@@ -173,7 +173,8 @@ carry a plain-language caveat and stay in "might qualify".
 
 ## Testing
 
-`npm test` runs 75 tests across four layers:
+`npm test` runs 77 unit tests; `npm run test:e2e` runs 20 browser tests; `npm run test:all`
+does both.
 
 - **`tests/engine/evaluate`** — three-valued logic, including that `false` is treated as
   answered rather than missing, and that a settled verdict stops reporting missing facts.
@@ -188,6 +189,32 @@ carry a plain-language caveat and stay in "might qualify".
   visible by reading either file alone.
 - **`tests/ui/app`** — renders the real app in jsdom and drives it, confirming the rules are
   wired to the screen and the disclaimers are actually present.
+- **`tests/e2e/personas`** — walks whole interviews through real Chromium, on desktop and
+  mobile viewports.
+
+### Why the e2e layer exists
+
+It was added after a bug the other four layers structurally could not catch. "211 Wisconsin"
+carried an `always()` rule so results would never be empty; every unit test passed, and the
+finished interview still told a user in another state they qualified for a Wisconsin-only
+service. Worse, the unit assertion that *results are never empty* was passing **because** of
+the bug — the bad data was propping up the test meant to catch that class of problem.
+
+What made it visible was walking a persona end to end and reading what a person would
+actually see. So the e2e specs assert user-visible outcomes ("a family in crisis sees the
+emergency programs", "never claims a Wisconsin-only service applies out of state") rather
+than function return values, and two of them verify the privacy guarantee empirically: zero
+network requests once the interview starts, and nothing written to storage, cookies, or the
+URL.
+
+### Honest empty states
+
+The matcher is now strictly truthful, so it can legitimately return nothing — and it does,
+for a high-income household outside Wisconsin. That is handled in the UI rather than by
+padding the results: out-of-scope users are told this tool only covers Wisconsin and pointed
+at national 211, Benefits.gov, and USA.gov (`src/data/national-resources.ts`). Those are
+deliberately not `Program` records; they are never matched against and never appear in a
+bucket.
 
 ## Build order
 

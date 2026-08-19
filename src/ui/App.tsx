@@ -109,7 +109,11 @@ export function App() {
           )}
         </section>
 
-        <Results result={result} isComplete={isComplete} />
+        <Results
+          result={result}
+          isComplete={isComplete}
+          isOutOfScope={answers.state === 'other'}
+        />
       </main>
 
       <footer className="footer">

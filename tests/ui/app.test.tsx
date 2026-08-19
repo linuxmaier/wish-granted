@@ -40,7 +40,8 @@ describe('the app', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    // 211 has no eligibility test, so it is a confirmed match from the start.
+    // Present from the start, though only as "might qualify" until we know the
+    // user is actually in Wisconsin.
     expect(within(results()).getByText('211 Wisconsin')).toBeTruthy();
 
     await user.click(screen.getByRole('radio', { name: /City of Madison/i }));

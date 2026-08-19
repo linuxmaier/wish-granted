@@ -1,0 +1,241 @@
+import { expect, test } from '@playwright/test';
+import type { Page } from '@playwright/test';
+
+/**
+ * Whole-interview tests through a real browser.
+ *
+ * These exist because the unit suite cannot see certain failures. The 211
+ * Wisconsin bug is the motivating example: `matchAll` was behaving exactly as
+ * written, every unit test passed, and the interview still ended by telling an
+ * out-of-state user they qualified for a Wisconsin-only service. It took
+ * walking a persona end to end to notice — and the "results are never empty"
+ * assertion in the unit suite was passing *because* of the bug.
+ *
+ * So each persona here is a claim about what a real person should see, not
+ * about what a function should return.
+ */
+
+type Action =
+  | { radio: string }
+  | { num: number }
+  | { check: string[] }
+  | { none: true };
+
+/** Maps a question prompt (substring) to how this persona answers it. */
+type Persona = Record<string, Action>;
+
+const CRISIS_FAMILY: Persona = {
+  'Where do you live': { radio: 'City of Madison' },
+  'How many people': { num: 3 },
+  'household income': { num: 18_000 },
+  'Does your household include': { check: ['A child under 5', 'A school-age child'] },
+  'best describes your housing': { radio: 'Renting' },
+  'Is any of this happening': {
+    check: ['Behind on rent', 'A utility shutoff notice', 'I pay a heating'],
+  },
+  'already receive any of these': { none: true },
+};
+
+const WELL_OFF_MADISON: Persona = {
+  'Where do you live': { radio: 'City of Madison' },
+  'How many people': { num: 2 },
+  'household income': { num: 250_000 },
+  'Does your household include': { none: true },
+  'best describes your housing': { radio: 'I own my home' },
+  'Is any of this happening': { check: ['I pay a heating'] },
+  'already receive any of these': { none: true },
+};
+
+/** Answers whatever question is on screen, then advances. Returns when done. */
+async function runInterview(page: Page, persona: Persona, maxScreens = 12) {
+  for (let i = 0; i < maxScreens; i += 1) {
+    if (await page.getByText(/that is everything we need to ask/i).isVisible()) return;
+
+    const fieldsets = page.locator('fieldset.question');
+    for (let f = 0; f < (await fieldsets.count()); f += 1) {
+      const fieldset = fieldsets.nth(f);
+      const prompt = (await fieldset.locator('legend').textContent()) ?? '';
+      const key = Object.keys(persona).find((k) => prompt.includes(k));
+      if (!key) continue;
+
+      const action = persona[key]!;
+      if ('num' in action) {
+        await fieldset.locator('input[type=number]').fill(String(action.num));
+      } else if ('none' in action) {
+        await fieldset.locator('button.choice--none').click();
+      } else if ('radio' in action) {
+        await fieldset.locator('label.choice', { hasText: action.radio }).first().click();
+      } else {
+        for (const label of action.check) {
+          const box = fieldset.locator('label.choice', { hasText: label }).first();
+          if (await box.count()) await box.click();
+        }
+      }
+    }
+
+    await page.getByRole('button', { name: 'Continue' }).click();
+  }
+}
+
+const results = (page: Page) => page.getByRole('region', { name: /matches so far|your results/i });
+
+/** Program names in a given results bucket. */
+async function bucket(page: Page, heading: RegExp): Promise<string[]> {
+  const group = page.locator('.results__group').filter({ has: page.locator('h3', { hasText: heading }) });
+  if (!(await group.count())) return [];
+  return group.first().locator('.program__name').allTextContents();
+}
+
+test.describe('the interview end to end', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+  });
+
+  test('a family in crisis sees the emergency programs', async ({ page }) => {
+    await runInterview(page, CRISIS_FAMILY);
+
+    const eligible = await bucket(page, /likely a match/i);
+    for (const expected of [
+      'FoodShare Wisconsin (SNAP)',
+      'Wisconsin WIC',
+      'WHEAP Crisis Assistance and Emergency Furnace Repair',
+      'Eviction Prevention and Rent Assistance',
+    ]) {
+      expect(eligible, `expected ${expected} for a household in crisis`).toContain(expected);
+    }
+  });
+
+  test('someone well off still gets the no-income-test options', async ({ page }) => {
+    await runInterview(page, WELL_OFF_MADISON);
+
+    const eligible = await bucket(page, /likely a match/i);
+    expect(eligible).not.toContain('FoodShare Wisconsin (SNAP)');
+    // Pantries have no income test by design, so nobody in Wisconsin leaves empty-handed.
+    expect(eligible).toContain('The River Food Pantry');
+  });
+
+  test('enrolling in SSI overrides the income test', async ({ page }) => {
+    await runInterview(page, { ...WELL_OFF_MADISON, 'already receive any of these': { check: ['SSI'] } });
+
+    const eligible = await bucket(page, /likely a match/i);
+    expect(eligible).toContain('FoodShare Wisconsin (SNAP)');
+  });
+
+  test('the interview is shorter out of state', async ({ page }) => {
+    let localScreens = 0;
+    await page.goto('/');
+    // Count screens for a Wisconsin resident.
+    for (let i = 0; i < 12; i += 1) {
+      if (await page.getByText(/that is everything/i).isVisible()) break;
+      localScreens += 1;
+      await runOneScreen(page, CRISIS_FAMILY);
+    }
+
+    await page.goto('/');
+    let awayScreens = 0;
+    const away: Persona = { ...CRISIS_FAMILY, 'Where do you live': { radio: 'Outside Wisconsin' } };
+    for (let i = 0; i < 12; i += 1) {
+      if (await page.getByText(/that is everything/i).isVisible()) break;
+      awayScreens += 1;
+      await runOneScreen(page, away);
+    }
+
+    expect(awayScreens).toBeLessThan(localScreens);
+  });
+});
+
+/** One screen's worth of answering, factored out for the length comparison. */
+async function runOneScreen(page: Page, persona: Persona) {
+  const fieldsets = page.locator('fieldset.question');
+  for (let f = 0; f < (await fieldsets.count()); f += 1) {
+    const fieldset = fieldsets.nth(f);
+    const prompt = (await fieldset.locator('legend').textContent()) ?? '';
+    const key = Object.keys(persona).find((k) => prompt.includes(k));
+    if (!key) continue;
+    const action = persona[key]!;
+    if ('num' in action) await fieldset.locator('input[type=number]').fill(String(action.num));
+    else if ('none' in action) await fieldset.locator('button.choice--none').click();
+    else if ('radio' in action)
+      await fieldset.locator('label.choice', { hasText: action.radio }).first().click();
+    else
+      for (const label of action.check) {
+        const box = fieldset.locator('label.choice', { hasText: label }).first();
+        if (await box.count()) await box.click();
+      }
+  }
+  await page.getByRole('button', { name: 'Continue' }).click();
+}
+
+test.describe('honest empty states', () => {
+  test('tells an out-of-state user this tool does not cover them', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('label.choice', { hasText: 'Outside Wisconsin' }).first().click();
+
+    await expect(results(page).getByText(/only covers Wisconsin/i)).toBeVisible();
+    // And points somewhere genuinely useful instead.
+    await expect(results(page).getByRole('link', { name: 'Benefits.gov' })).toBeVisible();
+  });
+
+  test('never claims a Wisconsin-only service applies out of state', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('label.choice', { hasText: 'Outside Wisconsin' }).first().click();
+
+    // The regression this suite was written for.
+    const eligible = await bucket(page, /likely a match/i);
+    expect(eligible).not.toContain('211 Wisconsin');
+  });
+
+  test('shows a real empty state rather than padding the results', async ({ page }) => {
+    await page.goto('/');
+    await runInterview(page, {
+      ...WELL_OFF_MADISON,
+      'Where do you live': { radio: 'Outside Wisconsin' },
+    });
+
+    expect(await bucket(page, /likely a match/i)).toHaveLength(0);
+    expect(await bucket(page, /might qualify/i)).toHaveLength(0);
+    await expect(results(page).getByText(/only covers Wisconsin/i)).toBeVisible();
+  });
+});
+
+test.describe('the privacy guarantee', () => {
+  test('makes no network request while the interview is answered', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'networkidle' });
+
+    // Everything from here on is user input. Any request would carry it off-device.
+    const requests: string[] = [];
+    page.on('request', (r) => {
+      // Vite's dev client keeps an HMR channel open; it does not exist in a build.
+      if (!/@vite|__vite|node_modules|\.map$/.test(r.url())) requests.push(r.url());
+    });
+
+    await runInterview(page, CRISIS_FAMILY);
+    expect(requests, `unexpected requests: ${requests.join(', ')}`).toHaveLength(0);
+  });
+
+  test('writes nothing to browser storage', async ({ page }) => {
+    await page.goto('/');
+    await runInterview(page, CRISIS_FAMILY);
+
+    const stored = await page.evaluate(() => ({
+      local: window.localStorage.length,
+      session: window.sessionStorage.length,
+      cookies: document.cookie,
+      search: window.location.search,
+    }));
+    expect(stored).toEqual({ local: 0, session: 0, cookies: '', search: '' });
+  });
+});
+
+test.describe('layout', () => {
+  test('does not scroll sideways', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('label.choice', { hasText: 'City of Madison' }).first().click();
+
+    const { scrollW, clientW } = await page.evaluate(() => ({
+      scrollW: document.documentElement.scrollWidth,
+      clientW: document.documentElement.clientWidth,
+    }));
+    expect(scrollW).toBeLessThanOrEqual(clientW);
+  });
+});

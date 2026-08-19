@@ -347,6 +347,44 @@ body {
   margin: 0 0 0.75rem;
 }
 
+/* Shown when the matcher honestly has nothing for this person. */
+.fallback {
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--maybe);
+  border-radius: var(--radius);
+  background: var(--maybe-bg);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.fallback__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.02rem;
+}
+
+.fallback p {
+  margin: 0 0 0.75rem;
+  font-size: 0.93rem;
+}
+
+.fallback__list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.92rem;
+}
+
+.fallback__list li {
+  margin-bottom: 0.4rem;
+}
+
+.fallback__phone {
+  color: var(--ink-soft);
+}
+
+.fallback__desc {
+  color: var(--ink-soft);
+}
+
 .program {
   border: 1px solid var(--line);
   border-left: 4px solid var(--line);

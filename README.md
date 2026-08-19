@@ -15,7 +15,9 @@ reasoning behind every match visible. **Your answers never leave your browser ta
 ```bash
 npm install
 npm run dev        # http://localhost:5173
-npm test           # 75 tests
+npm test           # 77 unit tests
+npm run test:e2e   # 20 browser tests (Chromium, desktop + mobile)
+npm run test:all   # both
 npm run build      # -> dist/, deployable to any static host
 ```
 
@@ -53,7 +55,12 @@ src/
     reference/ FPL / SMI / AMI income tables
   interview/   Questions, screens, adaptive flow, answer handling
   ui/          React components
-tests/         Engine, interview, data-consistency, and DOM smoke tests
+tests/
+  engine/      Rules engine
+  interview/   Simulated interviews
+  data/        Dataset <-> interview consistency
+  ui/          jsdom smoke test
+  e2e/         Whole interviews in real Chromium
 docs/
   brief.md            Original scope
   design.md           Architecture decisions and rationale

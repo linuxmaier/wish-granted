@@ -38,8 +38,10 @@ describe('bucketing', () => {
   it('starts with everything undecided and nothing ruled out', () => {
     const result = matchAll(PROGRAMS, {});
     expect(result.ruledOut).toHaveLength(0);
-    // 211 has no eligibility test, so it is confirmed from the very first screen.
-    expect(ids(result.eligible)).toContain('wi-211');
+    expect(result.maybe).toHaveLength(PROGRAMS.length);
+    // Nothing is confirmed before any answer: every program in the seed set is
+    // scoped to at least a geography, so all of them start as "might qualify".
+    expect(result.eligible).toHaveLength(0);
   });
 
   it('surfaces matches for a low-income Madison family with children', () => {
@@ -51,12 +53,36 @@ describe('bucketing', () => {
     expect(eligible).toContain('wheap-energy-assistance');
   });
 
+  const outOfState = {
+    ...madisonFamily,
+    state: 'other',
+    county: 'other-wi-county',
+    city: 'other',
+  } as const;
+
   it('rules out local programs for someone outside Wisconsin', () => {
-    const result = matchAll(PROGRAMS, { ...madisonFamily, state: 'other', county: 'other-wi-county', city: 'other' });
+    const result = matchAll(PROGRAMS, outOfState);
     expect(ids(result.ruledOut)).toContain('foodshare-snap-wi');
     expect(ids(result.ruledOut)).toContain('wheap-energy-assistance');
     // Lifeline is genuinely nationwide, so it must survive.
     expect(ids(result.eligible)).toContain('lifeline-phone-internet');
+  });
+
+  it('does not offer a Wisconsin-scoped service to someone out of state', () => {
+    // Regression: 211 Wisconsin used to carry an `always()` rule so that results
+    // were never empty, which told out-of-state users they qualified for a
+    // Wisconsin service. Padding results with something inapplicable is worse
+    // than an empty state; the UI now handles "nothing applies" instead.
+    const result = matchAll(PROGRAMS, outOfState);
+    expect(ids(result.eligible)).not.toContain('wi-211');
+    expect(ids(result.ruledOut)).toContain('wi-211');
+  });
+
+  it('can legitimately return nothing, rather than inventing a match', () => {
+    const result = matchAll(PROGRAMS, { ...outOfState, annualHouseholdIncome: 250_000 });
+    expect(result.eligible).toHaveLength(0);
+    expect(result.maybe).toHaveLength(0);
+    expect(result.ruledOut).toHaveLength(PROGRAMS.length);
   });
 
   it('rules out income-tested programs for a high earner but keeps the pantries', () => {
