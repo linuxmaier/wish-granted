@@ -1,0 +1,489 @@
+/*
+ * Styling notes
+ *
+ * The audience includes people in a housing or food crisis, often on a phone,
+ * sometimes on an old one. That drives most of the decisions here: system fonts
+ * so nothing blocks on a webfont, generous tap targets, high contrast, and a
+ * layout that degrades to a single column rather than depending on side-by-side
+ * space. No CSS framework -- the whole app is a handful of components, and a
+ * framework would cost more bytes than it saves.
+ */
+
+:root {
+  --bg: #f7f7f5;
+  --surface: #ffffff;
+  --ink: #1a1a17;
+  --ink-soft: #55534d;
+  --line: #dfdcd4;
+  --accent: #1c5d3f;
+  --accent-ink: #ffffff;
+  --pass: #1c5d3f;
+  --pass-bg: #e8f2ec;
+  --maybe: #7a5416;
+  --maybe-bg: #fbf2e2;
+  --out: #6b6b6b;
+  --out-bg: #f0efec;
+  --warn-bg: #fdf3d7;
+  --warn-line: #e4c65f;
+  --radius: 10px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16171a;
+    --surface: #1f2125;
+    --ink: #eceae4;
+    --ink-soft: #a8a49b;
+    --line: #34363b;
+    --accent: #6fbf95;
+    --accent-ink: #10241a;
+    --pass: #8fd4ad;
+    --pass-bg: #1b2a22;
+    --maybe: #e0b567;
+    --maybe-bg: #2a2318;
+    --out: #97948d;
+    --out-bg: #232529;
+    --warn-bg: #2e2716;
+    --warn-line: #6d5a24;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.55 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+.app {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 1rem 4rem;
+}
+
+/* --- Banners and masthead ------------------------------------------------ */
+
+.banner {
+  margin: 1rem 0 0;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+}
+
+.banner--warning {
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-line);
+}
+
+.masthead {
+  padding: 2rem 0 1.5rem;
+}
+
+.masthead h1 {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: -0.02em;
+}
+
+.masthead__tagline {
+  margin: 0.4rem 0 0;
+  font-size: 1.05rem;
+  color: var(--ink-soft);
+}
+
+.masthead__privacy {
+  margin: 0.75rem 0 0;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+/* --- Layout -------------------------------------------------------------- */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.interview,
+.results {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+
+/* The interview sticks while the results scroll on wide screens. */
+@media (min-width: 901px) {
+  .interview {
+    position: sticky;
+    top: 1rem;
+  }
+}
+
+/* --- Progress ------------------------------------------------------------ */
+
+.progress {
+  height: 5px;
+  background: var(--line);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}
+
+.progress__bar {
+  height: 100%;
+  background: var(--accent);
+  transition: width 220ms ease;
+}
+
+.interview__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.3rem;
+}
+
+.interview__intro {
+  margin: 0 0 1.25rem;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+
+.interview__skip {
+  flex-basis: 100%;
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.interview__done h2 {
+  margin-top: 0;
+}
+
+/* --- Questions ----------------------------------------------------------- */
+
+.question {
+  border: 0;
+  padding: 0;
+  margin: 0 0 1.75rem;
+}
+
+.question__prompt {
+  padding: 0;
+  font-weight: 650;
+  font-size: 1.02rem;
+}
+
+.question__help {
+  margin: 0.35rem 0 0.75rem;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+}
+
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.choice {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  cursor: pointer;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  width: 100%;
+}
+
+.choice:hover {
+  border-color: var(--accent);
+}
+
+.choice:has(input:checked),
+.choice.is-selected {
+  border-color: var(--accent);
+  background: var(--pass-bg);
+}
+
+.choice input {
+  margin-top: 0.25rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--accent);
+  flex: none;
+}
+
+.choice__label {
+  display: block;
+}
+
+.choice__hint {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  margin-top: 0.15rem;
+}
+
+.choice--none {
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.number {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.number input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.65rem 0.75rem;
+  font: inherit;
+  color: inherit;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.number input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.number__affix {
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+/* --- Buttons ------------------------------------------------------------- */
+
+.interview__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  margin-top: 1.5rem;
+}
+
+.button {
+  display: inline-block;
+  padding: 0.65rem 1.15rem;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.button--quiet {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.link-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin-top: 0.5rem;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* --- Results ------------------------------------------------------------- */
+
+.results__title {
+  margin: 0 0 1rem;
+  font-size: 1.3rem;
+}
+
+.results__group {
+  margin-bottom: 1.75rem;
+}
+
+.results__heading {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-soft);
+  margin: 0 0 0.6rem;
+}
+
+.count {
+  background: var(--out-bg);
+  border-radius: 99px;
+  padding: 0.05rem 0.5rem;
+  margin-left: 0.3rem;
+}
+
+.results__note,
+.results__empty {
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  margin: 0 0 0.75rem;
+}
+
+.program {
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.program--eligible {
+  border-left-color: var(--pass);
+}
+.program--maybe {
+  border-left-color: var(--maybe);
+}
+.program--ruledOut {
+  border-left-color: var(--out);
+  background: var(--out-bg);
+}
+
+.program__head {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.program__name {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.badge {
+  flex: none;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+
+.badge--eligible {
+  background: var(--pass-bg);
+  color: var(--pass);
+}
+.badge--maybe {
+  background: var(--maybe-bg);
+  color: var(--maybe);
+}
+.badge--ruledOut {
+  background: var(--out-bg);
+  color: var(--out);
+}
+
+.program__meta {
+  margin: 0.3rem 0 0.6rem;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+
+.program__summary,
+.program__benefit,
+.program__status {
+  margin: 0 0 0.6rem;
+  font-size: 0.94rem;
+}
+
+.program__status {
+  color: var(--maybe);
+}
+
+.program__apply {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 0.75rem 0;
+}
+
+.program__steps,
+.program__caveats ul {
+  margin: 0.5rem 0;
+  padding-left: 1.2rem;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.program__caveats {
+  font-size: 0.9rem;
+  margin-top: 0.75rem;
+}
+
+.program__why {
+  margin-top: 0.6rem;
+  padding: 0.7rem 0.85rem;
+  background: var(--bg);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+}
+
+.program__why ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.reason--pass {
+  color: var(--pass);
+}
+.reason--fail {
+  color: var(--ink);
+  font-weight: 600;
+}
+.reason--unknown {
+  color: var(--ink-soft);
+}
+
+.program__source {
+  margin: 0.6rem 0 0;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+
+/* --- Footer -------------------------------------------------------------- */
+
+.footer {
+  margin-top: 2.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+}
+
+a {
+  color: var(--accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

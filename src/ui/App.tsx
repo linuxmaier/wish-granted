@@ -1,0 +1,129 @@
+import { useInterview } from './useInterview';
+import { QuestionField } from './components/QuestionField';
+import { Results } from './components/Results';
+import { unverifiedPrograms } from '@/data/programs';
+import { allIncomeTablesVerified } from '@/engine/thresholds';
+
+/**
+ * The whole app: interview on the left, live results on the right.
+ *
+ * There is no router and no server. Every screen transition is local state, so
+ * there is no URL carrying answers around and nothing to leak in a referrer
+ * header or a browser history entry.
+ */
+
+const DATA_IS_UNVERIFIED = unverifiedPrograms().length > 0 || !allIncomeTablesVerified();
+
+export function App() {
+  const interview = useInterview();
+  const { screen, questions, answers, result, isComplete } = interview;
+
+  return (
+    <div className="app">
+      {/*
+        This banner is load-bearing, not decoration. The seed dataset has not
+        been checked against its sources, and shipping benefit figures that
+        might be wrong without saying so would be worse than shipping nothing.
+        It disappears on its own once every record carries a verification date.
+      */}
+      {DATA_IS_UNVERIFIED && (
+        <div className="banner banner--warning" role="alert">
+          <strong>Draft data.</strong> The program details and income limits here have not
+          yet been checked against their official sources. Treat every result as a lead to
+          confirm, not an answer.
+        </div>
+      )}
+
+      <header className="masthead">
+        <h1>Wish Granted</h1>
+        <p className="masthead__tagline">
+          Find grants and assistance you may qualify for in Madison, Dane County, and
+          Wisconsin.
+        </p>
+        <p className="masthead__privacy">
+          Your answers stay in this browser tab. Nothing is sent anywhere, nothing is
+          saved, and there is no account.
+        </p>
+      </header>
+
+      <main className="layout">
+        <section className="interview">
+          {screen ? (
+            <>
+              <div
+                className="progress"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(interview.progress * 100)}
+              >
+                <div className="progress__bar" style={{ width: `${interview.progress * 100}%` }} />
+              </div>
+
+              <h2 className="interview__title">{screen.title}</h2>
+              {screen.intro && <p className="interview__intro">{screen.intro}</p>}
+
+              {questions.map((question) => (
+                <QuestionField
+                  key={question.id}
+                  question={question}
+                  answers={answers}
+                  onChoice={interview.answerChoice}
+                  onFlags={interview.answerFlags}
+                  onNumber={interview.answerNumber}
+                  onMulti={interview.answerMulti}
+                />
+              ))}
+
+              <div className="interview__nav">
+                {interview.canGoBack && (
+                  <button type="button" className="button button--quiet" onClick={interview.goBack}>
+                    Back
+                  </button>
+                )}
+                <button type="button" className="button" onClick={interview.goNext}>
+                  Continue
+                </button>
+                <p className="interview__skip">
+                  You can skip anything you would rather not answer. Programs that depend on
+                  it will stay in “might qualify” rather than being ruled out.
+                </p>
+              </div>
+            </>
+          ) : (
+            <div className="interview__done">
+              <h2>That is everything we need to ask.</h2>
+              <p>
+                Nothing left to ask would change your results. Your matches are in the
+                results panel — open “Why this result?” on any of them to see the reasoning.
+              </p>
+              <div className="interview__nav">
+                <button type="button" className="button button--quiet" onClick={interview.goBack}>
+                  Back
+                </button>
+                <button type="button" className="button button--quiet" onClick={interview.restart}>
+                  Start over
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+
+        <Results result={result} isComplete={isComplete} />
+      </main>
+
+      <footer className="footer">
+        <p>
+          <strong>This is not legal or financial advice.</strong> Wish Granted is an
+          unofficial guide. Eligibility rules change, funding runs out, and only the agency
+          running a program can tell you whether you qualify. Always confirm with the
+          source linked on each program before relying on anything here.
+        </p>
+        <p>
+          Results are generated by matching your answers against published eligibility
+          rules. Every program links to the official source it was written from.
+        </p>
+      </footer>
+    </div>
+  );
+}
