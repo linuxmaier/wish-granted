@@ -99,6 +99,20 @@ export interface Screen {
   readonly title: string;
   readonly intro?: string;
   readonly questions: readonly Question[];
+  /**
+   * The id of a question on this screen that should stay first, ahead of the
+   * impact sort, when it is relevant at all.
+   *
+   * An escape hatch, not a redesign: impact ordering is doing useful work and
+   * remains the default for every other question on every other screen. Use
+   * this only when a question is a natural preamble the others don't make
+   * sense without -- e.g. asking someone's housing status before asking about
+   * housing trouble. It does not exempt the anchor from the relevance filter:
+   * an anchored question that no longer helps any undecided program settle is
+   * still dropped entirely, same as any other question. See
+   * `relevantQuestions` in flow.ts.
+   */
+  readonly anchorQuestionId?: string;
 }
 
 // --- Helpers --------------------------------------------------------------
@@ -216,6 +230,11 @@ export const SCREENS: readonly Screen[] = [
   {
     id: 'housing',
     title: 'Your housing and utilities',
+    // The trouble checklist usually scores higher on impact than housing
+    // status does, which would otherwise put it first -- correct by the
+    // ranking rule, backwards to a person asked about housing trouble before
+    // they've said what their housing situation even is.
+    anchorQuestionId: 'housing-status',
     questions: [
       {
         id: 'housing-status',
