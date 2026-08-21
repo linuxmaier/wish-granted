@@ -64,7 +64,7 @@ export const foodshareSnapWi: Program = {
 
   howToApply: {
     // access.wisconsin.gov 301-redirects here; recorded as the destination.
-    url: 'https://access.wi.gov/',
+    url: 'https://access.wi.gov/s/',
     phone: '1-800-362-3002',
     steps: [
       'Apply online through ACCESS Wisconsin, by phone, or in person at your county agency.',

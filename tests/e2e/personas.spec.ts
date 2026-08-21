@@ -184,8 +184,14 @@ test.describe('honest empty states', () => {
     await page.locator('label.choice', { hasText: 'Outside Wisconsin' }).first().click();
 
     await expect(results(page).getByText(/only covers Wisconsin/i)).toBeVisible();
-    // And points somewhere genuinely useful instead.
-    await expect(results(page).getByRole('link', { name: 'Benefits.gov' })).toBeVisible();
+    // And points somewhere genuinely useful instead. Note this asserts our own
+    // link renders, NOT that the destination is live -- a network assertion
+    // cannot live here, because two tests in this file guarantee the interview
+    // makes *zero* network requests, and that guarantee is worth more than
+    // link checking. Liveness is `npm run check:links` instead.
+    await expect(
+      results(page).getByRole('link', { name: 'USA.gov benefit finder' }),
+    ).toBeVisible();
   });
 
   test('never claims a Wisconsin-only service applies out of state', async ({ page }) => {

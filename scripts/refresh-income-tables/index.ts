@@ -1,4 +1,10 @@
-#!/usr/bin/env node
+// No shebang here on purpose. Every script in this repo is invoked as
+// `node <path>` via an npm script, so a shebang buys nothing -- and Vite
+// does NOT strip one when a test imports the module, so `#` lands in the
+// transformed output as an invalid token. That broke
+// tests/data/income-table-extraction.test.ts, and only on a cold Vite
+// cache, which is the worst way for a test to fail. See the guard in
+// tests/data/vocabulary.test.ts.
 /**
  * Deterministic refresher for src/data/reference/income-tables.ts (issue #6).
  *
