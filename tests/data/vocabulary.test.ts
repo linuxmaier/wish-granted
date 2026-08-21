@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { FACTS, FACT_KEYS, RESERVED_FACT_KEYS } from '@/domain/facts';
 import type { FactKey } from '@/domain/facts';
@@ -176,5 +178,31 @@ describe('curation status', () => {
       console.warn(`\n  Unverified income tables: ${pending.map((t) => t.id).join(', ')}\n`);
     }
     expect(ALL_INCOME_TABLES.length).toBeGreaterThan(0);
+  });
+});
+
+// --- Build-tooling guards ---------------------------------------------------
+
+describe('scripts stay importable by the test suite', () => {
+  it('no script starts with a shebang', () => {
+    // Vite does not strip a `#!` line when a test imports the module, so the
+    // `#` becomes an invalid token and the whole suite file fails to collect.
+    // Worse, it only shows up on a cold Vite transform cache -- the PR that
+    // introduced one was green in its own worktree and broken on main.
+    //
+    // Nothing here needs a shebang: every script is invoked as `node <path>`
+    // from an npm script, never executed directly.
+    const scriptsDir = path.join(process.cwd(), 'scripts');
+    const walk = (dir: string): string[] =>
+      fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) return entry.name === 'node_modules' ? [] : walk(full);
+        return /\.(m?[jt]s)$/.test(entry.name) ? [full] : [];
+      });
+
+    for (const file of walk(scriptsDir)) {
+      const firstTwo = fs.readFileSync(file, 'utf8').slice(0, 2);
+      expect(firstTwo, `${path.relative(process.cwd(), file)} starts with a shebang`).not.toBe('#!');
+    }
   });
 });

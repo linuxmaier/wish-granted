@@ -388,7 +388,7 @@ URL.
 The matcher is now strictly truthful, so it can legitimately return nothing — and it does,
 for a high-income household outside Wisconsin. That is handled in the UI rather than by
 padding the results: out-of-scope users are told this tool only covers Wisconsin and pointed
-at national 211, Benefits.gov, and USA.gov (`src/data/national-resources.ts`). Those are
+at national 211 and USA.gov (`src/data/national-resources.ts`). Those are
 deliberately not `Program` records; they are never matched against and never appear in a
 bucket.
 

@@ -28,10 +28,15 @@ export const NATIONAL_RESOURCES: readonly NationalResource[] = [
       'Dial 211 from any phone in the US to reach a referral specialist for your own area, free and confidential, 24 hours a day.',
   },
   {
-    name: 'Benefits.gov',
-    url: 'https://www.benefits.gov/',
+    // Was 'Benefits.gov'. That brand is retired: benefits.gov now 301s to this
+    // page, carrying UTM tracking parameters and a welcome-modal query string.
+    // We link the clean destination instead -- partly so the name matches what
+    // someone actually lands on, and partly because handing a stranger a
+    // tracking-tagged redirect sits badly with a tool that collects nothing.
+    name: 'USA.gov benefit finder',
+    url: 'https://www.usa.gov/benefit-finder',
     description:
-      'The federal benefit finder. Covers programs in every state, not just Wisconsin.',
+      'Answer a few questions and see federal benefits you may be eligible for, in any state.',
   },
   {
     name: 'USA.gov — Government benefits',

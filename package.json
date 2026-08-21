@@ -19,7 +19,8 @@
     "typecheck:refresh-income-tables": "tsc -p scripts/refresh-income-tables/tsconfig.json --noEmit",
     "extract:income-tables": "node scripts/extract-income-tables.mjs",
     "eval:llm-extraction": "node scripts/llm-extraction/run-eval.ts",
-    "typecheck:llm-extraction": "tsc -p scripts/llm-extraction --noEmit"
+    "typecheck:llm-extraction": "tsc -p scripts/llm-extraction --noEmit",
+    "check:links": "node scripts/check-links.mjs"
   },
   "dependencies": {
     "react": "^19.0.0",
