@@ -294,4 +294,55 @@ test.describe('layout', () => {
     await button.click();
     await expect(page.locator('.interview__title')).not.toHaveText(titleBefore ?? '');
   });
+
+  /**
+   * WCAG 2.2's Focus Not Obscured (Minimum), and the keyboard counterpart to
+   * the click-based test above. That test proves the mobile-summary strip
+   * never sits on top of something a mouse would tap; it says nothing about
+   * whether the browser's own scroll-into-view behavior for `Tab` keeps a
+   * keyboard-focused element clear of the same strip. `scroll-padding-bottom`
+   * (styles.css) is supposed to cover both cases -- this checks the second
+   * one, by tabbing through a real result set (several program cards' worth
+   * of controls) and confirming every stop that the browser actually brought
+   * into the viewport is the topmost element at its own center point -- the
+   * same test the browser itself runs before it would deliver a click or
+   * paint a focus ring there.
+   *
+   * Deliberately narrower than "every tab stop must be on screen": a tab
+   * stop the browser hasn't scrolled into view at all (top/bottom entirely
+   * outside the viewport) is a reachability question, not this criterion --
+   * Focus Not Obscured is about content that IS in the viewport being
+   * covered by other author content, specifically the fixed strip here.
+   * Conflating the two produced false failures on desktop, where a long
+   * checkbox list inside the sticky `.interview` panel can be taller than
+   * the viewport for reasons that have nothing to do with the mobile strip.
+   */
+  test('keyboard focus is never obscured by the mobile summary strip', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('label.choice', { hasText: 'City of Madison' }).first().click();
+    await page.getByRole('button', { name: 'Continue' }).click();
+
+    for (let i = 0; i < 40; i += 1) {
+      await page.keyboard.press('Tab');
+      const result = await page.evaluate(() => {
+        const el = document.activeElement;
+        if (!el || el === document.body) return { checked: false, obscured: false };
+        const rect = el.getBoundingClientRect();
+        const inViewport =
+          rect.width > 0 &&
+          rect.height > 0 &&
+          rect.bottom > 0 &&
+          rect.right > 0 &&
+          rect.top < window.innerHeight &&
+          rect.left < window.innerWidth;
+        if (!inViewport) return { checked: false, obscured: false };
+        const cx = Math.min(Math.max(rect.left + rect.width / 2, 0), window.innerWidth - 1);
+        const cy = Math.min(Math.max(rect.top + rect.height / 2, 0), window.innerHeight - 1);
+        const top = document.elementFromPoint(cx, cy);
+        const obscured = !(top === el || el.contains(top) || (top !== null && top.contains(el)));
+        return { checked: true, obscured };
+      });
+      expect(result.obscured, `tab stop ${i} is obscured by something else`).toBe(false);
+    }
+  });
 });

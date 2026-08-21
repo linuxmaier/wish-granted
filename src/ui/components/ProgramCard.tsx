@@ -91,7 +91,12 @@ export function ProgramCard({ match }: { readonly match: ProgramMatch }) {
         </>
       )}
 
-      <button type="button" className="link-button" onClick={() => setShowWhy((v) => !v)}>
+      <button
+        type="button"
+        className="link-button"
+        onClick={() => setShowWhy((v) => !v)}
+        aria-expanded={showWhy}
+      >
         {showWhy ? 'Hide reasoning' : 'Why this result?'}
       </button>
 

@@ -293,6 +293,12 @@ body {
   transition: width 320ms ease;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .progress__bar {
+    transition: none;
+  }
+}
+
 .progress__label {
   margin: var(--space-2) 0 0;
   font-size: var(--text-xs);
@@ -474,7 +480,13 @@ body {
 .link-button {
   background: none;
   border: 0;
+  /* WCAG 2.2 Target Size (Minimum): at font-size text-sm with the body's
+     1.6 line-height, the text box alone measures ~22.4px tall -- just under
+     the 24px floor. `min-height` plus vertically centered content (already
+     `align-items: center`) grows the tap target without changing the
+     underlined text's own size. */
   padding: 0;
+  min-height: 1.75rem;
   margin-top: var(--space-2);
   display: inline-flex;
   align-items: center;
@@ -802,4 +814,21 @@ a {
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* Present to assistive tech, invisible on screen -- the standard
+   "visually hidden but not display:none" pattern. display:none (and
+   visibility:hidden) remove an element from the accessibility tree, which
+   would silently defeat the one live-region announcement in Results.tsx, so
+   this clips it instead. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
