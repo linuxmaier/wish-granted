@@ -89,8 +89,15 @@ this project visibility into and control over that retention window. Until that'
 the public [privacy statement](../public/privacy.html) states only what we've verified —
 no invented number.
 
-**Analytics:** none, and none enabled. Cloudflare Web Analytics is opt-in per-project (not
-on by default for a fresh Pages project) and we have not turned it on.
+**Analytics:** no analytics script, tracker, or beacon, and none enabled — Cloudflare Web
+Analytics is opt-in per-project (not on by default for a fresh Pages project) and we have not
+turned it on. This is narrower than "no counter of any kind": the Workers & Pages dashboard's
+built-in project metrics (aggregate request counts, shown by default for any deployed project,
+not gated behind an opt-in) are separate from Web Analytics and appear to apply regardless of
+whether a project uses Pages Functions. We could not find Cloudflare documentation stating
+plainly whether that default view includes purely static Pages projects, so the privacy
+statement states the aggregate-count possibility rather than claiming zero counters of any
+kind, which would risk being false.
 
 **Outbound links:** every program/source link already used `rel="noreferrer"` before this
 work (`ProgramCard.tsx`, `Results.tsx`) — `tests/e2e/personas.spec.ts` now asserts that stays

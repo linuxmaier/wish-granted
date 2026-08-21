@@ -244,6 +244,22 @@ test.describe('the privacy guarantee', () => {
     expect(stored).toEqual({ local: 0, session: 0, cookies: '', search: '' });
   });
 
+  test('a reload erases an in-progress answer', async ({ page }) => {
+    // public/privacy.html claims answers are gone on reload, not just on tab
+    // close -- this is the check for that specific claim. All state lives in
+    // one useState (useInterview.ts) with no storage/service worker backing
+    // it, so a reload should return to a blank first question.
+    await page.goto('/');
+    const firstChoice = page.locator('fieldset.question label.choice').first();
+    await firstChoice.click();
+    await expect(firstChoice.locator('input')).toBeChecked();
+
+    await page.reload();
+
+    const firstChoiceAfterReload = page.locator('fieldset.question label.choice').first();
+    await expect(firstChoiceAfterReload.locator('input')).not.toBeChecked();
+  });
+
   test('never discloses a referrer on an outbound program or source link', async ({
     page,
   }) => {

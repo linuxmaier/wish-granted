@@ -44,8 +44,11 @@
       <ul>
         <li>No accounts, no sign-in, no email address collected.</li>
         <li>No cookies, and nothing written to your browser's storage.</li>
-        <li>No analytics, no ad trackers, no "how many people used this" counter of any
-          kind &mdash; self-hosted or third-party.</li>
+        <li>No analytics script, no ad tracker, and nothing that identifies you or follows
+          you from one visit to the next. The hosting service's own dashboard does show
+          us a running total of requests to the site &mdash; a single aggregate number,
+          not something we installed or can turn off, and it says nothing about who
+          visited, where from, or what anyone answered.</li>
         <li>Your answers never appear in the page's web address, so they can't end up in
           your browser history or in a link you accidentally share.</li>
       </ul>
@@ -57,9 +60,16 @@
           rel="noreferrer"
           >Content-Security-Policy</a
         >
-        header that tells your browser to actively refuse any network request the page
-        might try to make. You can check it yourself in your browser's developer tools,
-        under Network or Application &rarr; Security.
+        header that refuses, at the browser level, to let this page open a connection to
+        send data anywhere &mdash; no background request of any kind (the technical terms
+        are <code>fetch</code>, <code>XHR</code>, <code>WebSocket</code>), not even one
+        back to us. That's what actually enforces "your answers never leave your
+        browser": not us choosing not to send anything, but the browser refusing to let
+        the page try. You can check it yourself in developer tools, under Network or
+        Application &rarr; Security &mdash; look for <code>connect-src 'none'</code> in
+        the policy. (You will still see this page's own script and stylesheet load when
+        you first open it; that's normal, same-origin, and the one thing the policy does
+        allow.)
       </p>
 
       <h2>What the site you're on necessarily sees</h2>
