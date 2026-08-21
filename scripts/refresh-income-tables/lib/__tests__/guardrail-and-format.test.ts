@@ -4,25 +4,39 @@ import { checkGuardrail, GUARDRAIL_PERCENT } from '../guardrail.ts';
 import { formatNumberLiteral, parseUnderscoredNumber, parseDollarNumber } from '../format.ts';
 
 test('checkGuardrail is silent on a move exactly at the threshold', () => {
-  // 100 -> 110 is exactly +10%, and the check is "greater than", not "at or above".
-  const violations = checkGuardrail(() => 'x', [100], [110]);
+  // The check is "greater than", not "at or above" -- a move of exactly GUARDRAIL_PERCENT
+  // passes.
+  const newValue = 100 * (1 + GUARDRAIL_PERCENT / 100);
+  const violations = checkGuardrail(() => 'x', [100], [newValue]);
   assert.equal(violations.length, 0);
 });
 
 test('checkGuardrail flags a move just over the threshold, in both directions', () => {
-  const up = checkGuardrail(() => 'x', [100], [110.01]);
+  const justOverUp = 100 * (1 + GUARDRAIL_PERCENT / 100) + 0.01;
+  const up = checkGuardrail(() => 'x', [100], [justOverUp]);
   assert.equal(up.length, 1);
   assert.ok(up[0]!.percentChange > GUARDRAIL_PERCENT);
 
-  const down = checkGuardrail(() => 'x', [100], [89.98]);
+  const justOverDown = 100 * (1 - GUARDRAIL_PERCENT / 100) - 0.01;
+  const down = checkGuardrail(() => 'x', [100], [justOverDown]);
   assert.equal(down.length, 1);
   assert.ok(down[0]!.percentChange < -GUARDRAIL_PERCENT);
 });
 
-test('checkGuardrail reproduces the real Dane AMI move (issue #3) as just under the threshold', () => {
-  // Documented in the coordinator's review: $124,000 -> $135,300 is 9.1%, under the 10% band.
-  const violations = checkGuardrail(() => 'fourPersonMedian', [124_000], [135_300]);
-  assert.equal(violations.length, 0);
+test('checkGuardrail is silent on the real annual moves that calibrated it (issue #6 review)', () => {
+  // FPL moves ~3-4%/year; Dane AMI's real 2026 correction (#3) was 9.1%; WI SMI's was
+  // 15-20%. All three are legitimate and none should trip a 25% band -- that band exists
+  // specifically because a 10% band tripped on the middle two.
+  assert.equal(checkGuardrail(() => 'fpl', [33_000], [34_200]).length, 0); // +3.6%
+  assert.equal(checkGuardrail(() => 'fourPersonMedian', [124_000], [135_300]).length, 0); // +9.1%
+  assert.equal(checkGuardrail(() => 'wi-smi', [62_000], [73_888]).length, 0); // +19.2%
+});
+
+test('checkGuardrail still flags a move well beyond any normal annual change (a parse error, not a correction)', () => {
+  // The guardrail's actual job: catching a misread column or a footnote captured as a
+  // value, which produces a grossly wrong number, not a 12-20% one.
+  const violations = checkGuardrail(() => 'x', [73_888], [738_880]); // a misplaced decimal
+  assert.equal(violations.length, 1);
 });
 
 test('checkGuardrail skips a newly-tracked size rather than comparing against undefined', () => {

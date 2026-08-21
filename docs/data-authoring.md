@@ -2,12 +2,13 @@
 
 > **The seed dataset is only partly verified.** All 15 program records still carry
 > `lastVerified: null` and were drafted from secondary knowledge, not read off the official
-> sources. `FPL` and `DANE_AMI` in `src/data/reference/income-tables.ts` **are** verified as
-> of 2026-08-21 (see below). `WI_SMI_60` currently carries a machine-proposed update (from
-> the issue #6 refresher, described further down) awaiting human review, so it is
-> unverified for now -- see "Reviewing a proposed update" below. The UI's "unverified data"
-> banner stays up regardless, until the program records are verified too, since it checks
-> all of them together. Working through the program-record verification pass below is still
+> sources. The three income tables in `src/data/reference/income-tables.ts` **are** verified
+> as of 2026-08-21 (see below) -- including `WI_SMI_60`, whose `source` citation the issue
+> #6 refresher moved to a more stable page (described further down); a human independently
+> re-confirmed the figures against that new citation before `verified` was set back to
+> `true`, per "Reviewing a proposed update" below. The UI's "unverified data" banner stays up
+> regardless, until the program records are verified too, since it checks all of them
+> together. Working through the program-record verification pass below is still
 > a prerequisite for showing this to the public.
 
 ## Why this is treated as a blocker
@@ -123,6 +124,16 @@ flag.
   fetched plus the manual's own size-7/8 rows) exactly; `Math.round` is off by a dollar on
   several sizes. See the comment in `sources/wi-smi.ts` for the worked example.
 
+  **A change-detection signal worth passing to issue #7:** the Clearinghouse page carries a
+  publisher-authored `[Last edited MM/DD/YYYY]` stamp (e.g. `[Last edited 12/05/2025]` for
+  the FY2026 page) directly in the page body. This refresher doesn't use it -- it just
+  fetches and re-derives every run -- but it's a genuinely different thing from the generic
+  `Last-Modified` HTTP header noise the issue #5 spike found unusable elsewhere: it's a
+  human-maintained editorial date on a federal page, not a CDN/server artifact, so a diff on
+  that one string is a real "did the underlying data actually change" signal. Worth #7
+  checking for the same pattern on other government sources before assuming header-based
+  change detection is the only option.
+
 - **`DANE_AMI`** -- fetches exactly one fact from each of two independent PDFs (WHEDA's
   Section 8 Income Limits, FHLBank Chicago's HUD Income Guidelines): the county's stated
   median family income, and requires the two to agree exactly. `sizeAdjustment` and
@@ -137,15 +148,23 @@ flag.
   isolated `"FY{year} MFI: $X"` / `"MFI: X"` line does not have this problem, which is why
   the script only ever reads that one line from each document.
 
-### The 10% guardrail is not a bug when it trips on real data
+### The guardrail: calibrated to 25%, and why
 
-A year-over-year move over 10% on any figure holds that table's update back entirely --
-nothing is written, and the report says so. This is expected to fire on genuinely correct
-data, not just on parsing mistakes: Dane AMI's actual 2026 correction (#3) was a 9.1% move,
-under the band by less than a point, and WI SMI moved 15-20% the same round. A large move
-being flagged is not evidence it is wrong -- it is exactly the case a human should look at
-directly before it ships. Every guardrail message names the table, the specific figure, the
-old and new values, the percentage change, and the source URL.
+A year-over-year move over the guardrail on any figure holds that table's update back
+entirely -- nothing is written, and the report says so, naming the table, the specific
+figure, the old and new values, the percentage change, and the source URL. The threshold
+started at 10% and was raised to 25% once real data from building this script showed 10%
+was miscalibrated: it sits *below* normal annual movement rather than above it. Observed,
+legitimate, real moves: FPL ~3-4%/year, Dane AMI's actual 2026 correction (#3) 9.1%, WI
+SMI's 2026 correction 15-20%. A band that fires on every correct run is not a signal, it's
+noise -- it trains people to click through it, which also makes them click through the one
+run that matters. The guardrail's actual job is catching a *parse* error (a misread column,
+a footnote captured as a value, a row offset), which produces a grossly wrong number, not a
+12-20% one -- 25% still catches that comfortably. It also is not the only safety net: every
+run that changes anything still produces a diff a human reads before it merges. See the
+comment on `GUARDRAIL_PERCENT` in `lib/guardrail.ts` for the full reasoning; if you're
+considering tightening this again, get real observed movement across a few more years
+first, not just the one year that calibrated it originally.
 
 ### Reviewing a proposed update
 
