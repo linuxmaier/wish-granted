@@ -231,20 +231,29 @@ bucket.
 4. ~~Interview definition and adaptive flow~~ ✅
 5. ~~UI with progressive results and "why?" disclosure~~ ✅
 6. ~~Test suite~~ ✅
-7. **Verify all 15 program records and 3 income tables against sources** ← next, blocks launch
+7. ~~Verify the 3 income tables against sources~~ ✅ (2026-08-21). **Verify the 15 program
+   records** ← next, blocks launch
 8. Accessibility pass — keyboard traversal, screen reader, 200% zoom
 9. Deploy to static hosting
 10. Print/share view for taking results to an appointment
 
 ## Known gaps
 
-- **The seed data is unverified.** Every record carries `lastVerified: null` and the app
-  shows a warning banner. This blocks public launch; see
+- **The 15 program records are unverified.** Every record carries `lastVerified: null` and
+  the app shows a warning banner. The three income tables (FPL, Wisconsin SMI, Dane AMI) were
+  verified 2026-08-21 and no longer contribute to the banner, but it stays up until the
+  program records are checked too. This blocks public launch; see
   [data-authoring.md](data-authoring.md).
 - **No Spanish or Hmong.** Both matter for this audience in Dane County. No i18n framework
   is wired in yet, and retrofitting one will touch every string.
-- **Income is asked as an annual figure**, but WHEAP actually counts the last three months.
-  Someone recently laid off may be told they do not qualify when they do. The caveat says
-  so; the model should eventually carry a recent-income fact.
+- **Income is asked as an annual figure**, but WHEAP actually counts a single prior month,
+  annualized (×12) — not the "last three months" this note previously (and incorrectly)
+  claimed. Per the WHEAP PY26 Manual: "The HE+ Program uses a prior month income test which
+  is annualized to determine program income eligibility." This cuts the other way from what
+  was assumed here: a one-month test is *more* forgiving to someone recently laid off than
+  our annual-income question implies, since only their now-lower most recent month counts,
+  not an average that still includes higher pre-layoff earnings. The model should eventually
+  carry a recent-income fact so the interview can ask what WHEAP actually asks, rather than
+  approximating it with a full-year figure.
 - **Screens are ordered by impact but grouped by hand.** Fine at 15 programs; worth
   revisiting well before 100.
