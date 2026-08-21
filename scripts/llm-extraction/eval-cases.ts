@@ -74,7 +74,9 @@ export const EVAL_CASES: readonly EvalCase[] = [
       'Households with income at or below the amounts shown may qualify during the 2025-2026 program year (October 1, 2025 - September 30, 2026). Based on 60% of Wisconsin\'s median income.',
     expected: 'extract',
     // The cited income table IS the 60%-of-SMI figure already (see
-    // src/data/reference/income-tables.ts, WI_SMI_60_2025), so the rule is
+    // src/data/reference/income-tables.ts, WI_SMI_60 -- verified by #3 at
+    // exactly the figures this spike's own extractor independently pulled
+    // from this same page; see docs/eligibility-extraction.md), so the rule is
     // "at or below 100% of that table" -- matching the convention the
     // existing wheap-energy-assistance.ts and wheap-crisis-assistance.ts
     // records already use (`incomeAtOrBelow('wi-smi', 100)`). A model that

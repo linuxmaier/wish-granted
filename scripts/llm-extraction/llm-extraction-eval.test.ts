@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { buildCriterionJsonSchema } from '../../scripts/llm-extraction/criterion-schema.ts';
-import { gateCriterion } from '../../scripts/llm-extraction/schema-gate.ts';
-import { EVAL_CASES, EXPECTED_ABSTENTION_COUNT } from '../../scripts/llm-extraction/eval-cases.ts';
+import { buildCriterionJsonSchema } from './criterion-schema';
+import { gateCriterion } from './schema-gate';
+import { EVAL_CASES, EXPECTED_ABSTENTION_COUNT } from './eval-cases';
 import { PROGRAMS } from '../../src/data/programs';
 import { manualReview, oneOf, type Criterion } from '../../src/domain/criteria';
 
@@ -19,6 +19,15 @@ import { manualReview, oneOf, type Criterion } from '../../src/domain/criteria';
  * schema-valid (the ground truth is held to the same bar it grades against),
  * and the gate agrees with tests/data/vocabulary.test.ts's own checks on the
  * full curated dataset -- i.e. this is the same gate, not a look-alike.
+ *
+ * Lives here (scripts/llm-extraction/, not tests/) rather than as an
+ * ordinary test file, on purpose: it lets scripts/llm-extraction/*.ts keep
+ * the explicit ".ts" import specifiers run-eval.ts needs for direct
+ * `node --experimental-strip-types` execution, scoped to scripts/tsconfig.json
+ * alone, without asking the root tsconfig (which governs everything under
+ * src/ and tests/) to permit them too. `npm test`'s vitest config and
+ * `npm run typecheck`'s second `tsc -p scripts` pass both know to look here --
+ * see vite.config.ts and package.json.
  */
 
 describe('Criterion JSON Schema (for the extraction tool-use call)', () => {
@@ -94,7 +103,9 @@ describe('LLM extraction eval set (docs/eligibility-extraction.md)', () => {
     // findings, forwarded to the #2 agent): dane-eviction-prevention.ts's
     // `incomeAtOrBelow('dane-ami', 80)` is not stated anywhere on its cited
     // source page. A correctly-abstaining extractor would not have invented
-    // that figure from this excerpt.
+    // that figure from this excerpt. Unaffected by issue #3's income-table
+    // corrections -- this trap is about Dane County AMI-based eviction
+    // prevention, not the WHEAP/FPL tables #3 fixed.
     const trapCase = EVAL_CASES.find((c) => c.id === 'trc-no-published-ami');
     expect(trapCase).toBeDefined();
     expect(trapCase!.expected).toBe('abstain');

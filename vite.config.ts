@@ -19,6 +19,10 @@ export default defineConfig({
     // Engine and data tests are pure functions and run fastest in node; the UI
     // smoke test opts into jsdom with a per-file docblock.
     environment: 'node',
-    include: ['tests/**/*.test.{ts,tsx}'],
+    // scripts/llm-extraction's own harness test lives next to the code it
+    // tests, not under tests/ -- see that file's own docblock for why (it
+    // keeps a TS-extension requirement scoped to scripts/tsconfig.json
+    // instead of the root tsconfig).
+    include: ['tests/**/*.test.{ts,tsx}', 'scripts/**/*.test.ts'],
   },
 });

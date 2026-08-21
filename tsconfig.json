@@ -14,13 +14,6 @@
     "isolatedModules": true,
     "skipLibCheck": true,
     "noEmit": true,
-    // Lets scripts/llm-extraction/*.ts (a noEmit-only dev tool, run directly
-    // by Node's --experimental-strip-types, not bundled by Vite) use
-    // explicit ".ts" specifiers, which Node's ESM resolver requires for
-    // relative imports. Safe only because noEmit is true above -- nothing
-    // here is ever compiled to JS that would need to import a real ".ts"
-    // file. App code under src/ keeps the extensionless bundler style.
-    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": { "@/*": ["src/*"] }

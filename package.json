@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -b --noEmit",
+    "typecheck": "tsc -b --noEmit && tsc -p scripts --noEmit",
     "data:check": "vitest run tests/data",
     "test:e2e": "playwright test",
     "test:all": "vitest run && playwright test",

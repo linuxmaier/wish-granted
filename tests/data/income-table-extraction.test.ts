@@ -6,6 +6,7 @@ import {
   extractTables,
   HTML_TABLE_SOURCES,
 } from '../../scripts/extract-income-tables.mjs';
+import { FPL, WI_SMI_60 } from '@/data/reference/income-tables';
 
 /**
  * Locks in the measured hit rate claimed in docs/eligibility-extraction.md:
@@ -80,5 +81,53 @@ describe('deterministic income-table extraction (Tier 1)', () => {
     const source = HTML_TABLE_SOURCES.find((s) => s.id === 'madcap')!;
     const result = extractIncomeTable('<html><body>no tables here</body></html>', source);
     expect(result.ok).toBe(false);
+  });
+});
+
+/**
+ * Corroboration against issue #3's hand-verified reference tables.
+ *
+ * #3 verified `FPL` and `WI_SMI_60` (src/data/reference/income-tables.ts) by
+ * an entirely different route than this extractor: a human read the HHS
+ * Federal Register notice and the WHEAP PY26 manual PDF directly and cross-
+ * checked figures against a regulatory formula (45 CFR 96.85). This
+ * extractor independently re-derived the same numbers from the live HTML
+ * pages, before #3's verification PR existed. Two independent methods
+ * landing on the same number is stronger evidence than either one alone --
+ * this test makes that agreement a permanent, enforced regression rather
+ * than a one-time observation in a doc: if either side ever drifts (a real
+ * source change, or a typo in either place), this fails loudly instead of
+ * silently going stale. See docs/eligibility-extraction.md Section 3.
+ */
+describe('corroboration: this extractor agrees with the #3-verified reference tables', () => {
+  it('matches the verified FPL table exactly, every household size and the add-on', () => {
+    const source = HTML_TABLE_SOURCES.find((s) => s.id === 'fpl')!;
+    const result = extractIncomeTable(loadFixture(source.fixture), source);
+    if (!result.ok) throw new Error(result.reason);
+    expect(result.bySize).toEqual(FPL.bySize);
+    expect(result.perAdditionalPerson).toBe(FPL.perAdditionalPerson);
+  });
+
+  it('matches the verified WHEAP/WI_SMI_60 table exactly on every published household size', () => {
+    const source = HTML_TABLE_SOURCES.find((s) => s.id === 'wheap')!;
+    const result = extractIncomeTable(loadFixture(source.fixture), source);
+    if (!result.ok) throw new Error(result.reason);
+    expect(result.bySize).toEqual(WI_SMI_60.bySize);
+    // Not compared: WI_SMI_60.perAdditionalPerson (2,217) comes from a
+    // different document than this fixture -- #3 derived it from 45 CFR
+    // 96.85 applied to the PY26 manual PDF, which this HTML-table extractor
+    // never reads. This page simply doesn't publish that figure (this
+    // extractor correctly reports `null`, not a wrong guess) -- absence
+    // here is not a disagreement with #3, just a narrower source.
+  });
+
+  it('has no independent data point for DANE_AMI -- HUD\'s dataset format was out of scope for this extractor', () => {
+    // Recorded explicitly rather than silently omitted: unlike FPL and
+    // WI_SMI_60, this spike never attempted to extract HUD's Area Median
+    // Income figures (see NOT_ATTEMPTED in scripts/extract-income-tables.mjs),
+    // so there is nothing here to agree or disagree with #3's verified
+    // `DANE_AMI` ($135,300 four-person median). That gap is honest, not a
+    // silent pass.
+    expect(HTML_TABLE_SOURCES.some((s) => s.id === 'dane-ami')).toBe(false);
   });
 });

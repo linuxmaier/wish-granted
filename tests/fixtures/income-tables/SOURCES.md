@@ -18,11 +18,17 @@ a schedule, not read these files. They exist so this repo's test suite can asser
 "the extractor gets these four sources right" without depending on four government/nonprofit
 websites staying up and unchanged for `npm test` to pass.
 
-**Note on the numbers themselves, not just the fixture mechanics:** the `wheap.html` snapshot's
-extracted table differs substantially from `src/data/reference/income-tables.ts`'s existing
-`WI_SMI_60_2025` (e.g. household of 4: $73,888 here vs. $62,300 in the seed data — about
-19% higher, not a normal annual adjustment's worth of drift). The `fpl.html` snapshot's
-2026 guidelines are modestly higher than the seed `FPL_2025` table, consistent with a routine
-annual update. Both comparisons are discussed in `docs/eligibility-extraction.md`; neither the
-seed data nor this fixture has been reconciled as part of this spike — that is a
-`docs/data-authoring.md` verification task, out of scope here.
+**Note on the numbers themselves, not just the fixture mechanics:** when these fixtures were
+first fetched, `src/data/reference/income-tables.ts`'s income tables were still unverified
+(drafted from memory, per that file's own docstring at the time), and this extractor's output
+disagreed with them substantially — e.g. `wheap.html`'s household-of-4 figure was $73,888
+against a then-seed value of $62,300. Issue #3 landed independently afterward and verified
+the real tables by an entirely different route: a human read the HHS Federal Register notice
+and the WHEAP PY26 manual PDF directly. **The verified `FPL` and `WI_SMI_60`
+(src/data/reference/income-tables.ts) now agree with this extractor's output exactly** — see
+`tests/data/income-table-extraction.test.ts`'s "corroboration" block, which asserts this and
+will fail if either side ever drifts. Two independently-arrived-at numbers landing on the same
+figure is stronger evidence for both than either alone; full discussion in
+`docs/eligibility-extraction.md` Section 3. `DANE_AMI` has no corresponding comparison here —
+HUD's dataset format was out of scope for this HTML-table extractor (see `NOT_ATTEMPTED` in
+`scripts/extract-income-tables.mjs`), so this spike has nothing to agree or disagree with it.

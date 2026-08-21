@@ -16,6 +16,16 @@ authoring error, not churn. Section 5 ("Change rate") explains what actually hap
 this spike tried three different automatic ways to measure change rate, and why none of
 them worked.
 
+**A second correction, this one made by events rather than by the coordinator:** issue #3
+landed on `main` while this spike was in progress and independently verified
+`src/data/reference/income-tables.ts`'s three reference tables against their real sources,
+renaming `FPL_2025`/`WI_SMI_60_2025`/`DANE_AMI_2025` to `FPL`/`WI_SMI_60`/`DANE_AMI` in the
+process. An earlier draft of Sections 3, 5, and 8 below described this extractor's
+disagreement with the (then-unverified) seed data as an open defect. It no longer is one --
+merging #3 in showed the extractor's independently-fetched figures match #3's
+independently-verified ones **exactly**. Sections 3 and 8 below are rewritten as
+corroboration, not a bug report, and say so explicitly.
+
 ## TL;DR
 
 - **Tiering the corpus first was the right call.** Of 21 real source pages/documents
@@ -25,9 +35,12 @@ them worked.
   **33% of the corpus, not "everything."**
 - **The deterministic extractor is real, not a sketch.** `scripts/extract-income-tables.mjs`
   gets 4/4 attempted HTML income tables right against real page snapshots, including a
-  colspan-only footer row and three different table markups. Along the way it found that
-  two of the seed dataset's own income figures (FPL, WHEAP/WI-SMI) are stale or wrong
-  relative to what those sources publish today -- see [Section 3](#3-tier-1-the-deterministic-extractor-measured).
+  colspan-only footer row and three different table markups. Its output for FPL and
+  WHEAP/WI-SMI matches issue #3's independently, hand-verified reference tables **exactly**
+  -- two different methods, two different source formats (a live HTML page vs. a PDF manual
+  plus a regulatory cross-check), the same numbers to the dollar. That agreement is now an
+  enforced regression test, not just an observation -- see
+  [Section 3](#3-tier-1-the-deterministic-extractor-measured).
 - **The LLM prototype is built and schema-validated, but was NOT run against a live model
   in this spike** -- no `ANTHROPIC_API_KEY` was available in the sandboxed environment
   this spike ran in. `scripts/llm-extraction/run-eval.ts` is real, runnable code with a
@@ -72,6 +85,11 @@ different kind of remembered fact.
 ---
 
 ## 2. Corpus and tiering (measured)
+
+**Re-checked against the #3 merge:** #3 verified and corrected *values* inside three income
+tables; it didn't add, remove, or reshape any source page. Tiering is about how a source
+*expresses* its rule (table vs. prose vs. nothing), which #3 doesn't touch, so the corpus
+count and tier shares below are unaffected by the merge and were not recomputed.
 
 | Tier | Definition | Count | Share | Examples |
 |---|---|---|---|---|
@@ -133,17 +151,40 @@ fix was to check for the "additional person" pattern against the whole row befor
 column indexing. That bug, found and fixed in this spike, is exactly the kind of "should
 parse reliably" claim the issue asked not to take on faith.
 
-**A real, unplanned finding this extractor produced:** comparing its output to
-`src/data/reference/income-tables.ts`'s existing (already `verified: false`) tables:
+**Independent corroboration with issue #3's hand-verified reference tables -- the single
+best argument in this document for the deterministic path.** When this extractor was first
+run, `src/data/reference/income-tables.ts`'s tables were still unverified seed data
+(drafted from memory), and its output disagreed with them substantially -- e.g. a
+household-of-4 WHEAP figure of $73,888 against a then-seed value of $62,300. That looked,
+at the time, like a data-quality bug to flag. It wasn't: issue #3 landed on `main`
+independently, mid-spike, and verified the real tables by a **completely different route**
+-- a human reading the HHS Federal Register notice and the WHEAP PY26 manual PDF directly,
+cross-checked against a federal regulation's formula (45 CFR 96.85). Neither side knew
+about the other while working.
 
-- `FPL_2025`'s figures are modestly lower than the live 2026 guidelines fetched here --
-  consistent with a routine annual update, not a bug.
-- `WI_SMI_60_2025`'s figures are **substantially** lower than the live WHEAP table --
-  e.g. household of 4: $62,300 in the seed data vs. $73,888 fetched live, about 19%
-  higher. That gap is too large to be a normal one-year drift and is worth checking before
-  this table is treated as verified. Not fixed here -- flagged in
-  [Section 8](#8-findings-to-hand-off-not-fixed-here) for whoever owns
-  `docs/data-authoring.md`'s verification pass.
+The result, now that both exist: **`FPL` and `WI_SMI_60` (`src/data/reference/income-tables.ts`)
+match this extractor's independently-fetched figures exactly**, every household size:
+
+| Table | Household of 1 | Household of 4 | Per-additional-person |
+|---|---|---|---|
+| `FPL` (verified by #3) | $15,960 | $33,000 | $5,680 |
+| This extractor (fetched from `aspe.hhs.gov`) | $15,960 | $33,000 | $5,680 |
+| `WI_SMI_60` (verified by #3) | $38,421 | $73,888 | $2,217 (from 45 CFR 96.85 + the PDF manual, a document this extractor never reads) |
+| This extractor (fetched from `energyandhousing.wi.gov`) | $38,421 | $73,888 | not published on this HTML page |
+
+Two independently-arrived-at numbers landing on the same figure to the dollar is stronger
+evidence than either result alone -- a scripted extractor reproduced a hand-verified figure
+exactly, from a different document, by a different method, with nobody trying to make them
+agree. `tests/data/income-table-extraction.test.ts`'s "corroboration" block makes this a
+permanent, enforced regression rather than a one-time observation: if either side ever
+drifts from the other without a real source change behind it, the test suite fails loudly.
+
+**Not corroborated: `DANE_AMI`.** This extractor never attempted HUD's Area Median Income
+figures (a dataset/spreadsheet format, out of scope for an HTML-table parser -- see the
+`NOT_ATTEMPTED` list above), so this spike has no independent data point to agree or
+disagree with #3's verified `DANE_AMI` ($135,300 four-person median). Said plainly rather
+than left implicit: agreement was checked and found for two of the three tables; the third
+was never attempted, which is a different thing from "checked and passed."
 
 ---
 
@@ -440,8 +481,11 @@ in a spike whose deliverable is a document and a prototype, not dataset edits:
   authoring error against an unverified baseline rather than three-day churn. Input to #2
   (the URLs themselves need fixing) and #7 (change detection needs a verified baseline to
   mean anything).
-- **`WI_SMI_60_2025`'s figures run ~19% below the live WHEAP table** (Section 3) -- larger
-  than a normal annual drift, worth checking in the same verification pass.
+- ~~`WI_SMI_60`'s figures run below the live WHEAP table~~ -- **resolved.** This was flagged
+  in an earlier draft of this document, written before issue #3 landed. #3 independently
+  verified the real table; it now matches this extractor's output exactly. See Section 3's
+  corroboration writeup. Left here, struck through, so the history of "flagged, then
+  resolved" stays visible rather than silently disappearing.
 - **DPI's school-meals page URL also moved** before this spike could re-check its
   percent-of-FPL prose directly; Tier 2's count for that source is inferred from the
   general USDA school-meals pattern (130%/185% FPL), not independently confirmed this
@@ -451,18 +495,35 @@ in a spike whose deliverable is a document and a prototype, not dataset edits:
 
 ## 9. Recommendation
 
-1. **Ship the Tier 1 extractor as-is for income-table refreshes.** It is real, tested,
-   measured at 4/4, and already found two real data-quality issues worth fixing. Extend it
-   to a PDF-table parser (USDA) and the HUD dataset API as natural next steps, not blockers.
+0. **The LLM path is not validated yet, and no reader should come away from this document
+   thinking it is.** Abstention rate -- not extraction accuracy -- is this spike's headline
+   metric (Section 4.4, Section 4.3's trap-heavy eval set), and it is currently
+   **unmeasured**: no `ANTHROPIC_API_KEY` was available in this sandboxed environment, so
+   `scripts/llm-extraction/run-eval.ts` has never been run against a real model. Issue #23
+   has been filed to run it live once a key is available. Every recommendation below about
+   Tier 3 / the LLM path is conditional on #23's result, not a substitute for it.
+1. **Ship a deterministic extractor for income-table refreshes -- #24 already has, and it is
+   now the production path, not this spike's.** `scripts/extract-income-tables.mjs` was
+   built and measured here to answer the tiering question with real code, and its 4/4
+   result independently corroborates issue #3's hand-verified `FPL`/`WI_SMI_60` figures
+   exactly (Section 3) -- real evidence for the deterministic-extraction thesis this whole
+   document argues for. But issue #24 landed mid-spike with its own refresher
+   (`scripts/refresh-income-tables/`, wired to `npm run refresh:income-tables`) covering the
+   same ground for production use. **#24's tool is the one to run and maintain going
+   forward; this spike's extractor stays as evidence and a corroboration cross-check (its
+   test suite), not a second production path.** Don't merge the two or maintain both as
+   live tooling -- see the note in Section 3. #24 doesn't change this document's Tier 1
+   conclusion; it confirms it by independently choosing to build the same kind of tool this
+   spike recommended.
 2. **Treat Tier 4 as a human decision, not a pipeline stage.** No source-fetching or model
    call belongs in front of "this source publishes no rule" -- a human reads the page once
    and writes `manualReview`, using the mixed-leaf-inside-`allOf` pattern from
    `madison-housing-choice-voucher.ts` wherever part of the same program *is* decidable.
 3. **Build Tier 3 extraction on the prototype in this spike, but run the eval set against a
-   real model before trusting it.** The design (forced schema, reused gate, abstention as a
-   first-class correct output, provenance excerpt required) is sound and validated at the
-   mechanism level; the model-behavior level is not yet measured. That is the concrete next
-   step, not a re-design.
+   real model before trusting it (see item 0).** The design (forced schema, reused gate,
+   abstention as a first-class correct output, provenance excerpt required) is sound and
+   validated at the mechanism level; the model-behavior level is not yet measured. That is
+   the concrete next step -- tracked as #23 -- not a re-design.
 4. **Plan the roadmap around reviewer-minutes, not token cost**, once this project's scope
    grows past its current 15 programs -- Section 6.5's math says that constraint arrives
    long before the token bill becomes interesting.
@@ -471,6 +532,7 @@ in a spike whose deliverable is a document and a prototype, not dataset edits:
 
 All of the above respects the hard constraint this whole design exists to serve:
 extraction happens at build time, invoked by a human or CI (`npm run extract:income-tables`,
-`npm run eval:llm-extraction`), never from the shipped app -- confirmed directly by this
-spike's `npm run build`, which produces the same 60-module, dependency-free browser bundle
-whether or not `scripts/` exists, because nothing in `src/` imports it.
+`npm run refresh:income-tables`, `npm run eval:llm-extraction`), never from the shipped app
+-- confirmed directly by this spike's `npm run build`, which produces the same
+dependency-free browser bundle whether or not `scripts/` exists, because nothing in `src/`
+imports it.
