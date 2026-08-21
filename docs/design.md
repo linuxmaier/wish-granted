@@ -171,6 +171,108 @@ engine that got them slightly wrong would tell a family they are ineligible when
 not. That is the worst error this app can make. v1 declines to encode it; affected programs
 carry a plain-language caveat and stay in "might qualify".
 
+## Visual design
+
+Issue #10 asked for a deliberate pass: "approachable yet professional... calm, uncluttered,
+trustworthy." Before touching anything, the existing UI was screenshotted at desktop and
+360px, light and dark, and with a realistic dense result set (15 programs, all "might
+qualify" on the first screen). The concrete problems that fell out of that review, not just
+a vibe:
+
+- **Color-only state coding, three times over.** Eligible / might-qualify / ruled-out was
+  signaled by heading color, card border, and badge fill — the same hue at three altitudes,
+  which is one signal, not three, and does not survive grayscale or red-green color
+  deficiency. The old "ruled out" text measured 4.63:1 against its background — legal, but
+  the thinnest margin in the palette, with the #13 contrast audit still ahead.
+- **The accent color used as a call to action fifteen times in a row.** The same saturated
+  green filled "Continue" and every card's "How to apply" button, so a 15-card results panel
+  read as fifteen equally urgent actions rather than one.
+- **No seam between "answering" and "reading."** The interview and results panels were
+  identical white cards on the same background, so on mobile — where they stack — nothing
+  marked the transition from one to the other.
+- **A caution-tape banner as the first thing on the page.** The unverified-data warning was
+  a flat warning-yellow `role="alert"` — appropriately prominent, but for an audience that
+  may already be in crisis, a loud yellow alert as the literal first impression reads as
+  "something is wrong with this site" rather than "double check these numbers."
+- **A progress bar that could jump with no explanation.** Answering one question can make
+  several later screens irrelevant at once (see "Asking as few questions as possible"
+  above), so the bar advancing several steps at once is honest — but nothing said so, which
+  reads as a glitch.
+- **Uniform 10px radius on every element** blurred the distinction between "things you act
+  on" (buttons, inputs) and "things you read" (cards, panels), and a narrow type scale gave
+  little visual difference between "call this number" and "here's a caveat."
+
+### Direction: "Quiet civic"
+
+Three directions were sketched (an editorial paper-like theme, a cool minimal-utility theme,
+and a warm always-single-column theme); the project owner chose the first, "Quiet civic":
+
+- **Color** ([`src/ui/styles.css`](../src/ui/styles.css)) — a warm paper background
+  (`#f7f5f0`) rather than pure white or neutral gray, one muted teal-green accent (`#2a6b52`)
+  spent only on the progress bar and the single primary action per screen, and three
+  distinct hues for eligible / might-qualify / ruled-out, each re-verified against WCAG AA:
+  every text/background pair in both themes now measures at least 5.1:1 (light) and 7.3:1
+  (dark), a wider margin than the palette it replaced.
+- **Shape over color for match state** ([`src/ui/components/icons.tsx`](../src/ui/components/icons.tsx))
+  — eligible, might-qualify, and ruled-out each get a small inline icon (solid-ring
+  checkmark, dashed-ring dot, ringed dash) that is a distinct *shape*, not just a distinct
+  color, so the state still reads with color removed. Icons are `aria-hidden`; the state is
+  always also written out as real text next to them, so nothing is conveyed by shape alone
+  to assistive tech.
+- **Accent discipline.** Exactly one filled, saturated button exists on any given screen —
+  Continue. Every other button (Back, Start over, How to apply, a phone number) is now an
+  outline in the same accent color (`.button--quiet`), so a dense results panel does not read
+  as a wall of equally-urgent calls to action.
+- **Type** — a system serif (`Georgia, 'Iowan Old Style', 'Palatino Linotype', serif`) for
+  headings and card names, system sans for body copy, both at zero bytes since they ship
+  with the OS. A real 7-step scale (13/14/16/18/23/29/37px) replaces the old narrow range.
+- **Space** — an 8px rhythm (`--space-1` through `--space-7`) applied consistently, plus a
+  divider between result groups and between a card's apply/steps/caveats sections, so density
+  in the results panel reads as organized sections rather than one undifferentiated scroll.
+- **Two radii, not one** — `--radius-control` (8px) for things you act on, `--radius-card`
+  (14px) for things you read, so the page stops reading as one uniform register of form
+  controls.
+- **The banner** ([`src/ui/App.tsx`](../src/ui/App.tsx)) is now a calm, factually-worded
+  notice (`.banner--notice`) rather than a warning-yellow alert — its own tinted panel and
+  icon, still `role="alert"` so assistive tech still announces it immediately, still
+  impossible to miss. The lead-in changed from "Draft data." to "Not yet verified.", though
+  the sentence the unit test asserts on (`/not yet been checked/i`) was left intact
+  deliberately, so no test needed to change for the tone shift.
+- **Progress jump acknowledgment** — the step label now reads "Step *n* of about *total*"
+  (reconstructed exactly from `history.length / progress`, no new state in
+  `src/interview/`), and a one-line note appears for a few seconds the first time progress
+  advances by more than a small increment: "A couple of questions were skipped — your
+  answers so far already settle them."
+- **Mobile bottom strip** ([`src/ui/components/MobileSummary.tsx`](../src/ui/components/MobileSummary.tsx))
+  — below 900px, a fixed strip at the bottom of the screen jumps straight to the results
+  anchor without scrolling past the interview. It is always in the DOM; CSS alone decides
+  whether it's visible, so a stylesheet failure degrades to an ordinary inline link rather
+  than losing the shortcut. Its accessible name ("View your results") is stable; the match
+  count is a separate `aria-live="polite"` span so count changes are announced gently rather
+  than interrupting whatever the screen reader user is doing — results update on every
+  answer, and "assertive" would mean an interruption on every single one.
+
+### A grid overflow this pass introduced and fixed
+
+Widening the badge ("You might qualify" plus an icon, in a non-wrapping pill) pushed a
+`.program__head` flex row's min-content past what fit at 360px, and the single-column mobile
+grid used a bare `1fr` track, which has an implicit `auto` (min-content) minimum — so the
+whole column, and the page, gained a horizontal scrollbar. Fixed two ways: the mobile grid
+track is now `minmax(0, 1fr)` (matching the pattern the desktop two-column declaration
+already used), and `.program__head` gained `flex-wrap: wrap` so a long badge can drop to its
+own line instead of forcing the row wider than the viewport. Verified clean (no horizontal
+scroll) at 320, 360, 390, and 1440px, and at a simulated 200% desktop zoom. Below roughly
+200px of effective layout width — well under this project's stated 360–390px target and
+under WCAG's 320px reflow baseline — the badge pill itself remains a hard content floor,
+since it deliberately does not wrap; noting this rather than chasing a synthetic edge case
+that would mean shrinking the badge below a legible size.
+
+### Bundle size
+
+Before this pass: 1.93 KB gzipped CSS, 75.78 KB gzipped JS (~77.7 KB total). After: 2.62 KB
+gzipped CSS, 76.53 KB gzipped JS (~79.2 KB total) — a ~1.4 KB (1.8%) increase, from the icon
+components and the mobile summary strip. No new runtime dependencies.
+
 ## Testing
 
 `npm test` runs 77 unit tests; `npm run test:e2e` runs 20 browser tests; `npm run test:all`

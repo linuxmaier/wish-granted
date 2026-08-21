@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CATEGORY_LABELS, JURISDICTION_LABELS } from '@/domain/program';
 import type { ProgramMatch } from '@/engine/match';
+import { StateIcon } from './icons';
 
 /**
  * One program in the results. The "why?" disclosure is the point of the whole
@@ -23,7 +24,10 @@ export function ProgramCard({ match }: { readonly match: ProgramMatch }) {
     <article className={`program program--${bucket}`}>
       <header className="program__head">
         <h3 className="program__name">{program.name}</h3>
-        <span className={`badge badge--${bucket}`}>{BUCKET_LABEL[bucket]}</span>
+        <span className={`badge badge--${bucket}`}>
+          <StateIcon bucket={bucket} className="badge__icon" />
+          {BUCKET_LABEL[bucket]}
+        </span>
       </header>
 
       <p className="program__meta">
@@ -51,7 +55,12 @@ export function ProgramCard({ match }: { readonly match: ProgramMatch }) {
           )}
 
           <div className="program__apply">
-            <a className="button" href={program.howToApply.url} target="_blank" rel="noreferrer">
+            <a
+              className="button button--quiet"
+              href={program.howToApply.url}
+              target="_blank"
+              rel="noreferrer"
+            >
               How to apply
             </a>
             {program.howToApply.phone && (
