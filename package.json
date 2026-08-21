@@ -13,7 +13,9 @@
     "typecheck": "tsc -b --noEmit",
     "data:check": "vitest run tests/data",
     "test:e2e": "playwright test",
-    "test:all": "vitest run && playwright test"
+    "test:all": "vitest run && playwright test",
+    "extract:income-tables": "node scripts/extract-income-tables.mjs",
+    "eval:llm-extraction": "node --experimental-strip-types scripts/llm-extraction/run-eval.ts"
   },
   "dependencies": {
     "react": "^19.0.0",
