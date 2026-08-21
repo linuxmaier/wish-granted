@@ -23,6 +23,16 @@ export default defineConfig({
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
     { name: 'mobile', use: { ...devices['Pixel 7'] } },
+    // Pixel 7 is 412px wide -- comfortable, and not representative of the
+    // low end of Android hardware this audience is disproportionately on.
+    // 360px is the practical floor for phones still in real use, and it is
+    // the width issue #10 names explicitly. A real bug (the mobile summary
+    // strip covering the Continue button, making it unclickable) passed
+    // 20/20 on desktop + Pixel 7 and only reproduced here.
+    {
+      name: 'mobile-360',
+      use: { ...devices['Pixel 7'], viewport: { width: 360, height: 640 } },
+    },
   ],
 
   // Reuses a dev server you already have running, and starts one otherwise.

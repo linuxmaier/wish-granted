@@ -1,5 +1,5 @@
 import type { IncomeScale } from '@/domain/criteria';
-import { DANE_AMI_2025, FPL_2025, WI_SMI_60_2025 } from '@/data/reference/income-tables';
+import { DANE_AMI, FPL, WI_SMI_60 } from '@/data/reference/income-tables';
 import type { IncomeTable } from '@/data/reference/income-tables';
 
 /**
@@ -22,7 +22,7 @@ function fromTable(table: IncomeTable, householdSize: number): number {
 
 function daneAmi(householdSize: number): number {
   const clamped = Math.max(1, Math.floor(householdSize));
-  const { fourPersonMedian, sizeAdjustment, perAdditionalPersonFactor } = DANE_AMI_2025;
+  const { fourPersonMedian, sizeAdjustment, perAdditionalPersonFactor } = DANE_AMI;
   const listed = sizeAdjustment[clamped - 1];
   const factor =
     listed ??
@@ -35,12 +35,12 @@ function daneAmi(householdSize: number): number {
 export function baseAmount(scale: IncomeScale, householdSize: number): number {
   switch (scale) {
     case 'fpl':
-      return fromTable(FPL_2025, householdSize);
+      return fromTable(FPL, householdSize);
     case 'wi-smi':
       // The stored table is already the 60% figure, so 100% of the scale that
       // rules refer to as "wi-smi" is that number. Rules therefore express the
       // WHEAP limit as `incomeAtOrBelow('wi-smi', 100)`.
-      return fromTable(WI_SMI_60_2025, householdSize);
+      return fromTable(WI_SMI_60, householdSize);
     case 'dane-ami':
       return daneAmi(householdSize);
   }
@@ -63,5 +63,5 @@ export const SCALE_NAMES: Readonly<Record<IncomeScale, string>> = {
 
 /** True when every income table has been checked against its source. */
 export function allIncomeTablesVerified(): boolean {
-  return [FPL_2025, WI_SMI_60_2025, DANE_AMI_2025].every((t) => t.verified);
+  return [FPL, WI_SMI_60, DANE_AMI].every((t) => t.verified);
 }
