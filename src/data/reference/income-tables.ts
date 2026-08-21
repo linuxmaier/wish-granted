@@ -1,18 +1,19 @@
 /**
  * Income yardsticks the eligibility rules measure against.
  *
- * ============================ VERIFY BEFORE LAUNCH ==========================
- * Every table below carries a `verified` flag. Tables with `verified: false`
- * were drafted from secondary knowledge and have NOT been checked against the
- * cited source. They are structurally correct and good enough to develop and
- * test against, but they must be confirmed against `source` before this app is
- * shown to the public -- a wrong threshold here silently produces a wrong
- * eligibility answer for a real person.
+ * These are republished annually by their respective agencies, so this file is
+ * recurring maintenance, not a one-off (see issue #6, which proposes automating
+ * the refresh). Every table carries a `verified` flag plus `lastVerified`. The
+ * UI surfaces an "unverified data" banner for as long as any table or program
+ * record is unverified, so a lapsed re-verification cannot be forgotten by
+ * accident.
  *
- * See docs/data-authoring.md for the verification procedure. The UI surfaces an
- * "unverified data" banner for as long as any table or program record here is
- * unverified, so this cannot be forgotten by accident.
- * ============================================================================
+ * Constant names deliberately carry no year suffix -- the year lives in
+ * `effectiveYear` and `lastVerified` so an annual refresh (by hand or by the
+ * issue #6 automation) only ever rewrites values inside the object literal,
+ * never an export name that other files import.
+ *
+ * See docs/data-authoring.md for the verification procedure.
  */
 
 export interface IncomeTable {
@@ -26,35 +27,70 @@ export interface IncomeTable {
   readonly effectiveYear: number;
   readonly source: string;
   readonly verified: boolean;
+  /** Date (YYYY-MM-DD) a human last checked `bySize` against `source`, or null if never. */
+  readonly lastVerified: string | null;
 }
 
 /**
  * HHS Poverty Guidelines, 48 contiguous states and DC. The base for SNAP
  * (130% FPL), WIC and reduced-price school meals (185% FPL), and free school
  * meals (130% FPL).
+ *
+ * Verified 2026-08-21 against the 2026 guidelines (effective January 2026,
+ * published in the Federal Register January 15, 2026, notice 2026-00755) --
+ * cross-checked between the HHS page below and the Federal Register notice
+ * itself, which agree on every figure.
  */
-export const FPL_2025: IncomeTable = {
+export const FPL: IncomeTable = {
   id: 'fpl',
   name: 'Federal Poverty Level',
-  bySize: [15_650, 21_150, 26_650, 32_150, 37_650, 43_150, 48_650, 54_150],
-  perAdditionalPerson: 5_500,
-  effectiveYear: 2025,
+  bySize: [15_960, 21_640, 27_320, 33_000, 38_680, 44_360, 50_040, 55_720],
+  perAdditionalPerson: 5_680,
+  effectiveYear: 2026,
   source: 'https://aspe.hhs.gov/topics/poverty-economic-mobility/poverty-guidelines',
-  verified: false,
+  verified: true,
+  lastVerified: '2026-08-21',
 };
 
 /**
  * Wisconsin State Median Income. WHEAP (Wisconsin's LIHEAP) sets its limit at
- * 60% SMI, so these figures are already the 60% values, not full SMI.
+ * 60% SMI, so these figures are already the 60% values, not full SMI -- rules
+ * therefore express the WHEAP limit as `incomeAtOrBelow('wi-smi', 100)`. Do
+ * not replace these with full-SMI numbers without also changing every rule
+ * that references the scale.
+ *
+ * Verified 2026-08-21 against Appendix E ("PY26 (2025-2026) Wisconsin 60%
+ * State Median Income Guidelines") of the official WHEAP PY26 Manual, revised
+ * August 2025. PY26 runs October 1, 2025 - September 30, 2026, so it is the
+ * program year in effect today. The manual is a 2.5 MB PDF; WebFetch's own
+ * summarizer could not read its tables reliably, so this was verified by
+ * downloading the PDF and running `pdftotext` on it directly (relevant to
+ * issue #6's automated refresher -- this source is not simply scrapable).
+ *
+ * `perAdditionalPerson` (for household sizes 9+, beyond the published table)
+ * is not stated in the manual, but is not a guess either: 45 CFR 96.85, the
+ * federal regulation governing how states compute LIHEAP income limits,
+ * specifies size-4 percentages of 52/68/84/100/116/132% for sizes 1-6, then
+ * "add 3 percentage points... for each additional family member" above 6.
+ * Three percentage points of the size-4 (100%) base is 3% of the size-4
+ * dollar figure: 73_888 * 0.03 = 2_216.64, which rounds to the 2_216-2_217
+ * deltas actually observed between the manual's own published size 6-7-8
+ * rows. So this is "the published regulatory rule applied to the published
+ * size-4 figure," not an extrapolation from two data points. It looks like a
+ * typo next to the ~11_822 per-person steps used for sizes 1-6 -- it is not
+ * one; sizes 1-6 use fixed state-specific percentages while sizes 6+ step by
+ * a flat 3 points/3% per 45 CFR 96.85, and that is a genuine structural break
+ * in the source data, not an error here.
  */
-export const WI_SMI_60_2025: IncomeTable = {
+export const WI_SMI_60: IncomeTable = {
   id: 'wi-smi',
   name: '60% of Wisconsin State Median Income',
-  bySize: [32_400, 42_400, 52_300, 62_300, 72_200, 82_100, 84_000, 85_900],
-  perAdditionalPerson: 1_900,
-  effectiveYear: 2025,
-  source: 'https://energyandhousing.wi.gov/Pages/AgencyResources/EnergyAssistance.aspx',
-  verified: false,
+  bySize: [38_421, 50_243, 62_065, 73_888, 85_710, 97_532, 99_748, 101_965],
+  perAdditionalPerson: 2_217,
+  effectiveYear: 2026,
+  source: 'https://energyandhousing.wi.gov/Documents/WHEAP/WheapManual_PY26.pdf',
+  verified: true,
+  lastVerified: '2026-08-21',
 };
 
 /**
@@ -64,19 +100,47 @@ export const WI_SMI_60_2025: IncomeTable = {
  * with fixed adjustment factors, so that is how it is modelled here rather than
  * as a flat table -- it keeps the derivation correct even when only the base
  * figure is updated.
+ *
+ * Verified 2026-08-21 for FY2026 (HUD income limits effective May 1, 2026).
+ * huduser.gov itself returns an AWS WAF bot challenge to automated fetches (a
+ * 202 with an empty body, confirmed both via WebFetch and a raw curl) and
+ * could not be read directly -- also relevant to issue #6. Verified instead
+ * against two independent state/regional agency republications of HUD's own
+ * FY2026 Section 8 Income Limits dataset, which agree with each other exactly:
+ * WHEDA's 2026 Section 8 Income Limits
+ * (https://www.wheda.com/globalassets/documents/tax-credits/htc/2026/2026-section-8-income-limits-wheda.pdf)
+ * and FHLBank Chicago's 2026 HUD Income Guidelines for Wisconsin. Both list
+ * "Madison, WI HMFA" / Dane County at $135,300. Cross-checked arithmetically
+ * against HUD's own published Very Low Income (50%) limit for the same area
+ * ($67,650 at size 4): 67_650 / 0.5 = 135_300, exact.
+ *
+ * Trap for the next verifier: HUD splits the wider "Madison, WI MSA" into
+ * four HMFAs -- Columbia County, Green County, Iowa County, and Madison, WI
+ * HMFA (= Dane County alone). Only the last of these is Dane County; the
+ * other three are separate, lower-income exception areas for the surrounding
+ * rural counties. Reaching for an MSA-wide figure instead of the Madison, WI
+ * HMFA figure would silently understate every limit in this table.
+ *
+ * The household-size adjustment factors and the +8%/person rule beyond size 8
+ * were confirmed against HUD's own methodology (each additional family member
+ * beyond 8 adds 8 percentage points of the size-4 limit) and checked
+ * arithmetically against the Madison HMFA's own published Very Low Income
+ * figures at every size 1-8, which matched to the dollar after HUD's standard
+ * $50 rounding.
  */
-export const DANE_AMI_2025 = {
+export const DANE_AMI = {
   id: 'dane-ami',
   name: 'Madison, WI area median income',
-  fourPersonMedian: 124_000,
+  fourPersonMedian: 135_300,
   /** HUD household-size adjustment, as a fraction of the four-person figure. */
   sizeAdjustment: [0.7, 0.8, 0.9, 1.0, 1.08, 1.16, 1.24, 1.32] as const,
   /** Beyond 8 people HUD adds 8 percentage points per person. */
   perAdditionalPersonFactor: 0.08,
-  effectiveYear: 2025,
-  source: 'https://www.huduser.gov/portal/datasets/il.html',
-  verified: false,
+  effectiveYear: 2026,
+  source: 'https://www.wheda.com/globalassets/documents/tax-credits/htc/2026/2026-section-8-income-limits-wheda.pdf',
+  verified: true,
+  lastVerified: '2026-08-21',
 } as const;
 
 /** Every table in this file, for the "is our data verified?" check. */
-export const ALL_INCOME_TABLES = [FPL_2025, WI_SMI_60_2025, DANE_AMI_2025] as const;
+export const ALL_INCOME_TABLES = [FPL, WI_SMI_60, DANE_AMI] as const;
