@@ -89,8 +89,14 @@ describe('bucketing', () => {
     const result = matchAll(PROGRAMS, { ...madisonFamily, annualHouseholdIncome: 250_000 });
     expect(ids(result.ruledOut)).toContain('foodshare-snap-wi');
 
-    // Nobody should ever reach the end with an empty results page. Food
-    // pantries and referral lines have no income test, by design.
+    // Nobody should ever reach the end with an empty results page. The River
+    // Food Pantry is county-scoped only in `eligibility` -- it is not
+    // income-gated by this engine. (In practice The River does ask people to
+    // self-attest to a TEFAP income guideline for groceries, a generous 200%
+    // FPL that is not verified at intake; that is documented in
+    // `eligibilityCaveats`, deliberately not encoded as a rule here, so a
+    // high earner is never wrongly told they don't qualify for community
+    // meals or other services that are not TEFAP-gated.)
     expect(result.eligible.length).toBeGreaterThan(0);
     expect(ids(result.eligible)).toContain('the-river-food-pantry');
   });

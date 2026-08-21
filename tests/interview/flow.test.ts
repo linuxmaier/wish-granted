@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { Answers, FactKey } from '@/domain/facts';
+import type { Program } from '@/domain/program';
+import { isTrue } from '@/domain/criteria';
 import { PROGRAMS } from '@/data/programs';
 import { matchAll } from '@/engine/match';
 import { ALL_QUESTIONS, SCREENS, factsSuppliedBy } from '@/interview/screens';
-import type { Question } from '@/interview/screens';
+import type { Question, Screen } from '@/interview/screens';
 import {
   isQuestionRelevant,
+  isScreenRelevant,
   nextScreen,
   questionImpact,
   relevantQuestions,
@@ -180,6 +183,31 @@ describe('questions earn their place', () => {
 
 // --- Anchored questions -----------------------------------------------------
 
+/**
+ * A minimal, otherwise-inert program whose entire `eligibility` is "this one
+ * fact must be true." Used to build synthetic `maybe` buckets with exactly the
+ * `missingFacts` a test wants, independent of anything in the real seed
+ * dataset. Two fixture programs differing only in which fact they gate on is
+ * enough to give two synthetic questions a controlled, deterministic impact
+ * gap -- no coincidence of real income thresholds involved.
+ */
+function fixtureProgram(id: string, fact: FactKey): Program {
+  return {
+    id,
+    name: id,
+    administeredBy: 'fixture',
+    jurisdiction: 'state',
+    provider: 'government',
+    categories: ['housing-utilities'],
+    summary: 'fixture program for anchor tests',
+    benefit: 'fixture',
+    eligibility: isTrue(fact),
+    howToApply: { url: 'https://example.test' },
+    status: 'open',
+    source: { url: 'https://example.test', name: 'fixture', lastVerified: null },
+  };
+}
+
 describe('a screen can anchor one question ahead of the impact sort', () => {
   it('every anchorQuestionId names a real question on that screen', () => {
     // A typo here fails silently otherwise: the anchor just stops taking
@@ -195,30 +223,35 @@ describe('a screen can anchor one question ahead of the impact sort', () => {
     }
   });
 
-  it('asks housing status before housing trouble, though trouble scores higher', () => {
+  it('asks housing status before housing trouble', () => {
     const answers = { state: 'WI', county: 'dane', city: 'madison' };
     const result = matchAll(PROGRAMS, answers);
     const housing = SCREENS.find((s) => s.id === 'housing')!;
     const ordered = relevantQuestions(housing, answers, result);
 
     expect(ordered.map((q) => q.id)).toEqual(['housing-status', 'housing-trouble']);
-    // Confirms the anchor is doing something: left to impact alone, trouble
-    // would sort first.
-    expect(questionImpact(ordered[1]!, answers, result)).toBeGreaterThan(
-      questionImpact(ordered[0]!, answers, result),
-    );
+    // Every housing-adjacent program in the seed set that gates on
+    // facingLossOfHousing/utilityShutoffRisk/paysHeatingCost (housing-trouble's
+    // facts) is income-tested against the same dane-ami/wi-smi thresholds as
+    // the programs that gate on housingStatus, so at this stage -- nothing but
+    // geography answered -- the two questions tie in raw impact rather than
+    // trouble outscoring status. The anchor's job is to guarantee status leads
+    // regardless of how that tally lands, not to overturn a scoring upset;
+    // assert the tie holds so a future data change that breaks it (giving
+    // trouble a program status can't match) gets noticed here.
+    expect(questionImpact(ordered[1]!, answers, result)).toBe(questionImpact(ordered[0]!, answers, result));
   });
 
-  it('still drops an anchored question once nothing undecided depends on it', () => {
-    // Constructed so every housingStatus-dependent program is already
-    // decided by *other* facts, without housingStatus itself being answered:
-    // - dane-eviction-prevention needs facingLossOfHousing, which is false here.
-    // - madison-housing-choice-voucher needs livesIn.madison; city is 'other'.
-    // - wisconsin-weatherization needs income-or-benefits, and both branches
-    //   fail (income is set far above any threshold, currentBenefits is empty).
-    // wheap-crisis-assistance is left over, still waiting on utilityShutoffRisk
-    // and paysHeatingCost (not housingStatus), so the housing screen is still
-    // shown -- this isn't just "the whole screen became irrelevant".
+  it('drops the anchor along with the rest of the screen once nothing on it is undecided', () => {
+    // High income decides every housing-adjacent program in the seed set --
+    // not just the housingStatus-dependent ones. dane-eviction-prevention
+    // fails on facingLossOfHousing; madison-housing-choice-voucher,
+    // wisconsin-weatherization, madison-water-bill-assistance (MadCAP), and
+    // both WHEAP programs all fail their income test (dane-ami or wi-smi,
+    // both well under $200k for a 2-person household). So this demonstrates
+    // more than "the anchor gets dropped like anything else" -- the whole
+    // screen resolves, proving the anchor cannot keep a screen alive on its
+    // own once nothing on it, anchored or not, is still undecided.
     const answers = {
       state: 'WI',
       county: 'dane',
@@ -234,7 +267,121 @@ describe('a screen can anchor one question ahead of the impact sort', () => {
     expect(questionImpact(ALL_QUESTIONS.find((q) => q.id === 'housing-status')!, answers, result)).toBe(
       0,
     );
-    expect(relevantQuestions(housing, answers, result).map((q) => q.id)).toEqual(['housing-trouble']);
+    expect(questionImpact(ALL_QUESTIONS.find((q) => q.id === 'housing-trouble')!, answers, result)).toBe(
+      0,
+    );
+    expect(relevantQuestions(housing, answers, result)).toEqual([]);
+    expect(isScreenRelevant(housing, answers, result)).toBe(false);
+  });
+
+  it('leads with the anchor even when a sibling question clearly outscores it (synthetic)', () => {
+    // The real housing screen ties at this stage (see the test above) -- a
+    // tie alone can't prove the anchor mechanism does anything, since
+    // `relevantQuestions`' own tie-break (`a.question.id.localeCompare(b...)`)
+    // happens to also put "housing-status" before "housing-trouble"
+    // alphabetically. A synthetic screen with a real, controlled score gap is
+    // what actually exercises the anchor: three fixture programs depend on
+    // `hasChildUnder5`, only one depends on `isVeteran`, so left to impact
+    // alone "outscores" would sort first -- and it does not.
+    const anchorFact: FactKey = 'isVeteran';
+    const outscoresFact: FactKey = 'hasChildUnder5';
+    const programs: Program[] = [
+      fixtureProgram('fixture-anchor-1', anchorFact),
+      fixtureProgram('fixture-outscores-1', outscoresFact),
+      fixtureProgram('fixture-outscores-2', outscoresFact),
+      fixtureProgram('fixture-outscores-3', outscoresFact),
+    ];
+    const anchorQuestion: Question = {
+      id: 'fixture-anchor',
+      prompt: 'fixture anchor question',
+      input: { type: 'multi', fact: anchorFact, choices: [], noneLabel: 'None' },
+    };
+    const outscoresQuestion: Question = {
+      id: 'fixture-outscores',
+      prompt: 'fixture outscoring question',
+      input: { type: 'multi', fact: outscoresFact, choices: [], noneLabel: 'None' },
+    };
+    const screen: Screen = {
+      id: 'fixture-screen',
+      title: 'fixture screen',
+      questions: [anchorQuestion, outscoresQuestion],
+      anchorQuestionId: 'fixture-anchor',
+    };
+
+    const result = matchAll(programs, {});
+
+    // The gap is real, not assumed: outscores wins on impact alone.
+    expect(questionImpact(outscoresQuestion, {}, result)).toBe(3);
+    expect(questionImpact(anchorQuestion, {}, result)).toBe(1);
+    expect(questionImpact(outscoresQuestion, {}, result)).toBeGreaterThan(
+      questionImpact(anchorQuestion, {}, result),
+    );
+
+    // Yet the anchor still leads -- this is the anchor mechanism doing real
+    // work, not an artifact of impact order or id sort order (an unanchored
+    // sort here would put 'fixture-outscores' first on impact, and it also
+    // sorts before 'fixture-anchor' alphabetically, so both of the ordering's
+    // other possible explanations are ruled out).
+    expect(relevantQuestions(screen, {}, result).map((q) => q.id)).toEqual([
+      'fixture-anchor',
+      'fixture-outscores',
+    ]);
+  });
+
+  it('drops the anchor while a sibling question on the same screen stays relevant (synthetic)', () => {
+    // This is the property #16 was written to guarantee: an anchor doesn't
+    // resurrect itself within a screen that is still genuinely alive for
+    // other reasons. It used to be demonstrable on the real housing screen
+    // (housing-status dropping while housing-trouble survived on
+    // wheap-crisis-assistance's utilityShutoffRisk dependency), but the fix
+    // to that program's income-test bug (see wheap-crisis-assistance.ts)
+    // removed the loophole that made it independently decidable from
+    // wisconsin-weatherization's -- both now gate on the identical wi-smi
+    // income test, and madison-housing-choice-voucher's `manualReview` leaf
+    // means it can only ever be decided by *failing* that same coupling.
+    // Exhaustively searched a wide grid of income/household-size/benefit/
+    // geography combinations against the real seed data (household sizes
+    // 1-10, ~17 income levels, 8 benefit combinations, both cities/counties,
+    // facingLossOfHousing true/unset): zero combinations produce "housing-
+    // status resolved, housing-trouble still undecided." That is a real,
+    // provable consequence of the corrected data, not a search gap -- see the
+    // "drops the anchor along with the rest of the screen" test above for the
+    // real-data case this collapses into instead. A synthetic screen is what
+    // lets this property stay under test in the meantime.
+    const anchorFact: FactKey = 'isVeteran';
+    const survivingFact: FactKey = 'hasChildUnder5';
+    const programs: Program[] = [
+      fixtureProgram('fixture-anchor-only', anchorFact),
+      fixtureProgram('fixture-surviving-only', survivingFact),
+    ];
+    const anchorQuestion: Question = {
+      id: 'fixture-anchor',
+      prompt: 'fixture anchor question',
+      input: { type: 'multi', fact: anchorFact, choices: [], noneLabel: 'None' },
+    };
+    const survivingQuestion: Question = {
+      id: 'fixture-surviving',
+      prompt: 'fixture surviving question',
+      input: { type: 'multi', fact: survivingFact, choices: [], noneLabel: 'None' },
+    };
+    const screen: Screen = {
+      id: 'fixture-screen-2',
+      title: 'fixture screen',
+      questions: [anchorQuestion, survivingQuestion],
+      anchorQuestionId: 'fixture-anchor',
+    };
+
+    // Answering isVeteran resolves (rules out) the fixture program that
+    // depends on it, so the anchor question no longer helps anything --
+    // while hasChildUnder5 stays unanswered, so the surviving question and
+    // the screen itself both stay alive.
+    const answers: Answers = { isVeteran: false };
+    const result = matchAll(programs, answers);
+
+    expect(questionImpact(anchorQuestion, answers, result)).toBe(0);
+    expect(questionImpact(survivingQuestion, answers, result)).toBeGreaterThan(0);
+    expect(relevantQuestions(screen, answers, result).map((q) => q.id)).toEqual(['fixture-surviving']);
+    expect(isScreenRelevant(screen, answers, result)).toBe(true);
   });
 
   it('leaves non-anchored screens sorted purely by impact', () => {

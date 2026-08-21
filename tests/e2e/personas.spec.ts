@@ -99,18 +99,30 @@ test.describe('the interview end to end', () => {
       'FoodShare Wisconsin (SNAP)',
       'Wisconsin WIC',
       'WHEAP Crisis Assistance and Emergency Furnace Repair',
-      'Eviction Prevention and Rent Assistance',
     ]) {
       expect(eligible, `expected ${expected} for a household in crisis`).toContain(expected);
     }
+
+    // Eviction Prevention and Rent Assistance carries a `manualReview` leaf
+    // (its income threshold could not be sourced from a current, citizen-facing
+    // page -- see dane-eviction-prevention.ts) so it can never resolve to a
+    // full match; it should still surface as a lead in "might qualify" rather
+    // than being dropped or wrongly promised.
+    const maybe = await bucket(page, /might qualify/i);
+    expect(maybe).toContain('Eviction Prevention and Rent Assistance');
   });
 
-  test('someone well off still gets the no-income-test options', async ({ page }) => {
+  test('someone well off still gets the county-only options', async ({ page }) => {
     await runInterview(page, WELL_OFF_MADISON);
 
     const eligible = await bucket(page, /likely a match/i);
     expect(eligible).not.toContain('FoodShare Wisconsin (SNAP)');
-    // Pantries have no income test by design, so nobody in Wisconsin leaves empty-handed.
+    // The River Food Pantry's `eligibility` is Dane County residency only, so
+    // nobody in the county leaves empty-handed. (The River does ask people to
+    // self-attest to a TEFAP income guideline for groceries in practice --
+    // see eligibilityCaveats on the record -- but that is not enforced by
+    // this engine, deliberately, since it does not apply to all of their
+    // services and a false "ruled out" is the worse failure here.)
     expect(eligible).toContain('The River Food Pantry');
   });
 

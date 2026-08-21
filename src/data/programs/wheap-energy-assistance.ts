@@ -31,13 +31,15 @@ export const wheapEnergyAssistance: Program = {
     'Income is counted over the three months before you apply, not the whole year, so a recent drop in income can qualify you even if the annual figure does not.',
     'Renters qualify even when heat is included in the rent.',
     'You can receive this once per heating season.',
+    // Sourced verbatim from the program's own page (see source note below).
+    'Funding is limited each program year. When it runs out, no more benefits are issued for that year even to households who qualify.',
   ],
 
   howToApply: {
-    url: 'https://energyandhousing.wi.gov/Pages/AgencyResources/EnergyAssistance.aspx',
+    url: 'https://energyandhousing.wi.gov/Pages/AgencyResources/energy-assistance.aspx',
     phone: '1-866-432-8947',
     steps: [
-      'Find the agency for your county — in Dane County this is Energy Services, Inc.',
+      'Find the agency for your county — in Dane County this is Energy Services of Dane County.',
       'Apply online, by phone, or in person.',
       'Provide proof of income for the last three months and a recent energy bill.',
     ],
@@ -52,8 +54,24 @@ export const wheapEnergyAssistance: Program = {
   status: 'seasonal',
   seasonalNote: 'The regular heating season runs from October 1 through May 15.',
   source: {
-    url: 'https://energyandhousing.wi.gov/Pages/AgencyResources/EnergyAssistance.aspx',
+    url: 'https://energyandhousing.wi.gov/Pages/AgencyResources/energy-assistance.aspx',
     name: 'Wisconsin Energy and Housing — Energy Assistance',
-    lastVerified: null,
+    // Confirmed via direct fetch (curl, standard browser user agent). The old
+    // URL here (mixed-case "EnergyAssistance.aspx") 404s on this SharePoint
+    // site; the live page uses lowercase, hyphenated "energy-assistance.aspx"
+    // -- a Wayback Machine check found no archived snapshot of the old
+    // mixed-case URL at all (ever), while the corrected lowercase URL has a
+    // snapshot from 2026-08-13, so this reads as a URL that was never
+    // correct rather than a page that moved. Confirmed directly from the
+    // page: "Based on 60% of Wisconsin's median income" (matches the
+    // `wi-smi` scale's own 60%-already-baked-in documentation), the phone
+    // number (1-866-HEATWIS = 1-866-432-8947), and the funding-exhaustion
+    // caveat added above. Could not re-confirm the "three months of income"
+    // rule, the October 1-May 15 season window, or the renters-qualify
+    // caveat on this specific page (they're in the WHEAP manual PDF, which
+    // did not extract cleanly); left unchanged since they're consistent with
+    // this session's other findings and issue #4's independent spike, not
+    // because I fetched a page stating them today.
+    lastVerified: '2026-08-21',
   },
 };

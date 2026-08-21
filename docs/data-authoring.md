@@ -1,15 +1,18 @@
 # Authoring and verifying program data
 
-> **The seed dataset is only partly verified.** All 15 program records still carry
-> `lastVerified: null` and were drafted from secondary knowledge, not read off the official
-> sources. The three income tables in `src/data/reference/income-tables.ts` **are** verified
-> as of 2026-08-21 (see below) -- including `WI_SMI_60`, whose `source` citation the issue
-> #6 refresher moved to a more stable page (described further down); a human independently
-> re-confirmed the figures against that new citation before `verified` was set back to
-> `true`, per "Reviewing a proposed update" below. The UI's "unverified data" banner stays up
-> regardless, until the program records are verified too, since it checks all of them
-> together. Working through the program-record verification pass below is still
-> a prerequisite for showing this to the public.
+> **The seed dataset is nearly fully verified.** 14 of 15 program records now carry a real
+> `lastVerified` date (issue #2), and all three income tables in
+> `src/data/reference/income-tables.ts` are verified as of 2026-08-21 (issue #3) --
+> including `WI_SMI_60`, whose `source` citation the issue #6 refresher moved to a more
+> stable page (described further down); a human independently re-confirmed the figures
+> against that new citation before `verified` was set back to `true`, per "Reviewing a
+> proposed update" below. The one holdout is `dane-eviction-prevention`: its income
+> threshold could not be traced to a current, citizen-facing source (see the comment on
+> that record), so it deliberately kept `lastVerified: null` and an unresolved-income
+> `manualReview` rather than a guessed number. The UI's "unverified data" banner stays up
+> until that record is resolved too, since it checks every record and every table together.
+> See "What `lastVerified` means" below for what a date on a program record actually
+> asserts.
 
 ## Why this is treated as a blocker
 
@@ -43,6 +46,48 @@ For each file in `src/data/programs/`:
 
 Verifying a record means a human loaded the source and read it. It does not mean the record
 looked plausible.
+
+### What `lastVerified` means
+
+A date in `source.lastVerified` is a specific, bounded claim, not a blanket "this record is
+correct" stamp:
+
+- **It asserts**: a human loaded `source.url` (or a documented substitute — see "moved vs.
+  never correct" below) on that date, and confirmed the `eligibility` rule's shape and
+  thresholds, `status`, and the fields listed in step 2 above against what the source
+  actually said.
+- **It does not assert**: that every sentence in `summary`, every line in
+  `eligibilityCaveats`, or every step in `howToApply.steps` was independently re-confirmed
+  on that visit. Some of those carry over from an earlier pass, from a different source
+  entirely, or from general knowledge that was reasonable to trust and not worth re-deriving
+  from scratch every time.
+- **The rule that makes the difference honest**: anything in the record that was *not*
+  freshly confirmed against the cited source must be named as such, in a comment, at the
+  time `lastVerified` is set. Silence reads as "checked." `wheap-crisis-assistance.ts`'s
+  `source` comment is the model to copy — it says plainly what was confirmed directly (the
+  page, the phone number, the disconnection-moratorium dates) and what was carried over
+  unconfirmed (the "24 hours a day" claim, the homeowner-only furnace restriction, the
+  apply-for-both claim), rather than letting the date imply all of it was checked.
+
+If you cannot confirm the load-bearing part of a record — the rule that decides who
+matches, not a caveat or a phone number — do not set `lastVerified` at all. Encode the
+uncertainty (`manualReview`, a caveat, a narrower `eligibility`) and leave the date `null`,
+same as `dane-eviction-prevention.ts`. A record with an honest `null` is worth more than one
+with a date covering a threshold nobody actually re-derived.
+
+### "Moved" vs. "never correct"
+
+When `source.url` is dead, it matters which of two things happened, and the comment should
+say which: the page **moved** (the org restructured its site; a Wayback Machine snapshot of
+the old URL shows real content), or the URL was **never correct** (drafted from memory
+during prototyping and simply wrong — no snapshot exists at any date, or the snapshot that
+exists is itself an error page). Several `EnergyAssistance.aspx`/`Weatherization.aspx`-style
+URLs in this dataset turned out to be the latter: checking
+`http://archive.org/wayback/available?url=<old-url>` and getting back an empty
+`archived_snapshots` settled it in seconds. This distinction is not just trivia for the
+verifying human — issue #14's ingestion pipeline needs to treat "moved" and "never correct"
+as different failure modes with different fixes, and the record's own comment is the
+cheapest place to leave that signal for whoever builds it.
 
 ## Verifying the income tables
 

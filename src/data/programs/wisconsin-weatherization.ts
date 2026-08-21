@@ -29,7 +29,7 @@ export const wisconsinWeatherization: Program = {
   ],
 
   howToApply: {
-    url: 'https://energyandhousing.wi.gov/Pages/AgencyResources/Weatherization.aspx',
+    url: 'https://energyandhousing.wi.gov/Pages/AgencyResources/weatherization.aspx',
     phone: '1-866-432-8947',
     steps: [
       'Contact the weatherization agency serving your county.',
@@ -40,8 +40,23 @@ export const wisconsinWeatherization: Program = {
 
   status: 'waitlist',
   source: {
-    url: 'https://energyandhousing.wi.gov/Pages/AgencyResources/Weatherization.aspx',
+    url: 'https://energyandhousing.wi.gov/Pages/AgencyResources/weatherization.aspx',
     name: 'Wisconsin Energy and Housing — Weatherization',
-    lastVerified: null,
+    // Confirmed via direct fetch (curl, standard browser user agent). Old
+    // mixed-case URL ("Weatherization.aspx") 404s; Wayback Machine shows no
+    // snapshot of it ever, while the corrected lowercase URL has one from
+    // 2026-08-13 -- reads as never-correct, not moved (same pattern as the
+    // WHEAP energy-assistance URL). Confirmed WAP is bundled with WHEAP under
+    // "Home Energy Plus (HE+)" and administered by WI DOA's Division of
+    // Energy, Housing and Community Resources through the same county-agency
+    // network -- consistent with the WHEAP-categorical-eligibility caveat
+    // already in this record. This specific page is administrator/manual
+    // -facing (program-year PDFs, no consumer income table or landlord
+    // -consent language), so the 60% SMI income shape, the landlord-consent
+    // requirement, and the waiting-list/prioritization caveats are carried
+    // over from the original record rather than independently re-confirmed
+    // on a page fetched today; they're consistent with WAP's well-documented
+    // national structure and with WHEAP's own confirmed 60% SMI standard.
+    lastVerified: '2026-08-21',
   },
 };

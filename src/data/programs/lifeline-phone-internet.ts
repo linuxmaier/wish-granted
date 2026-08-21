@@ -17,11 +17,11 @@ export const lifelinePhoneInternet: Program = {
   summary:
     'A monthly discount on phone or internet service. Available in every state, including for people who move.',
   benefit:
-    'A monthly discount on one phone or internet bill per household, with a larger discount on Tribal lands.',
+    'A monthly discount of up to $9.25 on one phone or internet bill per household, with a larger discount on Tribal lands.',
 
   eligibility: anyOf(
     incomeAtOrBelow('fpl', 135),
-    hasAnyOf('currentBenefits', ['snap-foodshare', 'medicaid-badgercare', 'ssi']),
+    hasAnyOf('currentBenefits', ['snap-foodshare', 'medicaid-badgercare', 'ssi', 'housing-choice-voucher']),
   ),
   eligibilityCaveats: [
     'One discount per household, not per person.',
@@ -44,6 +44,16 @@ export const lifelinePhoneInternet: Program = {
   source: {
     url: 'https://www.lifelinesupport.org/',
     name: 'Lifeline Support — Universal Service Administrative Company',
-    lastVerified: null,
+    // Confirmed via direct fetch (curl, standard browser user agent) of the
+    // homepage and /how-to-qualify/: 135% FPL threshold confirmed verbatim
+    // ("You can get Lifeline if your income is at 135% or less than the 2026
+    // Federal Poverty Guidelines"), $9.25 standard monthly discount, and the
+    // categorical-eligibility program list, which also includes Federal
+    // Public Housing Assistance and Housing Choice Voucher (added 'ssi' was
+    // already present; added 'housing-choice-voucher' above). The phone
+    // number was not found on either fetched page directly, but is
+    // corroborated by USAC's own contact page and the FCC's Lifeline
+    // consumer page via search, so kept rather than dropped.
+    lastVerified: '2026-08-21',
   },
 };
