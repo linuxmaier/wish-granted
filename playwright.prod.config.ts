@@ -5,17 +5,18 @@ import { defineConfig, devices } from '@playwright/test';
  *
  * `playwright.config.ts` runs against `vite dev`, which never serves
  * `public/_headers` -- so a CSP/header test there would pass or fail for the
- * wrong reason. This boots the actual production build behind Cloudflare's
- * own local Pages emulator (`wrangler pages dev`), which applies `_headers`
- * (and `_redirects`) the same way the real deployment does. That was chosen
- * over hand-rolling a static server that reads `_headers`, because the thing
- * worth testing is Cloudflare's header semantics, not a parser of our own
- * that could quietly drift from them.
+ * wrong reason. This boots the actual production build behind
+ * tests/e2e/prod-server.mjs, a small static server that parses the real
+ * `dist/_headers` file (see that file's docblock for why this isn't
+ * `wrangler pages dev`: Cloudflare's own local Pages emulator crash-looped
+ * in at least one contributor's environment, which makes a security test
+ * that's supposed to be everyone's safety net unusable as one). `npm run
+ * build` runs first so the server serves current output, not a stale
+ * `dist/`.
  *
- * `wrangler pages dev` was verified (2026-08) to start in ~4s with no login
- * prompt and no CLOUDFLARE_API_TOKEN/account ID required for local static
- * serving -- safe to run in CI. `npm run build` runs first so the emulator
- * serves current output, not a stale `dist/`.
+ * Known gap: this doesn't confirm Cloudflare's own `_headers` parser agrees
+ * with tests/e2e/prod-server.mjs's. That's a one-time, checkable-after-
+ * deploy gap, not an ongoing one -- see docs/design.md.
  */
 export default defineConfig({
   testDir: './tests/e2e',
@@ -33,8 +34,7 @@ export default defineConfig({
   projects: [{ name: 'desktop', use: { ...devices['Desktop Chrome'] } }],
 
   webServer: {
-    command:
-      'npm run build && npx wrangler pages dev dist --port=8788 --compatibility-date=2026-08-18',
+    command: 'npm run build && node tests/e2e/prod-server.mjs',
     url: 'http://localhost:8788',
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,
