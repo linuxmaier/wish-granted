@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { MatchResult } from '@/engine/match';
 import { NATIONAL_RESOURCES } from '@/data/national-resources';
 import { ProgramCard } from './ProgramCard';
+import { StateIcon } from './icons';
 
 /**
  * The results panel, visible from the first screen onward.
@@ -64,6 +65,7 @@ export function Results({
       {eligible.length > 0 && (
         <div className="results__group">
           <h3 className="results__heading">
+            <StateIcon bucket="eligible" className="results__heading-icon" />
             Likely a match <span className="count">{eligible.length}</span>
           </h3>
           {eligible.map((match) => (
@@ -75,6 +77,7 @@ export function Results({
       {maybe.length > 0 && (
         <div className="results__group">
           <h3 className="results__heading">
+            <StateIcon bucket="maybe" className="results__heading-icon" />
             Might qualify <span className="count">{maybe.length}</span>
           </h3>
           <p className="results__note">
@@ -130,6 +133,7 @@ export function Results({
             onClick={() => setShowRuledOut((v) => !v)}
             aria-expanded={showRuledOut}
           >
+            <StateIcon bucket="ruledOut" className="results__heading-icon" />
             {showRuledOut ? 'Hide' : 'Show'} {ruledOut.length} ruled out
           </button>
           {/*

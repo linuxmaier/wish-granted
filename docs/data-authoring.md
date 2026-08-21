@@ -1,9 +1,11 @@
 # Authoring and verifying program data
 
-> **The seed dataset is currently unverified.** All 15 program records carry
-> `lastVerified: null`, and all three income tables are marked `verified: false`. They were
-> drafted from secondary knowledge, not read off the official sources. Working through the
-> verification pass below is a prerequisite for showing this to the public.
+> **The seed dataset is only partly verified.** All 15 program records still carry
+> `lastVerified: null` and were drafted from secondary knowledge, not read off the official
+> sources. The three income tables in `src/data/reference/income-tables.ts` **are** verified
+> as of 2026-08-21 (see below) — but the UI's "unverified data" banner stays up until the
+> program records are too, since it checks both. Working through the program-record
+> verification pass below is still a prerequisite for showing this to the public.
 
 ## Why this is treated as a blocker
 
@@ -40,19 +42,27 @@ looked plausible.
 
 ## Verifying the income tables
 
-`src/data/reference/income-tables.ts` holds three tables, each with a `source` URL:
+`src/data/reference/income-tables.ts` holds three tables, each with a `source` URL. The
+exported constants (`FPL`, `WI_SMI_60`, `DANE_AMI`) deliberately carry no year suffix — the
+year lives in `effectiveYear` and `lastVerified`, so a re-verification only ever changes
+values inside the object, never an import elsewhere in the codebase.
 
-- **`FPL_2025`** — HHS poverty guidelines, 48 contiguous states and DC. Confirm the figures
-  and the `perAdditionalPerson` increment. Used by SNAP, WIC, and school meals.
-- **`WI_SMI_60_2025`** — these are already the **60%** of state median income figures WHEAP
+- **`FPL`** — HHS poverty guidelines, 48 contiguous states and DC. Confirm the figures
+  and the `perAdditionalPerson` increment. Used by SNAP, WIC, and school meals. Updates each
+  January.
+- **`WI_SMI_60`** — these are already the **60%** of state median income figures WHEAP
   uses, not full SMI. Rules ask for `incomeAtOrBelow('wi-smi', 100)` accordingly. If you
   replace these with full-SMI numbers you must also change every rule that references the
-  scale.
-- **`DANE_AMI_2025`** — HUD income limits for the Madison, WI HMFA. Modelled as HUD computes
+  scale. Published in Appendix E of the annual WHEAP Manual PDF — a large document that needs
+  `pdftotext` or similar, not a quick page fetch.
+- **`DANE_AMI`** — HUD income limits for the Madison, WI HMFA. Modelled as HUD computes
   them: a four-person median plus size-adjustment factors. Verify the four-person median
-  and confirm the adjustment factors still match HUD's method.
+  and confirm the adjustment factors still match HUD's method. As of 2026, `huduser.gov`
+  blocks automated fetches with a WAF challenge; state/regional housing agencies (WHEDA,
+  FHLBank Chicago) republish the same HUD dataset and are a workable substitute, provided at
+  least two independent republications agree.
 
-Set `verified: true` once checked against the source.
+Set `verified: true` and `lastVerified` to today's date once checked against the source.
 
 These are republished annually. Updating them is a yearly maintenance task, and every
 program's effective threshold moves when they do.

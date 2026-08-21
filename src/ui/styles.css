@@ -1,51 +1,135 @@
 /*
- * Styling notes
+ * Styling notes -- "Quiet civic" visual direction (docs/design.md has the
+ * full rationale; this is the implementation summary).
  *
- * The audience includes people in a housing or food crisis, often on a phone,
- * sometimes on an old one. That drives most of the decisions here: system fonts
- * so nothing blocks on a webfont, generous tap targets, high contrast, and a
- * layout that degrades to a single column rather than depending on side-by-side
- * space. No CSS framework -- the whole app is a handful of components, and a
- * framework would cost more bytes than it saves.
+ * The audience includes people in a housing or food crisis, often on a
+ * phone, sometimes an old one, sometimes reading English as a second
+ * language. That drives every decision here:
+ *
+ *   - System fonts only, serif for headings and sans for body -- both from
+ *     the OS, so nothing blocks first paint and nothing is fetched.
+ *   - One saturated accent color, spent only on the progress bar and the
+ *     single primary action per screen (Continue). Every other button is
+ *     outlined, so "How to apply" x 15 does not read as fifteen equally
+ *     urgent calls to action.
+ *   - The three match states (likely / might / ruled out) are coded by
+ *     shape (an icon, see components/icons.tsx) and by text label first,
+ *     color second -- the app still works in grayscale.
+ *   - A consistent 8px spacing scale and a real type scale, so density in
+ *     the results panel reads as organized rather than cramped.
+ *   - Mobile-first: single column below 900px, with a fixed bottom strip
+ *     (`.mobile-summary`) that jumps to results without scrolling past the
+ *     interview. No CSS framework -- the whole app is a handful of
+ *     components, and a framework would cost more bytes than it saves.
  */
 
 :root {
-  --bg: #f7f7f5;
+  /* --- Color: light --------------------------------------------------- */
+  --bg: #f7f5f0;
   --surface: #ffffff;
-  --ink: #1a1a17;
-  --ink-soft: #55534d;
-  --line: #dfdcd4;
-  --accent: #1c5d3f;
+  --surface-2: #fbf9f4;
+  --ink: #201f1a;
+  --ink-soft: #5b564c;
+  --line: #e3ded2;
+  --line-strong: #cfc7b6;
+
+  --accent: #2a6b52;
   --accent-ink: #ffffff;
-  --pass: #1c5d3f;
-  --pass-bg: #e8f2ec;
-  --maybe: #7a5416;
-  --maybe-bg: #fbf2e2;
-  --out: #6b6b6b;
-  --out-bg: #f0efec;
-  --warn-bg: #fdf3d7;
-  --warn-line: #e4c65f;
-  --radius: 10px;
+  --accent-tint: #eaf1ec;
+
+  --pass: #1f6b49;
+  --pass-bg: #e7f2ec;
+  --maybe: #8a5a10;
+  --maybe-bg: #f7eedc;
+  --out: #5b564c;
+  --out-bg: #efebe0;
+
+  --notice-bg: #ecf1ef;
+  --notice-ink: #2e463c;
+  --notice-line: #b6c7be;
+
+  /* --- Type -------------------------------------------------------------
+     A system serif for headings gives the page an editorial, considered
+     register without costing a single byte; body copy stays sans for
+     maximum legibility on small, low-res screens. */
+  --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', serif;
+  --font-sans:
+    system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  --text-xs: 0.8125rem; /* 13px -- captions, meta, badge labels */
+  --text-sm: 0.875rem; /* 14px -- help text, secondary copy */
+  --text-base: 1rem; /* 16px -- body */
+  --text-md: 1.125rem; /* 18px -- question prompts, card names */
+  --text-lg: 1.4375rem; /* 23px -- section headings */
+  --text-xl: 1.8125rem; /* 29px -- unused today, reserved */
+  --text-xxl: 2.3125rem; /* 37px -- masthead h1 */
+
+  /* --- Space: an 8px rhythm, with a 4px half-step for tight spots ------- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+
+  --radius-control: 8px; /* inputs, choice rows, small buttons -- "you act on this" */
+  --radius-card: 14px; /* cards, banner, panels -- "you read this" */
+  --radius-pill: 999px;
+
+  --mobile-summary-height: 3.75rem;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #16171a;
-    --surface: #1f2125;
-    --ink: #eceae4;
-    --ink-soft: #a8a49b;
-    --line: #34363b;
-    --accent: #6fbf95;
-    --accent-ink: #10241a;
+  :root:not([data-theme='light']) {
+    --bg: #15171a;
+    --surface: #1e2023;
+    --surface-2: #191b1e;
+    --ink: #ede9e0;
+    --ink-soft: #aba69c;
+    --line: #34363a;
+    --line-strong: #454852;
+
+    --accent: #7fcba4;
+    --accent-ink: #0e2118;
+    --accent-tint: #1c2b25;
+
     --pass: #8fd4ad;
-    --pass-bg: #1b2a22;
-    --maybe: #e0b567;
-    --maybe-bg: #2a2318;
-    --out: #97948d;
-    --out-bg: #232529;
-    --warn-bg: #2e2716;
-    --warn-line: #6d5a24;
+    --pass-bg: #1a2a22;
+    --maybe: #e2b872;
+    --maybe-bg: #2b2417;
+    --out: #b7b2a6;
+    --out-bg: #232520;
+
+    --notice-bg: #1e2624;
+    --notice-ink: #bfd1c8;
+    --notice-line: #3c4e46;
   }
+}
+
+:root[data-theme='dark'] {
+  --bg: #15171a;
+  --surface: #1e2023;
+  --surface-2: #191b1e;
+  --ink: #ede9e0;
+  --ink-soft: #aba69c;
+  --line: #34363a;
+  --line-strong: #454852;
+
+  --accent: #7fcba4;
+  --accent-ink: #0e2118;
+  --accent-tint: #1c2b25;
+
+  --pass: #8fd4ad;
+  --pass-bg: #1a2a22;
+  --maybe: #e2b872;
+  --maybe-bg: #2b2417;
+  --out: #b7b2a6;
+  --out-bg: #232520;
+
+  --notice-bg: #1e2624;
+  --notice-ink: #bfd1c8;
+  --notice-line: #3c4e46;
 }
 
 * {
@@ -56,48 +140,100 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font: 16px/1.55 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font: var(--text-base) / 1.6 var(--font-sans);
+  -webkit-text-size-adjust: 100%;
 }
 
 .app {
   max-width: 1180px;
   margin: 0 auto;
-  padding: 0 1rem 4rem;
+  padding: 0 var(--space-4) var(--space-7);
 }
 
-/* --- Banners and masthead ------------------------------------------------ */
+@media (max-width: 900px) {
+  /* The fixed mobile-summary strip occupies the bottom of the *viewport*,
+     not the bottom of the *document* -- so a button can be positioned
+     correctly in the document flow and still be scrolled to sit exactly
+     behind the strip, wherever it happens to fall on the page (not just at
+     the very end). Two reservations, for the two different ways that
+     happens:
+
+     1. `scroll-padding-bottom` on the scrolling root tells the browser's
+        own scroll-into-view machinery (native `scrollIntoView`, Playwright's
+        actionability scrolling, Tab-focus auto-scroll, anchor jumps) to stop
+        short of the strip's zone, so a target like the Continue button is
+        never parked underneath it. This is the fix for the reported bug:
+        the Continue button was reachable and "visible" but not clickable at
+        360x640, because elementFromPoint at its centre resolved to the
+        strip, not the button.
+     2. `.app`'s padding-bottom reserves the same clearance at the tail end
+        of the document, so the true bottom of the page (the footer) isn't
+        covered either when a user scrolls all the way down by hand. */
+  html {
+    scroll-padding-bottom: calc(
+      var(--mobile-summary-height) + var(--space-4) + env(safe-area-inset-bottom, 0px)
+    );
+  }
+
+  .app {
+    padding-bottom: calc(
+      var(--mobile-summary-height) + var(--space-6) + env(safe-area-inset-bottom, 0px)
+    );
+  }
+}
+
+/* --- Banner and masthead ------------------------------------------------ */
 
 .banner {
-  margin: 1rem 0 0;
-  padding: 0.85rem 1rem;
-  border-radius: var(--radius);
-  font-size: 0.95rem;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-card);
+  font-size: var(--text-sm);
 }
 
-.banner--warning {
-  background: var(--warn-bg);
-  border: 1px solid var(--warn-line);
+.banner p {
+  margin: 0;
+}
+
+/* A calm, factual notice rather than a caution-tape warning -- see
+   App.tsx for why. Still unmissable: its own tinted panel, its own icon,
+   still role="alert" so assistive tech announces it immediately. */
+.banner--notice {
+  background: var(--notice-bg);
+  border: 1px solid var(--notice-line);
+  color: var(--notice-ink);
+}
+
+.banner__icon {
+  flex: none;
+  margin-top: 0.15rem;
+  color: var(--notice-ink);
 }
 
 .masthead {
-  padding: 2rem 0 1.5rem;
+  padding: var(--space-6) 0 var(--space-5);
 }
 
 .masthead h1 {
   margin: 0;
-  font-size: 2rem;
-  letter-spacing: -0.02em;
+  font-family: var(--font-serif);
+  font-size: var(--text-xxl);
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .masthead__tagline {
-  margin: 0.4rem 0 0;
-  font-size: 1.05rem;
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-md);
   color: var(--ink-soft);
 }
 
 .masthead__privacy {
-  margin: 0.75rem 0 0;
-  font-size: 0.9rem;
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-sm);
   color: var(--ink-soft);
 }
 
@@ -106,13 +242,18 @@ body {
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
-  gap: 1.5rem;
+  gap: var(--space-5);
   align-items: start;
 }
 
 @media (max-width: 900px) {
   .layout {
-    grid-template-columns: 1fr;
+    /* minmax(0, 1fr), not bare 1fr: a bare 1fr track has an implicit `auto`
+       (min-content) minimum, so any child with a wide unbreakable run --
+       a long badge, a nowrap price, an icon-plus-label pill -- can force
+       the whole column past the viewport width. This is the same fix
+       already applied to the two-column desktop declaration above. */
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -120,54 +261,72 @@ body {
 .results {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 1.25rem;
+  border-radius: var(--radius-card);
+  padding: var(--space-5);
 }
 
 /* The interview sticks while the results scroll on wide screens. */
 @media (min-width: 901px) {
   .interview {
     position: sticky;
-    top: 1rem;
+    top: var(--space-4);
   }
 }
 
 /* --- Progress ------------------------------------------------------------ */
 
+.progress-wrap {
+  margin-bottom: var(--space-5);
+}
+
 .progress {
-  height: 5px;
+  height: 6px;
   background: var(--line);
-  border-radius: 99px;
+  border-radius: var(--radius-pill);
   overflow: hidden;
-  margin-bottom: 1.25rem;
 }
 
 .progress__bar {
   height: 100%;
   background: var(--accent);
-  transition: width 220ms ease;
+  border-radius: var(--radius-pill);
+  transition: width 320ms ease;
+}
+
+.progress__label {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-xs);
+  color: var(--ink-soft);
+}
+
+.progress__note {
+  color: var(--ink);
 }
 
 .interview__title {
-  margin: 0 0 0.35rem;
-  font-size: 1.3rem;
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  font-weight: 600;
 }
 
 .interview__intro {
-  margin: 0 0 1.25rem;
+  margin: 0 0 var(--space-5);
   color: var(--ink-soft);
-  font-size: 0.95rem;
+  font-size: var(--text-sm);
 }
 
 .interview__skip {
   flex-basis: 100%;
-  margin: 0.5rem 0 0;
-  font-size: 0.85rem;
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-xs);
   color: var(--ink-soft);
 }
 
 .interview__done h2 {
   margin-top: 0;
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
 }
 
 /* --- Questions ----------------------------------------------------------- */
@@ -175,35 +334,35 @@ body {
 .question {
   border: 0;
   padding: 0;
-  margin: 0 0 1.75rem;
+  margin: 0 0 var(--space-6);
 }
 
 .question__prompt {
   padding: 0;
   font-weight: 650;
-  font-size: 1.02rem;
+  font-size: var(--text-md);
 }
 
 .question__help {
-  margin: 0.35rem 0 0.75rem;
-  font-size: 0.88rem;
+  margin: var(--space-2) 0 var(--space-3);
+  font-size: var(--text-sm);
   color: var(--ink-soft);
 }
 
 .choices {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  margin-top: 0.6rem;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
 }
 
 .choice {
   display: flex;
-  gap: 0.7rem;
+  gap: var(--space-3);
   align-items: flex-start;
-  padding: 0.7rem 0.85rem;
+  padding: var(--space-3);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-control);
   cursor: pointer;
   background: transparent;
   color: inherit;
@@ -219,7 +378,7 @@ body {
 .choice:has(input:checked),
 .choice.is-selected {
   border-color: var(--accent);
-  background: var(--pass-bg);
+  background: var(--accent-tint);
 }
 
 .choice input {
@@ -236,7 +395,7 @@ body {
 
 .choice__hint {
   display: block;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--ink-soft);
   margin-top: 0.15rem;
 }
@@ -249,19 +408,19 @@ body {
 .number {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.6rem;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
 }
 
 .number input {
   flex: 1;
   min-width: 0;
-  padding: 0.65rem 0.75rem;
+  padding: var(--space-3);
   font: inherit;
   color: inherit;
-  background: var(--bg);
+  background: var(--surface-2);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-control);
 }
 
 .number input:focus-visible {
@@ -274,123 +433,161 @@ body {
   white-space: nowrap;
 }
 
-/* --- Buttons ------------------------------------------------------------- */
+/* --- Buttons --------------------------------------------------------------
+   Exactly one saturated, filled button exists on any given screen: the
+   primary action (Continue). Every other button -- Back, Start over, How
+   to apply, a phone number -- is an outline in the same accent color, so
+   the page never has more than one thing visually shouting "do this". */
 
 .interview__nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.6rem;
+  gap: var(--space-3);
   align-items: center;
-  margin-top: 1.5rem;
+  margin-top: var(--space-6);
 }
 
 .button {
   display: inline-block;
-  padding: 0.65rem 1.15rem;
-  border: 1px solid var(--accent);
-  border-radius: var(--radius);
+  padding: 0.7rem 1.2rem;
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius-control);
   background: var(--accent);
   color: var(--accent-ink);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
   text-decoration: none;
+  line-height: 1.2;
 }
 
 .button--quiet {
   background: transparent;
-  color: var(--ink);
-  border-color: var(--line);
+  color: var(--accent);
+  border-color: var(--line-strong);
+}
+
+.button--quiet:hover {
+  border-color: var(--accent);
 }
 
 .link-button {
   background: none;
   border: 0;
   padding: 0;
-  margin-top: 0.5rem;
+  margin-top: var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   color: var(--accent);
   font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
   text-decoration: underline;
   cursor: pointer;
 }
 
-/* --- Results ------------------------------------------------------------- */
+/* --- Results --------------------------------------------------------------
+   The state icons (see components/icons.tsx) are the primary signal for
+   which bucket a group or card belongs to; color and the left border are
+   supporting cues, not the only ones. */
 
 .results__title {
-  margin: 0 0 1rem;
-  font-size: 1.3rem;
+  margin: 0 0 var(--space-4);
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  font-weight: 600;
 }
 
 .results__group {
-  margin-bottom: 1.75rem;
+  margin-bottom: var(--space-6);
+}
+
+.results__group + .results__group {
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--line);
 }
 
 .results__heading {
-  font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: 0.07em;
   color: var(--ink-soft);
-  margin: 0 0 0.6rem;
+  margin: 0 0 var(--space-3);
+}
+
+.results__heading-icon {
+  flex: none;
 }
 
 .count {
   background: var(--out-bg);
-  border-radius: 99px;
-  padding: 0.05rem 0.5rem;
-  margin-left: 0.3rem;
+  border-radius: var(--radius-pill);
+  padding: 0.05rem 0.55rem;
+  margin-left: var(--space-1);
+  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none;
 }
 
 .results__note,
 .results__empty {
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   color: var(--ink-soft);
-  margin: 0 0 0.75rem;
+  margin: 0 0 var(--space-4);
 }
 
 /* Shown when the matcher honestly has nothing for this person. */
 .fallback {
   border: 1px solid var(--line);
   border-left: 4px solid var(--maybe);
-  border-radius: var(--radius);
+  border-radius: var(--radius-card);
   background: var(--maybe-bg);
-  padding: 1rem;
-  margin-bottom: 1.5rem;
+  padding: var(--space-4);
+  margin-bottom: var(--space-5);
 }
 
 .fallback__title {
-  margin: 0 0 0.5rem;
-  font-size: 1.02rem;
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-serif);
+  font-size: var(--text-md);
+  font-weight: 600;
 }
 
 .fallback p {
-  margin: 0 0 0.75rem;
-  font-size: 0.93rem;
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-sm);
 }
 
 .fallback__list {
   margin: 0;
-  padding-left: 1.1rem;
-  font-size: 0.92rem;
+  padding-left: 1.2rem;
+  font-size: var(--text-sm);
 }
 
 .fallback__list li {
-  margin-bottom: 0.4rem;
+  margin-bottom: var(--space-2);
 }
 
-.fallback__phone {
-  color: var(--ink-soft);
-}
-
+.fallback__phone,
 .fallback__desc {
   color: var(--ink-soft);
 }
 
+/* --- Program cards ---------------------------------------------------------
+   Chrome only -- the information order inside a card belongs to issue #11.
+   This establishes the visual language (spacing, type, color, radius) the
+   card content lives in. */
+
 .program {
   border: 1px solid var(--line);
-  border-left: 4px solid var(--line);
-  border-radius: var(--radius);
-  padding: 0.9rem 1rem;
-  margin-bottom: 0.75rem;
+  border-left: 3px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-4);
 }
 
 .program--eligible {
@@ -400,31 +597,44 @@ body {
   border-left-color: var(--maybe);
 }
 .program--ruledOut {
-  border-left-color: var(--out);
-  background: var(--out-bg);
+  border-left-color: var(--line-strong);
 }
 
 .program__head {
   display: flex;
-  gap: 0.75rem;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
   justify-content: space-between;
-  align-items: baseline;
+  align-items: flex-start;
 }
 
 .program__name {
   margin: 0;
-  font-size: 1.05rem;
+  /* Lets the badge wrap onto its own line at narrow widths instead of
+     forcing the row (and the whole column) wider than the viewport --
+     the "You might qualify" badge does not shrink, so the name has to be
+     the one that can give. */
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-serif);
+  font-size: var(--text-md);
+  font-weight: 600;
 }
 
 .badge {
   flex: none;
-  font-size: 0.74rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: var(--text-xs);
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 0.2rem 0.5rem;
-  border-radius: 99px;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-pill);
   white-space: nowrap;
+}
+
+.badge__icon {
+  flex: none;
 }
 
 .badge--eligible {
@@ -441,16 +651,16 @@ body {
 }
 
 .program__meta {
-  margin: 0.3rem 0 0.6rem;
-  font-size: 0.82rem;
+  margin: var(--space-2) 0 var(--space-3);
+  font-size: var(--text-xs);
   color: var(--ink-soft);
 }
 
 .program__summary,
 .program__benefit,
 .program__status {
-  margin: 0 0 0.6rem;
-  font-size: 0.94rem;
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-base);
 }
 
 .program__status {
@@ -459,35 +669,55 @@ body {
 
 .program__apply {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-3);
   flex-wrap: wrap;
-  margin: 0.75rem 0;
+  margin: var(--space-4) 0;
 }
 
 .program__steps,
-.program__caveats ul {
-  margin: 0.5rem 0;
+.program__caveats {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+.program__steps {
+  margin: var(--space-4) 0 0;
   padding-left: 1.2rem;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   color: var(--ink-soft);
 }
 
-.program__caveats {
-  font-size: 0.9rem;
-  margin-top: 0.75rem;
+.program__steps li {
+  margin-bottom: var(--space-1);
+}
+
+.program__caveats ul {
+  margin: var(--space-2) 0 0;
+  padding-left: 1.2rem;
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+}
+
+.program__caveats > strong {
+  font-size: var(--text-sm);
 }
 
 .program__why {
-  margin-top: 0.6rem;
-  padding: 0.7rem 0.85rem;
-  background: var(--bg);
-  border-radius: var(--radius);
-  font-size: 0.9rem;
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  background: var(--surface-2);
+  border-radius: var(--radius-control);
+  font-size: var(--text-sm);
 }
 
 .program__why ul {
   margin: 0;
-  padding-left: 1.1rem;
+  padding-left: 1.2rem;
+}
+
+.program__why li + li {
+  margin-top: var(--space-1);
 }
 
 .reason--pass {
@@ -502,18 +732,66 @@ body {
 }
 
 .program__source {
-  margin: 0.6rem 0 0;
-  font-size: 0.82rem;
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-xs);
   color: var(--ink-soft);
+}
+
+/* --- Mobile results shortcut ----------------------------------------------
+   Always in the DOM; CSS alone decides visibility, so a stylesheet failure
+   degrades to an inline link rather than losing the shortcut entirely. */
+
+.mobile-summary {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .mobile-summary {
+    display: flex;
+    position: fixed;
+    left: var(--space-4);
+    right: var(--space-4);
+    bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+    z-index: 10;
+  }
+
+  .mobile-summary__link {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-1) var(--space-3);
+    width: 100%;
+    /* min-height, not height: at very narrow effective widths (a small
+       phone at 200% zoom) the two labels can wrap onto separate lines,
+       and the bar should grow rather than clip them. */
+    min-height: var(--mobile-summary-height);
+    padding: var(--space-3) var(--space-5);
+    background: var(--accent);
+    color: var(--accent-ink);
+    border-radius: var(--radius-card);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .mobile-summary__count {
+    font-size: var(--text-base);
+  }
+
+  .mobile-summary__cta {
+    font-size: var(--text-sm);
+    opacity: 0.9;
+  }
 }
 
 /* --- Footer -------------------------------------------------------------- */
 
 .footer {
-  margin-top: 2.5rem;
-  padding-top: 1.25rem;
+  margin-top: var(--space-7);
+  padding-top: var(--space-5);
   border-top: 1px solid var(--line);
-  font-size: 0.88rem;
+  font-size: var(--text-sm);
   color: var(--ink-soft);
 }
 
