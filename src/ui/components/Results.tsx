@@ -3,6 +3,7 @@ import type { MatchResult } from '@/engine/match';
 import { NATIONAL_RESOURCES } from '@/data/national-resources';
 import { ProgramCard } from './ProgramCard';
 import { StateIcon } from './icons';
+import { matchSummaryText } from './matchSummary';
 
 /**
  * The results panel, visible from the first screen onward.
@@ -56,11 +57,29 @@ export function Results({
   return (
     // Named via its own heading so it is exposed as a landmark region: results
     // change as the interview is answered, and a screen reader user needs to be
-    // able to jump to them rather than hunt through the questions.
-    <section className="results" aria-live="polite" aria-labelledby="results-title">
+    // able to jump to them rather than hunt through the questions. This section
+    // is deliberately NOT aria-live: it can hold up to 15 full program cards, and
+    // wrapping the whole thing meant a screen reader re-announced all of it after
+    // every single answer (issue #13). The one thing worth announcing -- how many
+    // matches there are now -- gets its own narrow, visually-hidden status region
+    // below, instead. See docs/design.md, "Live regions."
+    <section className="results" aria-labelledby="results-title">
       <h2 className="results__title" id="results-title">
         {isComplete ? 'Your results' : 'Matches so far'}
       </h2>
+
+      {/*
+        The only thing announced to assistive tech as results change: a short
+        count, nothing else. `role="status"` is implicitly `aria-live="polite"
+        aria-atomic="true"` -- it queues rather than interrupts, and always reads
+        the whole (short) sentence rather than a stray fragment. This is the one
+        copy of this text that is actually in the accessibility tree at every
+        viewport width; MobileSummary shows the same words but is `display: none`
+        above 900px, so it can't be the source of truth for desktop.
+      */}
+      <p className="sr-only" role="status">
+        {matchSummaryText(eligible.length, maybe.length)}
+      </p>
 
       {eligible.length > 0 && (
         <div className="results__group">

@@ -338,26 +338,38 @@ the copy is doing on purpose. Left as-is; if it needs a structural answer (e.g. 
 privacy line, or a slimmer masthead once the banner is gone for good) that's a call for #11
 rather than a CSS-only tweak here.
 
-### Live regions: a pre-existing issue this PR made slightly worse
+### Live regions (resolved in #13)
 
-`Results.tsx`'s `<section>` already carried `aria-live="polite"` before this PR -- the whole
-results panel, badges, reasoning and all, has always been one live region. That was a
-reasonable choice for the desktop layout (results update as you answer, and the panel needs
-to be announced as new matches appear), but it means every answer can queue an enormous
-announcement: a polite region wrapping fourteen program cards re-announces on essentially
-every keystroke-equivalent, which a screen reader user has to sit through or interrupt.
+`Results.tsx`'s `<section>` used to carry `aria-live="polite"` on the whole panel -- badges,
+reasoning, up to fifteen program cards, all one live region. Because results recompute on
+every answer, that queued an enormous announcement after essentially every interaction, which
+a screen reader user had to sit through or interrupt. A second, smaller `aria-live="polite"`
+region was later added to the mobile summary strip (just the match count), which meant mobile
+got both announcements on every answer.
 
-This PR adds a second, smaller `aria-live="polite"` region in the mobile summary strip (just
-the match count, e.g. "15 might qualify"). Both are "polite," so they queue rather than
-interrupt each other, but on mobile a screen reader user now gets *both* the full results
-panel announcement *and* the short count announcement on every single answer. The
-pre-existing region is the bigger problem of the two -- the new one is a few words; the old
-one can be several cards' worth of text -- but neither was scoped down here, since narrowing
-`Results.tsx`'s live region touches behavior outside this PR's remit (presentation chrome,
-not interaction scope) and deserves its own pass rather than a reactive tweak. Recording this
-so issue #13's audit starts from "the results panel's live region needs scoping down, and the
-mobile strip's smaller one should be reconsidered alongside it" rather than a vague "audit
-live regions."
+#13 removed `aria-live` from the results `<section>` entirely and replaced both regions with
+one: a visually-hidden `role="status"` element inside `Results`, holding only a short count
+("4 likely matches"). It lives in `Results` rather than the mobile strip because the strip is
+`display: none` above 900px -- an `aria-live` region inside `display: none` content is outside
+the accessibility tree, so it can never be heard, and the mobile-only version was silently
+useless on desktop. `MobileSummary` now shows the identical wording as plain visible text,
+with no live region of its own, so mobile hears the count exactly once.
+
+`ProgramCard`'s "Why this result?" toggle gained `aria-expanded`, matching the pattern the
+ruled-out toggle in `Results.tsx` already used. And #13 added focus management on screen
+transitions: pressing Continue or Back now moves focus to the new screen's heading
+(`tabIndex={-1}`, never on first render), so a keyboard or screen reader user encounters the
+next question instead of being left on a button that no longer does anything new. Verified in
+real Chromium that mouse-driven transitions do not paint a focus ring (`:focus-visible` does
+not match) while keyboard-driven ones do.
+
+**Honesty about how this was verified:** the decision to remove the section-wide live region,
+and the wording of its replacement, were made by reading ARIA semantics and testing with
+Playwright + axe-core, not by listening to a real screen reader -- NVDA/VoiceOver could not be
+driven from the environment #13 was done in. The live-region wording was kept deliberately
+short and factual for exactly this reason: less for a real AT pass to overturn. A manual
+NVDA/VoiceOver walkthrough of this decision is filed as a follow-up and should happen before
+public launch.
 
 ## Bugs found (and fixed) during review
 

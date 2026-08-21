@@ -43,10 +43,39 @@ function useProgressJumpNote(progress: number): boolean {
   return visible;
 }
 
+/**
+ * Moves focus to the new screen's heading whenever the screen changes --
+ * but never on first render, which would steal focus from wherever the
+ * browser naturally started (issue #13). Without this, a keyboard or screen
+ * reader user who presses Continue keeps focus on the Continue button and
+ * never encounters the next question unless they go hunting for it. The
+ * heading, not the first input, is the target: it tells the user where they
+ * are now before the controls start. `tabIndex={-1}` on the heading makes it
+ * programmatically focusable without adding it to the normal Tab order.
+ *
+ * Only one heading is ever mounted at a time (the question screen's or the
+ * "done" screen's), so both can share this one ref.
+ */
+function useScreenTransitionFocus(key: string) {
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    headingRef.current?.focus();
+  }, [key]);
+
+  return headingRef;
+}
+
 export function App() {
   const interview = useInterview();
   const { screen, questions, answers, result, isComplete } = interview;
   const showJumpNote = useProgressJumpNote(interview.progress);
+  const headingRef = useScreenTransitionFocus(screen ? screen.id : 'done');
 
   // `progress` is done / (done + remaining) and `done` is always exactly
   // history.length (see src/interview/flow.ts), so the total screen count
@@ -121,7 +150,9 @@ export function App() {
                 </p>
               </div>
 
-              <h2 className="interview__title">{screen.title}</h2>
+              <h2 className="interview__title" ref={headingRef} tabIndex={-1}>
+                {screen.title}
+              </h2>
               {screen.intro && <p className="interview__intro">{screen.intro}</p>}
 
               {questions.map((question) => (
@@ -153,7 +184,9 @@ export function App() {
             </>
           ) : (
             <div className="interview__done">
-              <h2>That is everything we need to ask.</h2>
+              <h2 ref={headingRef} tabIndex={-1}>
+                That is everything we need to ask.
+              </h2>
               <p>
                 Nothing left to ask would change your results. Your matches are in the
                 results panel — open “Why this result?” on any of them to see the reasoning.
