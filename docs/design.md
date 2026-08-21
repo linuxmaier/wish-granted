@@ -257,33 +257,100 @@ and a warm always-single-column theme); the project owner chose the first, "Quie
   than losing the shortcut. Its accessible name ("View your results") is stable; the match
   count is a separate `aria-live="polite"` span so count changes are announced gently rather
   than interrupting whatever the screen reader user is doing — results update on every
-  answer, and "assertive" would mean an interruption on every single one.
+  answer, and "assertive" would mean an interruption on every single one. See "Live regions"
+  below for how this interacts with the results panel's own `aria-live`.
 
-### A grid overflow this pass introduced and fixed
+### Observation, not fixed here: the mobile above-the-fold stack
 
-Widening the badge ("You might qualify" plus an icon, in a non-wrapping pill) pushed a
-`.program__head` flex row's min-content past what fit at 360px, and the single-column mobile
-grid used a bare `1fr` track, which has an implicit `auto` (min-content) minimum — so the
-whole column, and the page, gained a horizontal scrollbar. Fixed two ways: the mobile grid
-track is now `minmax(0, 1fr)` (matching the pattern the desktop two-column declaration
-already used), and `.program__head` gained `flex-wrap: wrap` so a long badge can drop to its
-own line instead of forcing the row wider than the viewport. Verified clean (no horizontal
-scroll) at 320, 360, 390, and 1440px, and at a simulated 200% desktop zoom. Below roughly
-200px of effective layout width — well under this project's stated 360–390px target and
-under WCAG's 320px reflow baseline — the badge pill itself remains a hard content floor,
+On a fresh mobile load, the draft-data banner, masthead, tagline, and privacy line together
+take up roughly 40% of the first viewport before the first question is visible. It's
+acceptable today, and improves the moment the banner clears (two data-verification passes
+are in flight as of this PR). Trimming it further without touching card hierarchy didn't
+have an obvious cheap answer -- the candidates (shortening the tagline, collapsing the
+privacy line into the footer, tightening the banner's own padding) all trade away something
+the copy is doing on purpose. Left as-is; if it needs a structural answer (e.g. deferring the
+privacy line, or a slimmer masthead once the banner is gone for good) that's a call for #11
+rather than a CSS-only tweak here.
+
+### Live regions: a pre-existing issue this PR made slightly worse
+
+`Results.tsx`'s `<section>` already carried `aria-live="polite"` before this PR -- the whole
+results panel, badges, reasoning and all, has always been one live region. That was a
+reasonable choice for the desktop layout (results update as you answer, and the panel needs
+to be announced as new matches appear), but it means every answer can queue an enormous
+announcement: a polite region wrapping fourteen program cards re-announces on essentially
+every keystroke-equivalent, which a screen reader user has to sit through or interrupt.
+
+This PR adds a second, smaller `aria-live="polite"` region in the mobile summary strip (just
+the match count, e.g. "15 might qualify"). Both are "polite," so they queue rather than
+interrupt each other, but on mobile a screen reader user now gets *both* the full results
+panel announcement *and* the short count announcement on every single answer. The
+pre-existing region is the bigger problem of the two -- the new one is a few words; the old
+one can be several cards' worth of text -- but neither was scoped down here, since narrowing
+`Results.tsx`'s live region touches behavior outside this PR's remit (presentation chrome,
+not interaction scope) and deserves its own pass rather than a reactive tweak. Recording this
+so issue #13's audit starts from "the results panel's live region needs scoping down, and the
+mobile strip's smaller one should be reconsidered alongside it" rather than a vague "audit
+live regions."
+
+## Bugs found (and fixed) during review
+
+Two real regressions surfaced during the design-pass review, both from the same root cause:
+content that's correctly *visible* in the DOM's normal flow can still end up in the wrong
+place relative to something else, if you only test the box a component draws and not where a
+finger or a browser's own click-delivery would actually land.
+
+**A grid overflow.** Widening the badge ("You might qualify" plus an icon, in a non-wrapping
+pill) pushed a `.program__head` flex row's min-content past what fit at 360px, and the
+single-column mobile grid used a bare `1fr` track, which has an implicit `auto` (min-content)
+minimum -- so the whole column, and the page, gained a horizontal scrollbar. Fixed two ways:
+the mobile grid track is now `minmax(0, 1fr)` (matching the pattern the desktop two-column
+declaration already used), and `.program__head` gained `flex-wrap: wrap` so a long badge can
+drop to its own line instead of forcing the row wider than the viewport. Verified clean (no
+horizontal scroll) at 320, 360, 390, and 1440px, and at a simulated 200% desktop zoom. Below
+roughly 200px of effective layout width -- well under this project's stated 360-390px target
+and under WCAG's 320px reflow baseline -- the badge pill itself remains a hard content floor,
 since it deliberately does not wrap; noting this rather than chasing a synthetic edge case
 that would mean shrinking the badge below a legible size.
 
+**The mobile summary strip covered the Continue button.** At 360x640 -- a common real phone
+shape, and narrower than the 412px Pixel 7 the e2e mobile project runs at -- the fixed strip's
+zone at the bottom of the viewport overlapped the Continue button whenever the interview
+screen's content was short enough that scrolling the button into view parked it flush against
+the viewport's bottom edge. The button was `visible` by every check that only asks "is this
+element on screen," but `document.elementFromPoint` at its centre resolved to the strip, not
+the button -- the actual property that matters (would a tap here reach the button?) was never
+true. Two reservations now exist for the two different ways a fixed footer can cover content:
+`scroll-padding-bottom` on the scrolling root, so the browser's own scroll-into-view machinery
+(native `scrollIntoView`, Playwright's actionability scrolling, Tab-focus auto-scroll, anchor
+jumps) stops short of the strip's zone no matter where the target sits in the document -- this
+is the actual fix for the reported bug -- and `.app`'s existing `padding-bottom`, which
+reserves the same clearance at the tail end of the document for a user scrolling all the way
+down by hand. Verified at 360x640 (the reported width), 360x800, and a 200%-zoom proxy, all
+the way through a full interview with real `.click()` calls, not just a static overlap check.
+
+**What this says about the test suite.** All 20 e2e tests passed before this fix, including
+on the `mobile` project -- which runs at the Pixel 7's 412px, comfortably wider than where the
+bug reproduced. The suite looked like it covered mobile and actually covered *one* mobile
+width, on the comfortable side. Two changes address that going forward, not just this one bug:
+a `mobile-360` project in `playwright.config.ts` (360x640, the reported width, run alongside
+`desktop` and `mobile`), and a new test, `the Continue button is not covered by anything,
+including the mobile summary strip`, that checks `elementFromPoint` at the button's centre
+and then performs a real click and asserts the interview actually advanced -- "visible" was
+true in the failing case, so visibility was never the property worth asserting. Confirmed the
+new test fails against the pre-fix CSS and passes against the fix, on all three projects.
+
 ### Bundle size
 
-Before this pass: 1.93 KB gzipped CSS, 75.78 KB gzipped JS (~77.7 KB total). After: 2.62 KB
-gzipped CSS, 76.53 KB gzipped JS (~79.2 KB total) — a ~1.4 KB (1.8%) increase, from the icon
-components and the mobile summary strip. No new runtime dependencies.
+Before this pass: 1.93 KB gzipped CSS, 75.78 KB gzipped JS (~77.7 KB total). After: 2.64 KB
+gzipped CSS, 76.71 KB gzipped JS (~79.35 KB total) -- a ~1.65 KB (2.1%) increase, from the
+icon components, the mobile summary strip, and the `scroll-padding-bottom` fix. No new
+runtime dependencies.
 
 ## Testing
 
-`npm test` runs 77 unit tests; `npm run test:e2e` runs 20 browser tests; `npm run test:all`
-does both.
+`npm test` runs 81 unit tests; `npm run test:e2e` runs 33 browser tests across three
+projects (desktop, `mobile` at 412px, `mobile-360` at 360px); `npm run test:all` does both.
 
 - **`tests/engine/evaluate`** — three-valued logic, including that `false` is treated as
   answered rather than missing, and that a settled verdict stops reporting missing facts.

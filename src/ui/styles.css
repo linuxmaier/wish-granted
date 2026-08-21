@@ -151,8 +151,30 @@ body {
 }
 
 @media (max-width: 900px) {
-  /* Reserves room so the fixed mobile-summary strip never sits over the
-     last piece of content in the document. */
+  /* The fixed mobile-summary strip occupies the bottom of the *viewport*,
+     not the bottom of the *document* -- so a button can be positioned
+     correctly in the document flow and still be scrolled to sit exactly
+     behind the strip, wherever it happens to fall on the page (not just at
+     the very end). Two reservations, for the two different ways that
+     happens:
+
+     1. `scroll-padding-bottom` on the scrolling root tells the browser's
+        own scroll-into-view machinery (native `scrollIntoView`, Playwright's
+        actionability scrolling, Tab-focus auto-scroll, anchor jumps) to stop
+        short of the strip's zone, so a target like the Continue button is
+        never parked underneath it. This is the fix for the reported bug:
+        the Continue button was reachable and "visible" but not clickable at
+        360x640, because elementFromPoint at its centre resolved to the
+        strip, not the button.
+     2. `.app`'s padding-bottom reserves the same clearance at the tail end
+        of the document, so the true bottom of the page (the footer) isn't
+        covered either when a user scrolls all the way down by hand. */
+  html {
+    scroll-padding-bottom: calc(
+      var(--mobile-summary-height) + var(--space-4) + env(safe-area-inset-bottom, 0px)
+    );
+  }
+
   .app {
     padding-bottom: calc(
       var(--mobile-summary-height) + var(--space-6) + env(safe-area-inset-bottom, 0px)
