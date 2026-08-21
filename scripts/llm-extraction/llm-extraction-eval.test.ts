@@ -22,12 +22,18 @@ import { manualReview, oneOf, type Criterion } from '../../src/domain/criteria';
  *
  * Lives here (scripts/llm-extraction/, not tests/) rather than as an
  * ordinary test file, on purpose: it lets scripts/llm-extraction/*.ts keep
- * the explicit ".ts" import specifiers run-eval.ts needs for direct
- * `node --experimental-strip-types` execution, scoped to scripts/tsconfig.json
- * alone, without asking the root tsconfig (which governs everything under
- * src/ and tests/) to permit them too. `npm test`'s vitest config and
- * `npm run typecheck`'s second `tsc -p scripts` pass both know to look here --
- * see vite.config.ts and package.json.
+ * the explicit ".ts" import specifiers run-eval.ts needs for direct `node`
+ * execution, scoped to scripts/llm-extraction/tsconfig.json alone, without
+ * asking the root tsconfig (which governs everything under src/ and tests/)
+ * to permit them too -- the same scoping pattern issue #24 established for
+ * scripts/refresh-income-tables/tsconfig.json (a plain "bundler"
+ * moduleResolution here rather than #24's "NodeNext", though: this
+ * directory imports real values from src/domain, which #24's tool never
+ * does, and NodeNext would force src/'s own extensionless style to change
+ * to satisfy this one dev tool -- see this directory's tsconfig.json for
+ * the full reasoning). `npm test`'s vitest config and
+ * `npm run typecheck:llm-extraction` both know to look here -- see
+ * vite.config.ts and package.json.
  */
 
 describe('Criterion JSON Schema (for the extraction tool-use call)', () => {

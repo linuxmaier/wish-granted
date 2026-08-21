@@ -20,9 +20,12 @@ export default defineConfig({
     // smoke test opts into jsdom with a per-file docblock.
     environment: 'node',
     // scripts/llm-extraction's own harness test lives next to the code it
-    // tests, not under tests/ -- see that file's own docblock for why (it
-    // keeps a TS-extension requirement scoped to scripts/tsconfig.json
-    // instead of the root tsconfig).
-    include: ['tests/**/*.test.{ts,tsx}', 'scripts/**/*.test.ts'],
+    // tests, not under tests/ -- see that file's own docblock for why. Scoped
+    // to that one directory deliberately: scripts/refresh-income-tables (#24)
+    // has its own *.test.ts files too, written for Node's built-in test
+    // runner (`npm run test:refresh-income-tables`), not vitest -- a broader
+    // `scripts/**/*.test.ts` glob would sweep those in and vitest would
+    // reject them ("No test suite found") since they don't use describe/it.
+    include: ['tests/**/*.test.{ts,tsx}', 'scripts/llm-extraction/**/*.test.ts'],
   },
 });

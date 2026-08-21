@@ -10,12 +10,16 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -b --noEmit && tsc -p scripts --noEmit",
+    "typecheck": "tsc -b --noEmit",
     "data:check": "vitest run tests/data",
     "test:e2e": "playwright test",
     "test:all": "vitest run && playwright test",
+    "refresh:income-tables": "node --use-system-ca scripts/refresh-income-tables/index.ts",
+    "test:refresh-income-tables": "node --test scripts/refresh-income-tables/lib/__tests__/*.test.ts",
+    "typecheck:refresh-income-tables": "tsc -p scripts/refresh-income-tables/tsconfig.json --noEmit",
     "extract:income-tables": "node scripts/extract-income-tables.mjs",
-    "eval:llm-extraction": "node --experimental-strip-types scripts/llm-extraction/run-eval.ts"
+    "eval:llm-extraction": "node scripts/llm-extraction/run-eval.ts",
+    "typecheck:llm-extraction": "tsc -p scripts/llm-extraction --noEmit"
   },
   "dependencies": {
     "react": "^19.0.0",

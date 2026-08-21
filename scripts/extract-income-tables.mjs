@@ -21,6 +21,15 @@
  * Fixtures in tests/fixtures/income-tables/ are real HTML snapshots fetched
  * 2026-08-21 (see tests/fixtures/income-tables/SOURCES.md) so the measured
  * hit rate below is reproducible offline, in CI, without a network call.
+ *
+ * NOT the production refresher -- that's scripts/refresh-income-tables/
+ * (issue #24, `npm run refresh:income-tables`), which landed independently
+ * mid-spike, patches src/data/reference/income-tables.ts directly with a
+ * guardrail against implausible jumps, and covers DANE_AMI too. This script
+ * stays as spike evidence and a standing corroboration check (its output
+ * matches #24's independently-verified FPL/WI_SMI_60 figures exactly -- see
+ * docs/eligibility-extraction.md Section 3) -- not something to run to
+ * actually refresh the dataset. Don't maintain both as live tooling.
  */
 
 import { readFile } from 'node:fs/promises';

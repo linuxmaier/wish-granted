@@ -1,0 +1,39 @@
+{
+  // Deliberately "bundler" resolution, not the "NodeNext" #24's
+  // scripts/refresh-income-tables/tsconfig.json uses for the same kind of
+  // scoped, noEmit dev-tool config. #24's tool never imports from src/; this
+  // one does on purpose (FACT_KEYS, FACTS, walk, Criterion builders --
+  // building the extraction schema/gate FROM the real vocabulary is the
+  // point, see criterion-schema.ts and schema-gate.ts). src/ is authored in
+  // root tsconfig's "bundler" style throughout (extensionless imports).
+  // NodeNext would force every src/domain file reached transitively from
+  // here (criteria.ts, facts.ts) to satisfy ITS stricter extension rule too
+  // -- a real, empirically-hit error, not a theoretical one -- which would
+  // mean either rewriting shared app code to suit this one dev tool, or
+  // living with a red `typecheck:llm-extraction`. "bundler" (matching root)
+  // accepts both src/'s extensionless style and this directory's own
+  // explicit ".ts" specifiers (needed for direct `node` execution --
+  // allowImportingTsExtensions below) without touching src/ at all.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "types": ["node"],
+    // The real curated dataset (src/data/programs) this directory's own
+    // test imports uses this alias internally throughout src/ -- mirror
+    // root's config so those files resolve here too.
+    "baseUrl": "../..",
+    "paths": { "@/*": ["src/*"] }
+  },
+  "include": ["**/*.ts"]
+}

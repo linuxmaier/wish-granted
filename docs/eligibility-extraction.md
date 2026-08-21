@@ -53,6 +53,10 @@ corroboration, not a bug report, and say so explicitly.
 - **PolicyEngine's two open questions stay open**, per #4's own flag and the coordinator's
   instruction -- reasoning is given, no conclusion is asserted. See
   [Section 7](#7-policyengine-open-questions-not-resolved-here).
+- **Issue #24 landed mid-spike with its own income-table refresher.** It's now the
+  production path (`npm run refresh:income-tables`); this spike's extractor stays as
+  evidence and a standing corroboration check, not a second tool to maintain. See
+  [Section 3](#3-tier-1-the-deterministic-extractor-measured).
 
 ---
 
@@ -185,6 +189,21 @@ figures (a dataset/spreadsheet format, out of scope for an HTML-table parser -- 
 disagree with #3's verified `DANE_AMI` ($135,300 four-person median). Said plainly rather
 than left implicit: agreement was checked and found for two of the three tables; the third
 was never attempted, which is a different thing from "checked and passed."
+
+**Which tool is the production path, now that there are two.** Issue #24 landed on `main`
+mid-spike with `scripts/refresh-income-tables/` -- a real, tested, deterministic refresher
+covering the same three tables (`npm run refresh:income-tables`), independent of this
+document's extractor. The two were built for different purposes and shouldn't be merged:
+this spike's `scripts/extract-income-tables.mjs` exists to answer the tiering question with
+real code and, as it turned out, to cross-check #3's verification -- its value now is as
+standing evidence and a permanent corroboration test, not as a tool anyone should run to
+actually refresh the dataset. **`scripts/refresh-income-tables/` is the one to run and
+maintain going forward** -- it's the more complete tool (it patches the file directly with a
+guardrail against implausible jumps, and covers `DANE_AMI` too, which this spike's script
+never attempted). Nobody should end up maintaining two income-table fetchers; this is the
+explicit statement of which one that is. #24's existence doesn't change this document's
+Tier 1 conclusion -- it independently confirms it, by a different team choosing to build the
+same category of tool this document argues Tier 1 calls for.
 
 ---
 

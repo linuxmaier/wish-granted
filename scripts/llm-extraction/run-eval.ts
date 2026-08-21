@@ -15,7 +15,10 @@
  * at all. That is the hard constraint this whole design exists to respect.
  *
  * Usage:
- *   ANTHROPIC_API_KEY=sk-... node --experimental-strip-types scripts/llm-extraction/run-eval.ts
+ *   ANTHROPIC_API_KEY=sk-... node scripts/llm-extraction/run-eval.ts
+ * (also `npm run eval:llm-extraction` with the key exported in the shell --
+ * this Node version strips TS types directly, no flag or build step needed,
+ * matching #24's scripts/refresh-income-tables/index.ts convention.)
  *
  * Without an API key, every case is reported SKIPPED rather than silently
  * treated as a pass or a failure -- this script was written but NOT executed
