@@ -141,6 +141,13 @@ programs they would resolve — most decisive first.
 Ranking counts *distinct programs* a question would unblock, not a sum of per-fact tallies,
 so a question supplying two facts a single program is waiting on scores 1, not 2.
 
+A screen can name one question as its `anchorQuestionId`, which stays first regardless of
+impact — an escape hatch for a question that is a natural preamble to the rest of the
+screen, not a redesign of the default order. The housing screen anchors "which best
+describes your housing right now?" ahead of the trouble checklist, which otherwise scores
+higher but reads backwards asked first. Anchoring does not exempt a question from the
+relevance filter above: an anchored question nothing undecided depends on is still dropped.
+
 Why a plain count rather than an information-theoretic score: true entropy needs a prior
 over how people answer, which we could only get by collecting answers — precisely what the
 privacy constraint forbids. Counting unblocked programs needs data about nobody, and on a
