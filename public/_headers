@@ -1,0 +1,39 @@
+# Security headers for Cloudflare Pages. See docs/design.md, "Privacy
+# architecture" and "Hosting and logs" for the reasoning behind this file,
+# and tests/e2e/csp.spec.ts for the test that keeps it honest against a real
+# production build (npm run test:e2e:prod).
+#
+# One rule applies to every path: the app shell, its assets, and the
+# standalone public/privacy.html page all satisfy the same strict policy, so
+# there is no reason to split it by route.
+/*
+  # default-src 'self': safe fallback -- same-origin only, nothing external
+  # by default. Everything below either narrows this further to 'none' or
+  # restates 'self' for directives default-src does NOT cover (base-uri,
+  # form-action, frame-ancestors -- see comments below).
+  #
+  # connect-src 'none' is the centerpiece: this app makes zero network calls
+  # by design (see docs/design.md, "Privacy architecture"), and this turns
+  # that from a property of the code into a property the browser enforces --
+  # a future fetch(), <img src="https://...">, or analytics snippet fails
+  # instead of quietly working. Verified against the production build in
+  # tests/e2e/csp.spec.ts.
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; manifest-src 'none'; worker-src 'none'; upgrade-insecure-requests
+  # Force HTTPS for a year, including subdomains. No `preload` yet -- that's
+  # a near-permanent submission to browsers' preload lists and belongs to a
+  # deliberate decision once the production domain is final, not a default.
+  Strict-Transport-Security: max-age=63072000; includeSubDomains
+  # No Referer header ever, including on the same-origin footer link to
+  # /privacy. For this audience, a referrer disclosing "came from a
+  # benefits-screening tool" is itself a meaningful leak.
+  Referrer-Policy: no-referrer
+  # Stop the browser from MIME-sniffing the JS/CSS assets into something
+  # else.
+  X-Content-Type-Options: nosniff
+  # Deny device/browser APIs this static interview never needs.
+  # interest-cohort=() is a cheap, explicit opt-out of FLoC/Topics-style
+  # tracking APIs even though most browsers have retired them.
+  Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=(), usb=(), interest-cohort=()
+  # Redundant with frame-ancestors 'none' above, but free, and read by older
+  # tooling that doesn't know CSP.
+  X-Frame-Options: DENY

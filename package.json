@@ -13,6 +13,7 @@
     "typecheck": "tsc -b --noEmit",
     "data:check": "vitest run tests/data",
     "test:e2e": "playwright test",
+    "test:e2e:prod": "playwright test --config=playwright.prod.config.ts",
     "test:all": "vitest run && playwright test",
     "refresh:income-tables": "node --use-system-ca scripts/refresh-income-tables/index.ts",
     "test:refresh-income-tables": "node --test scripts/refresh-income-tables/lib/__tests__/*.test.ts",
@@ -38,6 +39,7 @@
     "jsdom": "^30.0.1",
     "typescript": "~5.7.2",
     "vite": "^6.0.5",
-    "vitest": "^3.2.7"
+    "vitest": "^3.2.7",
+    "wrangler": "^4.125.0"
   }
 }

@@ -37,6 +37,65 @@ The guarantee is that answers never leave the tab. Concretely:
 
 Closing the tab destroys the data. That is the intended behaviour, not a missing feature.
 
+### Hosting, headers, and log retention
+
+Deployed on **Cloudflare Pages**, chosen specifically because it supports a `public/_headers`
+file — the CSP and other security headers below are real response headers, not a `<meta>`
+tag, which is the degraded form GitHub Pages would have forced (no custom headers there).
+
+**Content-Security-Policy**, in [`public/_headers`](../public/_headers): `default-src 'self'`
+with everything unused set to `'none'`, most importantly `connect-src 'none'` — this turns
+"no network calls at runtime" (above) from a property of the code into one the browser
+enforces. A future contributor adding a CDN font, an analytics snippet, or a stray `fetch`
+gets a blocked request and a console violation, not a silent privacy regression. No
+`'unsafe-inline'` anywhere: the production build (checked before this policy was written) has
+no inline `<script>` or `<style>` blocks, and the one inline `style` prop in the app
+(`App.tsx`'s progress bar) was verified empirically to go through the CSSOM `style` property
+rather than an inline attribute, which Chromium does not treat as covered by `style-src`.
+`tests/e2e/csp.spec.ts` (run via `npm run test:e2e:prod`, see that file and
+`playwright.prod.config.ts` for why a separate config exists — `npm run test:e2e` runs
+against the dev server, which never serves `_headers`) asserts the headers are present on the
+deployed-shape build and that an injected external request is actually refused, not just
+absent by convention.
+
+Also set, each for a specific reason: `Strict-Transport-Security` (force HTTPS; no `preload`
+yet — that's a near-permanent submission to browser vendors' preload lists and belongs to a
+deliberate decision once the production domain is final); `Referrer-Policy: no-referrer` (for
+this audience, a `Referer` header disclosing "came from a benefits-screening tool" is itself a
+meaningful leak — this covers even the same-origin footer link to `/privacy`);
+`X-Content-Type-Options: nosniff`; `Permissions-Policy` denying `geolocation`, `camera`,
+`microphone`, `payment`, `usb`, and `interest-cohort` (an explicit opt-out of FLoC/Topics-style
+tracking APIs); `frame-ancestors 'none'` plus the redundant-but-free `X-Frame-Options: DENY`
+for older tooling.
+
+**Logs and retention.** We do not run our own server or logging — there is nothing for us to
+retain, export, or be compelled to hand over, because we were never given it. On the
+Cloudflare Pages tier this project uses, raw per-request logs (IP, timestamp, path, user
+agent) are not exposed to us at all: that level of log access (Logpull/Logpush) is an
+Enterprise feature. We consider that a feature of this hosting choice for a tool like this,
+not only a limitation: **we can't see what we don't collect.**
+
+The honest limit on that claim: Cloudflare itself, as the infrastructure serving the page,
+still necessarily processes that same connection metadata on its own systems in order to
+operate its network — that is inherent to being a web host, the same way a postal service
+has to read an envelope's address to deliver it. That processing happens under Cloudflare's
+own privacy policy, which we do not control and have no visibility into. We looked for a
+single, authoritative, publicly documented retention period that applies to a plain Cloudflare
+Pages site on our tier and could not find one — the one concrete figure we found (~124 days)
+belongs to an unrelated Enterprise product (Privacy Gateway) and would have been a wrong
+number if quoted here. **Open decision, not yet made:** whether to accept this free-tier
+posture indefinitely, or pursue an arrangement (Enterprise, or a different host) that gives
+this project visibility into and control over that retention window. Until that's decided,
+the public [privacy statement](../public/privacy.html) states only what we've verified —
+no invented number.
+
+**Analytics:** none, and none enabled. Cloudflare Web Analytics is opt-in per-project (not
+on by default for a fresh Pages project) and we have not turned it on.
+
+**Outbound links:** every program/source link already used `rel="noreferrer"` before this
+work (`ProgramCard.tsx`, `Results.tsx`) — `tests/e2e/personas.spec.ts` now asserts that stays
+true as the results panel grows, rather than relying on convention.
+
 ## Data schema
 
 [`src/domain/program.ts`](../src/domain/program.ts) defines one `Program` record.

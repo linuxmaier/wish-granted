@@ -243,6 +243,24 @@ test.describe('the privacy guarantee', () => {
     }));
     expect(stored).toEqual({ local: 0, session: 0, cookies: '', search: '' });
   });
+
+  test('never discloses a referrer on an outbound program or source link', async ({
+    page,
+  }) => {
+    // Regression guard, not new behavior: ProgramCard and Results already set
+    // rel="noreferrer" on every outbound link, because for this audience a
+    // Referer header disclosing "came from a benefits-screening tool" is a
+    // real leak on its own. This just keeps it true as the results panel grows.
+    await page.goto('/');
+    await runInterview(page, CRISIS_FAMILY);
+
+    const outboundLinks = results(page).locator('a[target="_blank"]');
+    const count = await outboundLinks.count();
+    expect(count).toBeGreaterThan(0);
+    for (let i = 0; i < count; i++) {
+      await expect(outboundLinks.nth(i)).toHaveAttribute('rel', /noreferrer/);
+    }
+  });
 });
 
 test.describe('layout', () => {
