@@ -1,0 +1,32 @@
+/**
+ * A normal-looking browser User-Agent. Several sources this refresher depends on (WI state
+ * sites, and historically huduser.gov) block requests carrying an obviously-automated UA
+ * even though their robots.txt permits crawling -- see docs/data-sources.md. Using the same
+ * header for every fetch keeps that workaround in one place.
+ */
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36';
+
+export interface FetchTextResult {
+  status: number;
+  ok: boolean;
+  text: string;
+}
+
+export async function fetchText(url: string): Promise<FetchTextResult> {
+  const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT, Accept: '*/*' } });
+  const text = await res.text();
+  return { status: res.status, ok: res.ok, text };
+}
+
+export interface FetchBufferResult {
+  status: number;
+  ok: boolean;
+  buffer: Buffer;
+}
+
+export async function fetchBuffer(url: string): Promise<FetchBufferResult> {
+  const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT, Accept: '*/*' } });
+  const arrayBuffer = await res.arrayBuffer();
+  return { status: res.status, ok: res.ok, buffer: Buffer.from(arrayBuffer) };
+}
