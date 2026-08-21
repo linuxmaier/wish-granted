@@ -238,4 +238,42 @@ test.describe('layout', () => {
     }));
     expect(scrollW).toBeLessThanOrEqual(clientW);
   });
+
+  /**
+   * A real bug: at 360x640 the fixed mobile-summary strip painted directly
+   * over the Continue button. The button was still `visible` -- Playwright's
+   * default visibility check passed, and so did a naive "is it on screen"
+   * assertion -- but it was not the topmost element at its own centre point,
+   * so a real tap there would have hit the strip instead. Checking
+   * `elementFromPoint` is the same check the browser itself does before
+   * delivering a click, so this is "clickable," not "visible."
+   *
+   * This is deliberately not scoped to the `mobile-360` project: the
+   * assertion is a general invariant (the primary action must always be the
+   * thing a tap on it actually hits), and running it everywhere is what
+   * would have caught the strip covering the button before it was reported.
+   */
+  test('the Continue button is not covered by anything, including the mobile summary strip', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await page.locator('label.choice', { hasText: 'City of Madison' }).first().click();
+
+    const button = page.getByRole('button', { name: 'Continue' });
+    await button.scrollIntoViewIfNeeded();
+
+    const isOnTop = await button.evaluate((el) => {
+      const rect = el.getBoundingClientRect();
+      const top = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      return top === el || el.contains(top);
+    });
+    expect(isOnTop, 'something is painted over the Continue button').toBe(true);
+
+    // And the click actually has to land and do something -- a covered
+    // button can still report "visible" while every click silently hits
+    // whatever sits on top of it instead.
+    const titleBefore = await page.locator('.interview__title').textContent();
+    await button.click();
+    await expect(page.locator('.interview__title')).not.toHaveText(titleBefore ?? '');
+  });
 });
