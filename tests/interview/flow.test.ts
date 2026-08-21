@@ -178,6 +178,77 @@ describe('questions earn their place', () => {
   });
 });
 
+// --- Anchored questions -----------------------------------------------------
+
+describe('a screen can anchor one question ahead of the impact sort', () => {
+  it('every anchorQuestionId names a real question on that screen', () => {
+    // A typo here fails silently otherwise: the anchor just stops taking
+    // effect and every other test still passes. Check it explicitly, and
+    // across all screens so this keeps working when a second screen grows
+    // an anchor later.
+    for (const screen of SCREENS) {
+      if (screen.anchorQuestionId === undefined) continue;
+      expect(
+        screen.questions.some((q) => q.id === screen.anchorQuestionId),
+        `${screen.id} anchors '${screen.anchorQuestionId}', which is not one of its questions`,
+      ).toBe(true);
+    }
+  });
+
+  it('asks housing status before housing trouble, though trouble scores higher', () => {
+    const answers = { state: 'WI', county: 'dane', city: 'madison' };
+    const result = matchAll(PROGRAMS, answers);
+    const housing = SCREENS.find((s) => s.id === 'housing')!;
+    const ordered = relevantQuestions(housing, answers, result);
+
+    expect(ordered.map((q) => q.id)).toEqual(['housing-status', 'housing-trouble']);
+    // Confirms the anchor is doing something: left to impact alone, trouble
+    // would sort first.
+    expect(questionImpact(ordered[1]!, answers, result)).toBeGreaterThan(
+      questionImpact(ordered[0]!, answers, result),
+    );
+  });
+
+  it('still drops an anchored question once nothing undecided depends on it', () => {
+    // Constructed so every housingStatus-dependent program is already
+    // decided by *other* facts, without housingStatus itself being answered:
+    // - dane-eviction-prevention needs facingLossOfHousing, which is false here.
+    // - madison-housing-choice-voucher needs livesIn.madison; city is 'other'.
+    // - wisconsin-weatherization needs income-or-benefits, and both branches
+    //   fail (income is set far above any threshold, currentBenefits is empty).
+    // wheap-crisis-assistance is left over, still waiting on utilityShutoffRisk
+    // and paysHeatingCost (not housingStatus), so the housing screen is still
+    // shown -- this isn't just "the whole screen became irrelevant".
+    const answers = {
+      state: 'WI',
+      county: 'dane',
+      city: 'other',
+      householdSize: 2,
+      annualHouseholdIncome: 200_000,
+      currentBenefits: [] as string[],
+      facingLossOfHousing: false,
+    };
+    const result = matchAll(PROGRAMS, answers);
+    const housing = SCREENS.find((s) => s.id === 'housing')!;
+
+    expect(questionImpact(ALL_QUESTIONS.find((q) => q.id === 'housing-status')!, answers, result)).toBe(
+      0,
+    );
+    expect(relevantQuestions(housing, answers, result).map((q) => q.id)).toEqual(['housing-trouble']);
+  });
+
+  it('leaves non-anchored screens sorted purely by impact', () => {
+    const result = matchAll(PROGRAMS, { state: 'WI', county: 'dane', city: 'madison' });
+    const household = SCREENS.find((s) => s.id === 'household')!;
+    expect(household.anchorQuestionId).toBeUndefined();
+    const ordered = relevantQuestions(household, { state: 'WI', county: 'dane', city: 'madison' }, result);
+    const impacts = ordered.map((q) =>
+      questionImpact(q, { state: 'WI', county: 'dane', city: 'madison' }, result),
+    );
+    expect(impacts).toEqual([...impacts].sort((a, b) => b - a));
+  });
+});
+
 // --- Whole-interview behaviour -------------------------------------------
 
 describe('the interview as a whole', () => {
