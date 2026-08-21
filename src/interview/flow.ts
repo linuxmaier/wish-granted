@@ -60,17 +60,33 @@ export function isQuestionRelevant(
   return questionImpact(question, answers, result) > 0;
 }
 
-/** The questions on a screen still worth asking, most decisive first. */
+/**
+ * The questions on a screen still worth asking, most decisive first -- unless
+ * the screen names an `anchorQuestionId`, in which case that question leads
+ * (when it is still relevant at all) and the rest follow in impact order.
+ *
+ * The anchor is not exempt from the relevance filter: it is scored and
+ * dropped like any other question, so a screen cannot resurrect a question
+ * nothing undecided depends on just because it was marked as the anchor.
+ */
 export function relevantQuestions(
   screen: Screen,
   answers: Answers,
   result: MatchResult,
 ): Question[] {
-  return screen.questions
+  const scored = screen.questions
     .map((question) => ({ question, impact: questionImpact(question, answers, result) }))
-    .filter((q) => q.impact > 0)
-    .sort((a, b) => b.impact - a.impact || a.question.id.localeCompare(b.question.id))
-    .map((q) => q.question);
+    .filter((q) => q.impact > 0);
+
+  const anchorIndex = screen.anchorQuestionId
+    ? scored.findIndex((q) => q.question.id === screen.anchorQuestionId)
+    : -1;
+  const anchor = anchorIndex >= 0 ? scored[anchorIndex] : undefined;
+  const rest = anchor ? scored.filter((_, i) => i !== anchorIndex) : scored;
+
+  rest.sort((a, b) => b.impact - a.impact || a.question.id.localeCompare(b.question.id));
+
+  return anchor ? [anchor.question, ...rest.map((q) => q.question)] : rest.map((q) => q.question);
 }
 
 export function isScreenRelevant(
