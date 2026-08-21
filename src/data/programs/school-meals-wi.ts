@@ -31,7 +31,8 @@ export const schoolMealsWi: Program = {
   ],
 
   howToApply: {
-    url: 'https://dpi.wi.gov/school-nutrition/school-meals/family',
+    // Old URL 404s and has no Wayback snapshot -- reads as never correct.
+    url: 'https://dpi.wi.gov/school-nutrition/program-requirements/free-reduced-meal-eligibility',
     steps: [
       'Get the household application from your district, usually online or in the enrollment packet.',
       'List every child and the household income.',
@@ -41,8 +42,18 @@ export const schoolMealsWi: Program = {
 
   status: 'open',
   source: {
-    url: 'https://dpi.wi.gov/school-nutrition/school-meals/family',
+    url: 'https://dpi.wi.gov/school-nutrition/program-requirements/free-reduced-meal-eligibility',
     name: 'Wisconsin DPI — School Nutrition Programs',
-    lastVerified: null,
+    // Confirmed via direct fetch (curl, standard browser user agent) that
+    // this page is live and current, but it's written for school staff, not
+    // families, and doesn't itself restate the 130%/185% FPL split or dollar
+    // table. That split and the underlying dollar figures are confirmed
+    // instead from the identical USDA NSLP income-eligibility table used by
+    // WIC and Summer EBT (both fetched directly this session, see
+    // wic-wisconsin.ts / sun-bucks-wi.ts), which DPI's own income-guidelines
+    // memo references as the same national standard. The Community
+    // Eligibility Provision caveat (some schools serve free meals to
+    // everyone) is independently confirmed on DHS's Summer EBT qualify page.
+    lastVerified: '2026-08-21',
   },
 };

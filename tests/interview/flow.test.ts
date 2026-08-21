@@ -6,6 +6,7 @@ import { ALL_QUESTIONS, SCREENS, factsSuppliedBy } from '@/interview/screens';
 import type { Question } from '@/interview/screens';
 import {
   isQuestionRelevant,
+  isScreenRelevant,
   nextScreen,
   questionImpact,
   relevantQuestions,
@@ -195,30 +196,35 @@ describe('a screen can anchor one question ahead of the impact sort', () => {
     }
   });
 
-  it('asks housing status before housing trouble, though trouble scores higher', () => {
+  it('asks housing status before housing trouble', () => {
     const answers = { state: 'WI', county: 'dane', city: 'madison' };
     const result = matchAll(PROGRAMS, answers);
     const housing = SCREENS.find((s) => s.id === 'housing')!;
     const ordered = relevantQuestions(housing, answers, result);
 
     expect(ordered.map((q) => q.id)).toEqual(['housing-status', 'housing-trouble']);
-    // Confirms the anchor is doing something: left to impact alone, trouble
-    // would sort first.
-    expect(questionImpact(ordered[1]!, answers, result)).toBeGreaterThan(
-      questionImpact(ordered[0]!, answers, result),
-    );
+    // Every housing-adjacent program in the seed set that gates on
+    // facingLossOfHousing/utilityShutoffRisk/paysHeatingCost (housing-trouble's
+    // facts) is income-tested against the same dane-ami/wi-smi thresholds as
+    // the programs that gate on housingStatus, so at this stage -- nothing but
+    // geography answered -- the two questions tie in raw impact rather than
+    // trouble outscoring status. The anchor's job is to guarantee status leads
+    // regardless of how that tally lands, not to overturn a scoring upset;
+    // assert the tie holds so a future data change that breaks it (giving
+    // trouble a program status can't match) gets noticed here.
+    expect(questionImpact(ordered[1]!, answers, result)).toBe(questionImpact(ordered[0]!, answers, result));
   });
 
-  it('still drops an anchored question once nothing undecided depends on it', () => {
-    // Constructed so every housingStatus-dependent program is already
-    // decided by *other* facts, without housingStatus itself being answered:
-    // - dane-eviction-prevention needs facingLossOfHousing, which is false here.
-    // - madison-housing-choice-voucher needs livesIn.madison; city is 'other'.
-    // - wisconsin-weatherization needs income-or-benefits, and both branches
-    //   fail (income is set far above any threshold, currentBenefits is empty).
-    // wheap-crisis-assistance is left over, still waiting on utilityShutoffRisk
-    // and paysHeatingCost (not housingStatus), so the housing screen is still
-    // shown -- this isn't just "the whole screen became irrelevant".
+  it('drops the anchor along with the rest of the screen once nothing on it is undecided', () => {
+    // High income decides every housing-adjacent program in the seed set --
+    // not just the housingStatus-dependent ones. dane-eviction-prevention
+    // fails on facingLossOfHousing; madison-housing-choice-voucher,
+    // wisconsin-weatherization, madison-water-bill-assistance (MadCAP), and
+    // both WHEAP programs all fail their income test (dane-ami or wi-smi,
+    // both well under $200k for a 2-person household). So this demonstrates
+    // more than "the anchor gets dropped like anything else" -- the whole
+    // screen resolves, proving the anchor cannot keep a screen alive on its
+    // own once nothing on it, anchored or not, is still undecided.
     const answers = {
       state: 'WI',
       county: 'dane',
@@ -234,7 +240,11 @@ describe('a screen can anchor one question ahead of the impact sort', () => {
     expect(questionImpact(ALL_QUESTIONS.find((q) => q.id === 'housing-status')!, answers, result)).toBe(
       0,
     );
-    expect(relevantQuestions(housing, answers, result).map((q) => q.id)).toEqual(['housing-trouble']);
+    expect(questionImpact(ALL_QUESTIONS.find((q) => q.id === 'housing-trouble')!, answers, result)).toBe(
+      0,
+    );
+    expect(relevantQuestions(housing, answers, result)).toEqual([]);
+    expect(isScreenRelevant(housing, answers, result)).toBe(false);
   });
 
   it('leaves non-anchored screens sorted purely by impact', () => {

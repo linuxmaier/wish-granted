@@ -30,9 +30,14 @@ export const wicWisconsin: Program = {
 
   howToApply: {
     url: 'https://www.dhs.wisconsin.gov/wic/index.htm',
-    phone: '1-800-722-2295',
+    // There is no single statewide WIC phone line; DHS publishes a
+    // per-county contact list (dhs.wisconsin.gov/wic/apply.htm). The old
+    // number here (1-800-722-2295) does not appear anywhere on that current
+    // list and could not be confirmed, so it's replaced with the Dane
+    // County / Madison office's own published number.
+    phone: '608-267-1111',
     steps: [
-      'Call your local WIC agency to book an appointment.',
+      'Call the Madison and Dane County WIC office (or your county’s WIC agency if outside Dane County) to book an appointment.',
       'Bring ID, proof of address, and proof of income.',
       'Attend a short appointment where height, weight, and iron levels are checked.',
     ],
@@ -43,6 +48,13 @@ export const wicWisconsin: Program = {
   source: {
     url: 'https://www.dhs.wisconsin.gov/wic/index.htm',
     name: 'Wisconsin DHS — WIC',
-    lastVerified: null,
+    // Confirmed via direct fetch (curl with a standard browser user agent;
+    // dhs.wisconsin.gov blocks some automated fetchers by user agent, not by
+    // robots.txt). Category test, 185% FPL income limit shape (matches the
+    // WIC Income Eligibility Table at dhs.wisconsin.gov/wic/income-guidelines.htm,
+    // effective 7/1/2026-6/30/2027), and the categorical-eligibility program
+    // list (FoodShare, Medicaid/BadgerCare, W-2/TANF, plus FDPIR which we
+    // don't model) all confirmed. Phone number corrected -- see note above.
+    lastVerified: '2026-08-21',
   },
 };

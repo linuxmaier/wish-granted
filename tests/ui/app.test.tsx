@@ -47,7 +47,12 @@ describe('the app', () => {
     await user.click(screen.getByRole('radio', { name: /City of Madison/i }));
 
     // Madison-only programs become reachable the moment location is known.
-    expect(within(results()).getByText(/Housing Choice Voucher/i)).toBeTruthy();
+    // Scoped to the heading role: madison-water-bill-assistance's own
+    // eligibility explanation also mentions "a Housing Choice Voucher" as a
+    // qualifying benefit, so a plain text match now finds two hits.
+    expect(
+      within(results()).getByRole('heading', { name: /Housing Choice Voucher/i }),
+    ).toBeTruthy();
   });
 
   it('rules programs out and explains why, in plain language', async () => {

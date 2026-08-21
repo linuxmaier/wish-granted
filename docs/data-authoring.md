@@ -1,9 +1,12 @@
 # Authoring and verifying program data
 
-> **The seed dataset is currently unverified.** All 15 program records carry
-> `lastVerified: null`, and all three income tables are marked `verified: false`. They were
-> drafted from secondary knowledge, not read off the official sources. Working through the
-> verification pass below is a prerequisite for showing this to the public.
+> **The seed dataset is mostly verified.** 14 of 15 program records now carry a real
+> `lastVerified` date (issue #2). `dane-eviction-prevention` is the one holdout: its income
+> threshold could not be traced to a current, citizen-facing source (see the comment on that
+> record), so it deliberately kept `lastVerified: null` and an unresolved-income `manualReview`
+> rather than a guessed number. All three income tables are still marked `verified: false`
+> (issue #3, in progress separately). Re-verification on the usual cadence still applies --
+> see "Keeping data fresh" below.
 
 ## Why this is treated as a blocker
 

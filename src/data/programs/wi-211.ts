@@ -41,6 +41,17 @@ export const wi211: Program = {
   source: {
     url: 'https://211wisconsin.communityos.org/',
     name: '211 Wisconsin',
-    lastVerified: null,
+    // Confirmed via direct fetch (curl, standard browser user agent; no
+    // robots.txt file exists at this domain, so no crawl restriction is
+    // stated). Page title is "211 Wisconsin," branded with United Way and
+    // referencing 24-hour, confidential service. The 898211 text shortcode
+    // is corroborated by several Wisconsin United Way affiliate sites (not
+    // independently re-confirmed on 211wisconsin.communityos.org itself,
+    // whose content is served through a heavy CMS/JS layer that didn't
+    // render cleanly for a plain fetch). No public API/export exists for
+    // this site (per issue #4's source survey), so this record is limited to
+    // what a person would see visiting the page or dialing 211, which is all
+    // this record needs.
+    lastVerified: '2026-08-21',
   },
 };

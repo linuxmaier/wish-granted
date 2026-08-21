@@ -5,6 +5,26 @@ import { allOf, anyOf, hasAnyOf, incomeAtOrBelow, livesIn } from '@/domain/crite
  * Wisconsin administers SNAP under the name FoodShare and sets its gross income
  * limit at 200% FPL -- higher than the federal 130% floor -- so the rule below
  * uses the Wisconsin number, not the federal one.
+ *
+ * USDA's federal SNAP standard is two income tests: 130% FPL gross AND 100%
+ * FPL net. Wisconsin's broad-based categorical eligibility (BBCE) replaces
+ * the 130% gross test with its own 200% gross test for most households AND
+ * waives the separate net-income test for eligibility purposes -- confirmed
+ * directly from Wisconsin's FoodShare Policy Handbook, Release 26-02 (Aug 12
+ * 2026), section 4.2.1.1 ("Broad-based categorically eligible food units have
+ * no asset test") and section 1.1.4's "Income Test" subsection verbatim:
+ * "Food units that are not categorically eligible must pass the 100% FPL net
+ * income test... Broad-based categorically eligible food units do not have to
+ * pass this test." (emhandbooks.wisconsin.gov/fsh/policy_files/1/11/1.1.4.htm
+ * and .../4/42/4.2.1.htm, fetched directly 2026-08-21.) Net income still
+ * affects the *benefit amount* for BBCE households -- the handbook notes
+ * large assistance groups (3+) with high net income "might not receive
+ * FoodShare benefits" via the allotment calculation -- but that is a benefit
+ * question, not an eligibility one, so it stays out of `eligibility` and is
+ * covered by the existing "amount depends on... income" line in `benefit`.
+ * Do not add a second `incomeAtOrBelow('fpl', 100)` test here: for the ~all
+ * of our applicants who qualify via BBCE (gross <= 200% FPL), it is not a
+ * real eligibility gate, and adding it would wrongly rule people out.
  */
 export const foodshareSnapWi: Program = {
   id: 'foodshare-snap-wi',
@@ -32,10 +52,19 @@ export const foodshareSnapWi: Program = {
     'Adults aged 18-52 without dependents may need to meet work requirements to keep benefits beyond three months.',
     'Some households face an asset limit. Most do not, but it is checked during the application.',
     'Immigration status affects eligibility for some household members. Children are often eligible even when adults are not.',
+    // Sourced from WI FoodShare Policy Handbook 4.2.1.3 / 1.1.4: households
+    // with an elderly, blind, or disabled member and gross income above 200%
+    // FPL fall back to regular SNAP rules -- no gross income limit at all,
+    // just a 100% FPL net-income test after deductions -- so they can still
+    // qualify even though the gross-income check above would say no. We do
+    // not have facts for disability status or the deduction stack needed to
+    // evaluate this, so it stays a caveat rather than a rule.
+    'If your household includes someone who is elderly, blind, or disabled, you may still qualify even with gross income above 200% of the poverty line — a different rule based on income after deductions applies. Check with your county agency or ACCESS Wisconsin.',
   ],
 
   howToApply: {
-    url: 'https://access.wisconsin.gov/',
+    // access.wisconsin.gov 301-redirects here; recorded as the destination.
+    url: 'https://access.wi.gov/',
     phone: '1-800-362-3002',
     steps: [
       'Apply online through ACCESS Wisconsin, by phone, or in person at your county agency.',
@@ -53,6 +82,10 @@ export const foodshareSnapWi: Program = {
   source: {
     url: 'https://www.dhs.wisconsin.gov/foodshare/index.htm',
     name: 'Wisconsin DHS — FoodShare',
-    lastVerified: null,
+    // Confirmed via headless-browser fetch (dhs.wisconsin.gov blocks plain
+    // HTTP fetchers): name, 200% FPL gross income limit table
+    // (dhs.wisconsin.gov/foodshare/fpl.htm, effective 10/1/2025-9/30/2026),
+    // and phone number all match. ACCESS Wisconsin apply URL updated below.
+    lastVerified: '2026-08-21',
   },
 };
