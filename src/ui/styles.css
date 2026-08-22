@@ -488,7 +488,15 @@ body {
   padding: 0;
   min-height: 1.75rem;
   margin-top: var(--space-2);
-  display: inline-flex;
+  /* `flex`, not `inline-flex`: a program card can now show two of these back
+     to back ("Show details" then "Why this result?") with no other content
+     between them when collapsed. As an inline box the two would run together
+     on one line with no gap ("Show detailsWhy this result?") -- JSX drops
+     the whitespace between sibling elements on separate source lines, so
+     nothing separated them. `width: max-content` keeps the block box shrunk
+     to its label instead of stretching to the card's full width. */
+  display: flex;
+  width: max-content;
   align-items: center;
   gap: var(--space-2);
   color: var(--accent);
@@ -590,9 +598,11 @@ body {
 }
 
 /* --- Program cards ---------------------------------------------------------
-   Chrome only -- the information order inside a card belongs to issue #11.
-   This establishes the visual language (spacing, type, color, radius) the
-   card content lives in. */
+   The information order (topline vs. behind the "Show details" disclosure)
+   is decided in ProgramCard.tsx (issue #11); no new classes were needed for
+   it -- expansion reuses .program__summary/.program__steps/.program__caveats
+   and the existing .link-button, just conditionally rendered. This block is
+   the visual language (spacing, type, color, radius) that content lives in. */
 
 .program {
   border: 1px solid var(--line);

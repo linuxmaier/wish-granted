@@ -41,6 +41,10 @@ test.describe('axe-core: automated WCAG 2.2 AA scan', () => {
     expectClean(await runAxe(page));
   });
 
+  // This is also the coverage for issue #11's default state: every program
+  // card's details disclosure starts collapsed (see ProgramCard.tsx for why
+  // -- measured, not assumed), so a plain mid-interview scan already exercises
+  // fifteen collapsed cards across all three buckets without any extra click.
   test('mid-interview, with all three result buckets present', async ({ page }) => {
     await page.goto('/');
     await page.locator('label.choice', { hasText: 'City of Madison' }).first().click();
@@ -49,10 +53,36 @@ test.describe('axe-core: automated WCAG 2.2 AA scan', () => {
     expectClean(await runAxe(page));
   });
 
+  // Issue #11: a program card's own details disclosure ("Show details"),
+  // independent of and in addition to the "why this result?" disclosure
+  // below. Each button's accessible name includes the program name (see
+  // ProgramCard.tsx) so this also stands as coverage that axe sees no
+  // duplicate/ambiguous accessible names among the many identical-looking
+  // buttons a set of results produces.
+  test('a program card\'s details disclosure expanded', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('label.choice', { hasText: 'City of Madison' }).first().click();
+    await page.getByRole('button', { name: /^show details/i }).first().click();
+    expectClean(await runAxe(page));
+  });
+
   test('a "why this result?" disclosure expanded', async ({ page }) => {
     await page.goto('/');
     await page.locator('label.choice', { hasText: 'City of Madison' }).first().click();
     await page.getByRole('button', { name: /why this result/i }).first().click();
+    expectClean(await runAxe(page));
+  });
+
+  // Both of a card's disclosures open at once -- a real state (the two are
+  // independent controls, per issue #11), and the one most likely to surface
+  // any spacing/overlap issue between them.
+  test('a card with both its details and "why this result?" disclosures expanded', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await page.locator('label.choice', { hasText: 'City of Madison' }).first().click();
+    await page.getByRole('button', { name: /^show details/i }).first().click();
+    await page.getByRole('button', { name: /^why this result/i }).first().click();
     expectClean(await runAxe(page));
   });
 
