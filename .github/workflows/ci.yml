@@ -1,0 +1,90 @@
+name: CI
+
+# The full gate: every suite runs on every PR and on every push to main.
+# Cloudflare Pages deploys from main via its own GitHub integration,
+# independent of this workflow -- branch protection on main (requiring this
+# check to pass before merge) is what actually gates a deploy. See
+# docs/deploy.md, "Branch protection" for why that's owner setup this
+# workflow cannot do on its own, and what it does and doesn't cover.
+#
+# Steps are ordered cheapest/fastest-fail first, so a broken PR fails in
+# seconds (typecheck) rather than minutes (a full browser matrix). Node's
+# built-in test runner (test:refresh-income-tables) gets its own step, kept
+# separate from `npm test` (vitest) on purpose -- they are two different
+# runners over two different sets of tests, and a failure should say which
+# one broke, not just "tests failed".
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Pinned to the 24.x line the app was actually developed and verified
+      # against, not the current LTS -- two npm scripts
+      # (refresh:income-tables, test:refresh-income-tables) run .ts files
+      # directly via Node's native TypeScript type-stripping rather than a
+      # transpile step, deliberately, so scripts/refresh-income-tables (#6)
+      # needs zero new dependencies (no tsx, no build step). That behaviour
+      # is absent or flag-gated on Node 22, so pinning to LTS would fail
+      # test:refresh-income-tables below for a version reason, not a code
+      # reason. Verified locally: 19/19 pass on the .nvmrc version. Keep
+      # .nvmrc, this step, and Cloudflare Pages' NODE_VERSION build variable
+      # (docs/deploy.md) all in agreement -- see docs/deploy.md for the full
+      # explanation of why this isn't just "use LTS".
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests (vitest)
+        run: npm test
+
+      - name: Unit tests (Node test runner -- scripts/refresh-income-tables)
+        run: npm run test:refresh-income-tables
+
+      - name: Build
+        run: npm run build
+
+      # Keyed on package-lock.json so a Playwright version bump invalidates
+      # the cache automatically instead of silently reusing stale browsers.
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      # playwright.config.ts sets `reuseExistingServer: !process.env.CI`. If
+      # CI were ever unset here, Playwright would silently reuse a leftover
+      # dev server instead of booting a fresh one against this checkout, and
+      # the suite could pass against the wrong build. GitHub Actions sets CI
+      # for every step by default -- this asserts that rather than trusting
+      # it, so a change to the runner environment fails loudly here instead
+      # of producing a quietly-wrong-but-green e2e run.
+      - name: Assert CI env var is set
+        run: |
+          if [ -z "$CI" ]; then
+            echo "::error::CI is not set in this job's environment. playwright.config.ts uses reuseExistingServer: !process.env.CI, so without CI set, the e2e run below could reuse a leftover dev server and pass against the wrong build instead of this checkout. Refusing to continue."
+            exit 1
+          fi
+          echo "CI='$CI' -- Playwright will start a fresh server, not reuse one."
+
+      - name: E2E tests (desktop / Pixel 7 / mobile-360)
+        run: npm run test:e2e
+
+      - name: E2E tests (production build -- CSP / security headers)
+        run: npm run test:e2e:prod

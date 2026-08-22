@@ -39,6 +39,10 @@ Closing the tab destroys the data. That is the intended behaviour, not a missing
 
 ### Hosting, headers, and log retention
 
+See [`deploy.md`](./deploy.md) for the CI setup, the Cloudflare Pages project configuration,
+branch protection, rollback, and the one-time post-deploy header check -- this section is the
+*why*, that file is the *how*.
+
 Deployed on **Cloudflare Pages**, chosen specifically because it supports a `public/_headers`
 file — the CSP and other security headers below are real response headers, not a `<meta>`
 tag, which is the degraded form GitHub Pages would have forced (no custom headers there).
