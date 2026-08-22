@@ -9,3 +9,10 @@ build/
 playwright-report/
 test-results/
 .wrangler/
+
+# Per-agent/per-developer Playwright configs pointing at a pinned local port.
+# Several worktrees run concurrently and Vite defaults to 5173 in all of them;
+# the shared config must never be edited for one run, so local overrides are
+# expected -- and must not be committed. See the port section in the
+# contributor brief.
+*.local.config.ts
