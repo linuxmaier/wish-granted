@@ -1,6 +1,10 @@
-#!/usr/bin/env node
 // Minimal static file server for tests/e2e/csp.spec.ts, standing in for
 // Cloudflare Pages against a built `dist/`.
+//
+// No shebang: it's invoked as `node tests/e2e/prod-server.mjs` from
+// playwright.prod.config.ts, never executed directly, and #26 established
+// that a shebang here buys nothing while risking Vite's transform cache
+// choking on the leading `#` if this file is ever imported.
 //
 // History: this originally shelled out to `wrangler pages dev`, Cloudflare's
 // own local Pages emulator, on the theory that trusting their `_headers`
