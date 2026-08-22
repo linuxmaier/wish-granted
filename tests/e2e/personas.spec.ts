@@ -379,4 +379,66 @@ test.describe('layout', () => {
       expect(result.obscured, `tab stop ${i} is obscured by something else`).toBe(false);
     }
   });
+
+  /**
+   * Issue #30. `.interview` is `position: sticky` on desktop (min-width:
+   * 901px). When its own content is taller than the viewport, a plain
+   * sticky element pins at `top` and clips its overflow -- and because page
+   * scroll only moves a sticky element while it is inside its own sticky
+   * range, the clipped part is never reachable by scrolling the page at
+   * all. This was found (per the issue) by a keyboard test, not a mouse
+   * one, so this test reproduces it the same way: Tab to the Continue
+   * button and check where the browser's own focus-scroll actually lands
+   * it, rather than driving `window.scrollTo` by hand.
+   *
+   * The failing condition is constructed, not assumed: a short desktop
+   * viewport (901px+ wide so the sticky rule applies, short enough that
+   * today's opening screen already overflows it). The assertion right
+   * after setting it up re-checks that premise on every run -- if a future
+   * content or spacing change ever makes the screen fit, this fails loudly
+   * and tells the next person to shrink the viewport further, instead of
+   * quietly passing while testing nothing (see personas.spec.ts's own
+   * header comment on that failure shape, and issue #30's list of six
+   * prior examples).
+   */
+  test('overflowing interview content is reachable by keyboard on a short desktop viewport', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 400 });
+    await page.goto('/');
+
+    const overflow = await page.evaluate(() => {
+      const el = document.querySelector('.interview');
+      return { contentHeight: el ? el.scrollHeight : 0, viewportHeight: window.innerHeight };
+    });
+    expect(
+      overflow.contentHeight,
+      `test viewport (${overflow.viewportHeight}px tall) no longer produces overflow in ` +
+        `.interview (content is only ${overflow.contentHeight}px) -- shrink the viewport height ` +
+        'in this test until the opening screen overflows it again, or this test is vacuous'
+    ).toBeGreaterThan(overflow.viewportHeight);
+
+    let reachedContinue = false;
+    for (let i = 0; i < 15; i += 1) {
+      await page.keyboard.press('Tab');
+      const text = await page.evaluate(() => document.activeElement?.textContent?.trim() ?? null);
+      if (text === 'Continue') {
+        reachedContinue = true;
+        break;
+      }
+    }
+    expect(reachedContinue, 'Tab never reached the Continue button within 15 stops').toBe(true);
+
+    const rect = await page.evaluate(() => {
+      const r = document.activeElement!.getBoundingClientRect();
+      return { top: r.top, bottom: r.bottom };
+    });
+    const reachable = rect.top < overflow.viewportHeight && rect.bottom > 0;
+    expect(
+      reachable,
+      `Continue button is off-screen after the browser's own focus-scroll (top=${rect.top}, ` +
+        `bottom=${rect.bottom}, viewport height=${overflow.viewportHeight}) -- overflowing ` +
+        '.interview content is trapped behind position: sticky'
+    ).toBe(true);
+  });
 });

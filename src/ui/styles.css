@@ -265,11 +265,21 @@ body {
   padding: var(--space-5);
 }
 
-/* The interview sticks while the results scroll on wide screens. */
+/* The interview sticks while the results scroll on wide screens. Issue #30:
+   when .interview's own content is taller than the viewport, a plain sticky
+   element pins at `top` and simply clips its overflow -- page scroll can't
+   reach the clipped part, because scroll only moves the element while its
+   sticky range (bounded by the taller .results sibling) is active. Giving it
+   its own max-height + overflow-y makes the excess content scroll inside the
+   panel instead of being trapped off-screen. When content fits (today's
+   common case), max-height exceeds it and this is a no-op -- no scrollbar,
+   no visual change. */
 @media (min-width: 901px) {
   .interview {
     position: sticky;
     top: var(--space-4);
+    max-height: calc(100vh - var(--space-4) * 2);
+    overflow-y: auto;
   }
 }
 

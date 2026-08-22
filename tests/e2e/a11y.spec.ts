@@ -110,4 +110,42 @@ test.describe('axe-core: automated WCAG 2.2 AA scan', () => {
     await expect(page.getByText(/that is everything we need to ask/i)).toBeVisible();
     expectClean(await runAxe(page));
   });
+
+  // Issue #30's fix (max-height + overflow-y: auto on .interview at desktop
+  // widths) makes it a scrollable region for the first time whenever its
+  // content overflows a short viewport. Axe's scrollable-region-focusable
+  // rule exists for exactly that shape: a scrollable container a
+  // keyboard-only user cannot get into. Every state below is confirmed
+  // (personas.spec.ts's "layout" describe block) to overflow this viewport,
+  // so this isn't a viewport that merely could exercise the rule -- it does.
+  test.describe('at a short desktop viewport where .interview scrolls internally', () => {
+    test.beforeEach(async ({ page }) => {
+      await page.setViewportSize({ width: 1280, height: 400 });
+    });
+
+    test('the opening screen', async ({ page }) => {
+      await page.goto('/');
+      expectClean(await runAxe(page));
+    });
+
+    test('mid-interview, with all three result buckets present', async ({ page }) => {
+      await page.goto('/');
+      await page.locator('label.choice', { hasText: 'City of Madison' }).first().click();
+      await page.getByRole('button', { name: 'Continue' }).click();
+      await page.locator('.number input').first().fill('3');
+      expectClean(await runAxe(page));
+    });
+
+    test('the "everything we need to ask" completion screen', async ({ page }) => {
+      await page.goto('/');
+      await page.locator('label.choice', { hasText: 'Outside Wisconsin' }).first().click();
+      for (let i = 0; i < 8; i += 1) {
+        const button = page.getByRole('button', { name: 'Continue' });
+        if (!(await button.isVisible())) break;
+        await button.click();
+      }
+      await expect(page.getByText(/that is everything we need to ask/i)).toBeVisible();
+      expectClean(await runAxe(page));
+    });
+  });
 });
