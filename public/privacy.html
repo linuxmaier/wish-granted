@@ -1,0 +1,126 @@
+<!doctype html>
+<!--
+  Standalone static page -- deliberately NOT part of the Vite/React build.
+  Wish Granted has no router by design (see docs/design.md, "Privacy
+  architecture"): screen transitions are local state, so nothing leaks
+  through browser history. A router entry for "/privacy" would cut against
+  that on the one page where trust matters most, so this is plain HTML,
+  copied byte-for-byte into the build by Vite's public/ handling and served
+  by Cloudflare Pages at /privacy (extensionless HTML is served automatically
+  -- no redirect rule needed). It shares public/_headers with the rest of
+  the site, so the same strict CSP applies here too.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy &mdash; Wish Granted</title>
+    <meta
+      name="description"
+      content="What Wish Granted stores about you (nothing), what the host necessarily sees, and why."
+    />
+    <link rel="stylesheet" href="/privacy.css" />
+  </head>
+  <body>
+    <main class="page">
+      <h1>Privacy</h1>
+      <p class="lede">
+        Short version: we don't want your information, we don't ask for it, and we
+        couldn't hand it over even if someone made us, because we never have it.
+      </p>
+
+      <div class="card">
+        <p><strong>Nothing you answer here is ever sent anywhere.</strong></p>
+        <p>
+          Wish Granted runs entirely in your browser. When you answer a question, that
+          answer is held in memory on your device, used to figure out which programs to
+          show you, and then it's gone &mdash; closing or reloading the tab erases it.
+          There is no server that receives your answers, because the app never sends
+          them. There's nothing to opt out of, because nothing is being collected.
+        </p>
+      </div>
+
+      <h2>What we don't have</h2>
+      <ul>
+        <li>No accounts, no sign-in, no email address collected.</li>
+        <li>No cookies, and nothing written to your browser's storage.</li>
+        <li>No analytics script, no ad tracker, and nothing that identifies you or follows
+          you from one visit to the next. The hosting service's own dashboard does show
+          us a running total of requests to the site &mdash; a single aggregate number,
+          not something we installed or can turn off, and it says nothing about who
+          visited, where from, or what anyone answered.</li>
+        <li>Your answers never appear in the page's web address, so they can't end up in
+          your browser history or in a link you accidentally share.</li>
+      </ul>
+      <p>
+        You don't have to take our word for any of this. This site sends a
+        <a
+          href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CSP"
+          target="_blank"
+          rel="noreferrer"
+          >Content-Security-Policy</a
+        >
+        header that refuses, at the browser level, to let this page open a connection to
+        send data anywhere &mdash; no background request of any kind (the technical terms
+        are <code>fetch</code>, <code>XHR</code>, <code>WebSocket</code>), not even one
+        back to us. That's what actually enforces "your answers never leave your
+        browser": not us choosing not to send anything, but the browser refusing to let
+        the page try. You can check it yourself in developer tools, under Network or
+        Application &rarr; Security &mdash; look for <code>connect-src 'none'</code> in
+        the policy. (You will still see this page's own script and stylesheet load when
+        you first open it; that's normal, same-origin, and the one thing the policy does
+        allow.)
+      </p>
+
+      <h2>What the site you're on necessarily sees</h2>
+      <p>
+        This is true of every website, not just this one, and it isn't something we
+        collect &mdash; it's how the web works. To send you this page at all, the
+        infrastructure that hosts it (Cloudflare) has to process your IP address, the
+        time of your visit, and which page you requested, the same as any postal service
+        has to read the address on an envelope to deliver it.
+      </p>
+      <p>
+        We do not run our own server and we have no dashboard, log file, or export that
+        shows us that information. On the hosting plan we use, we were never given
+        access to raw visit logs in the first place. We think that's the right way to
+        build this: we can't see what we were never given, we can't be compelled to hand
+        over something we don't have, and there's no log of yours sitting somewhere for
+        us to lose or mishandle.
+      </p>
+      <p>
+        That said, we're being precise, not evasive: Cloudflare, as the infrastructure
+        we run on, still processes that connection information on its own systems in
+        order to operate its network, under its own privacy policy &mdash; which we
+        don't control and don't have visibility into. If you want the specifics of how
+        long Cloudflare itself retains that operational data, see
+        <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noreferrer"
+          >Cloudflare's privacy policy</a
+        >.
+      </p>
+
+      <h2>Links to other sites</h2>
+      <p>
+        Every program shown links to the government or agency page it was written from,
+        so you can confirm it yourself. Those are links to other organizations' websites,
+        which have their own privacy practices we don't control. We do send those links
+        without a referrer, so the site you land on has no way to see that you came from
+        a benefits-screening tool.
+      </p>
+
+      <h2>Questions</h2>
+      <p>
+        Wish Granted is an unofficial, volunteer-built project &mdash; see the source and
+        file an issue on
+        <a
+          href="https://github.com/linuxmaier/wish-granted"
+          target="_blank"
+          rel="noreferrer"
+          >GitHub</a
+        >.
+      </p>
+
+      <a class="back" href="/">&larr; Back to Wish Granted</a>
+    </main>
+  </body>
+</html>

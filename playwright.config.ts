@@ -10,6 +10,11 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './tests/e2e',
+  // csp.spec.ts needs public/_headers applied, which only a production build
+  // serves (see playwright.prod.config.ts / `npm run test:e2e:prod`). The dev
+  // server here has no headers at all, so that file would fail for a reason
+  // that has nothing to do with the CSP itself -- excluded here on purpose.
+  testIgnore: ['**/csp.spec.ts'],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

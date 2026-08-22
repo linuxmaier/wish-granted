@@ -1,0 +1,117 @@
+/*
+ * Standalone stylesheet for public/privacy.html.
+ *
+ * This page is deliberately outside the Vite/React build (see docs/design.md,
+ * "Privacy architecture" and the note in privacy.html) so it can't grow a
+ * router or a state dependency on the app. That means it can't import
+ * src/ui/styles.css either -- so the tokens below are a hand copy of the
+ * subset actually used here (colors, type, spacing), not a generated file.
+ * If the "Quiet civic" palette in src/ui/styles.css changes, update this
+ * file too. tests/e2e/csp.spec.ts asserts the --bg/--ink/--accent color
+ * values stay in sync between the two files so a drift doesn't go silent.
+ */
+
+:root {
+  --bg: #f7f5f0;
+  --surface: #ffffff;
+  --ink: #201f1a;
+  --ink-soft: #5b564c;
+  --line: #e3ded2;
+  --accent: #2a6b52;
+
+  --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', serif;
+  --font-sans:
+    system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-md: 1.125rem;
+  --text-lg: 1.4375rem;
+  --text-xxl: 2.3125rem;
+
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+
+  --radius-card: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15171a;
+    --surface: #1e2023;
+    --ink: #ede9e0;
+    --ink-soft: #aba69c;
+    --line: #34363a;
+    --accent: #7fcba4;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: var(--text-base) / 1.6 var(--font-sans);
+  -webkit-text-size-adjust: 100%;
+}
+
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4) var(--space-7);
+}
+
+h1 {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-serif);
+  font-size: var(--text-xxl);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  margin: var(--space-6) 0 var(--space-3);
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+p,
+ul {
+  margin: 0 0 var(--space-4);
+}
+
+li {
+  margin-bottom: var(--space-2);
+}
+
+.lede {
+  font-size: var(--text-md);
+  color: var(--ink-soft);
+}
+
+.card {
+  margin: var(--space-5) 0;
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+a {
+  color: var(--accent);
+}
+
+.back {
+  display: inline-block;
+  margin-top: var(--space-6);
+  font-size: var(--text-sm);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
