@@ -11,11 +11,15 @@
  * own link text rendered -- not that the destination resolved (issue #19).
  *
  *   node scripts/check-links.mjs          # report only, always exits 0
- *   node scripts/check-links.mjs --strict # exit 1 on any dead or redirected link
+ *   node scripts/check-links.mjs --strict # exit 1 on a dead link (not a redirect)
  *
- * A redirect is reported, not failed by default: agency sites reorganise
- * constantly and a 301 to a live page is a nudge to update a record, not a
- * broken build. --strict is for CI once the URLs are known good (issue #15).
+ * A redirect is reported, never failed, even under --strict: agency sites
+ * reorganise constantly and a 301 to a live page is a nudge to update a
+ * record, not a broken build. A scheduled job that fails most weeks for a
+ * benign reason is a job everyone learns to ignore, which is worse than not
+ * having it -- see the scheduled workflow in .github/workflows/check-links.yml
+ * (issue #15). Only an actually dead link (4xx/5xx/network error) fails
+ * --strict.
  */
 
 import { readFileSync, readdirSync } from 'node:fs';
@@ -83,4 +87,5 @@ if (dead.length || moved.length) {
   );
 }
 
-if (process.argv.includes('--strict') && (dead.length || moved.length)) process.exit(1);
+// Only a dead link fails --strict; a redirect is informational (see docblock).
+if (process.argv.includes('--strict') && dead.length) process.exit(1);

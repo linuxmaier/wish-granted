@@ -1,0 +1,29 @@
+name: Check links
+
+# Opt-in, scheduled, never a PR gate -- see scripts/check-links.mjs's own
+# docblock. This hits live agency sites; a redirect there is a nudge to
+# update a record, not a reason to fail somebody's build, so --strict here
+# only fails on an actually dead link (script enforces that, not this
+# workflow). Weekly is enough to catch real link rot without being noisy.
+on:
+  schedule:
+    - cron: '0 13 * * 1' # Monday, 13:00 UTC
+  workflow_dispatch: {}
+
+jobs:
+  check-links:
+    name: Check program/resource links
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check links (fails only on dead links, not redirects)
+        run: npm run check:links -- --strict
