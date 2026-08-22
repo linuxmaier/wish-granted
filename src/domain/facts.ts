@@ -39,6 +39,8 @@ export const FACT_KEYS = [
   // --- Situation -----------------------------------------------------------
   'currentBenefits',
   'employmentStatus',
+  // See the FactSpec below for why this is a boolean, not a dollar figure.
+  'recentIncomeDrop',
 
   // --- Declared but not asked in v1 ---------------------------------------
   // Reserved so the schema can carry the deferred categories (veterans,
@@ -139,6 +141,13 @@ export const BENEFIT_ENROLLMENTS = [
   'w2-tanf',
   'wheap-energy-assistance',
   'housing-choice-voucher',
+  // Confirmed on Lifeline's own qualify page (see lifeline-phone-internet.ts's
+  // source note) as one of Lifeline's categorical-eligibility programs. Added
+  // to the shared checklist rather than a per-program caveat: this is already
+  // one `multi` question, so the marginal cost of one more checkbox is zero,
+  // and a caveat would leave someone in federal public housing wrongly ruled
+  // out instead of correctly matched. See docs/design.md, issue #9.
+  'federal-public-housing',
 ] as const;
 
 export const FACTS: Readonly<Record<FactKey, FactSpec>> = {
@@ -248,6 +257,7 @@ export const FACTS: Readonly<Record<FactKey, FactSpec>> = {
       'w2-tanf': 'Wisconsin Works (W-2)',
       'wheap-energy-assistance': 'WHEAP energy assistance',
       'housing-choice-voucher': 'a Housing Choice Voucher',
+      'federal-public-housing': 'Federal Public Housing Assistance',
     },
   },
   employmentStatus: {
@@ -262,6 +272,27 @@ export const FACTS: Readonly<Record<FactKey, FactSpec>> = {
       'unable-to-work': 'unable to work',
       student: 'a student',
     },
+  },
+  /**
+   * WHEAP's real income test looks at one prior month, annualized -- not the
+   * full year `annualHouseholdIncome` asks for (see docs/design.md, issue #9,
+   * quoting the WHEAP PY26 Manual). A household whose annual figure is too
+   * high can still pass the real test after a recent layoff.
+   *
+   * We deliberately ask "has it dropped?" rather than "what was last month's
+   * income?": a precise recent-month dollar figure is hard to estimate
+   * accurately mid-crisis, and even a precise one couldn't be safely compared
+   * against the WHEAP income table without parameterising `incomeAtOrBelow`'s
+   * fact source in the engine, which is out of scope here (tracked as a
+   * follow-up issue). This fact only ever keeps a program from being wrongly
+   * ruled out on income -- it never turns a `manualReview` branch into a
+   * `pass` -- see the WHEAP/weatherization program records.
+   */
+  recentIncomeDrop: {
+    key: 'recentIncomeDrop',
+    type: 'boolean',
+    label: 'household income has dropped significantly in the last month or two',
+    negated: 'household income has not changed significantly in the last month or two',
   },
 
   isVeteran: {

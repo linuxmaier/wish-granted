@@ -21,7 +21,17 @@ export const lifelinePhoneInternet: Program = {
 
   eligibility: anyOf(
     incomeAtOrBelow('fpl', 135),
-    hasAnyOf('currentBenefits', ['snap-foodshare', 'medicaid-badgercare', 'ssi', 'housing-choice-voucher']),
+    hasAnyOf('currentBenefits', [
+      'snap-foodshare',
+      'medicaid-badgercare',
+      'ssi',
+      'housing-choice-voucher',
+      // Added per issue #9: this record's own source note below already
+      // named Federal Public Housing Assistance as one of Lifeline's
+      // categorical-eligibility programs; it just wasn't wired into the
+      // fact vocabulary yet. See facts.ts's BENEFIT_ENROLLMENTS.
+      'federal-public-housing',
+    ]),
   ),
   eligibilityCaveats: [
     'One discount per household, not per person.',
@@ -50,8 +60,10 @@ export const lifelinePhoneInternet: Program = {
     // Federal Poverty Guidelines"), $9.25 standard monthly discount, and the
     // categorical-eligibility program list, which also includes Federal
     // Public Housing Assistance and Housing Choice Voucher (added 'ssi' was
-    // already present; added 'housing-choice-voucher' above). The phone
-    // number was not found on either fetched page directly, but is
+    // already present; added 'housing-choice-voucher' above; issue #9 added
+    // 'federal-public-housing' to BENEFIT_ENROLLMENTS and wired it in here,
+    // finishing what this note had already found but not yet encoded). The
+    // phone number was not found on either fetched page directly, but is
     // corroborated by USAC's own contact page and the FCC's Lifeline
     // consumer page via search, so kept rather than dropped.
     lastVerified: '2026-08-21',

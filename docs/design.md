@@ -248,6 +248,106 @@ engine that got them slightly wrong would tell a family they are ineligible when
 not. That is the worst error this app can make. v1 declines to encode it; affected programs
 carry a plain-language caveat and stay in "might qualify".
 
+### Frequency alone doesn't decide whether a fact earns a question (issue #9)
+
+Issue #9 re-derived the fact vocabulary from what the (by then verified, per #2/#3) 15-program
+corpus actually gates on, not from the 15 hand-picked programs the interview was originally
+designed around. Raw counts: `state` gates 14/15 programs, `annualHouseholdIncome`/
+`householdSize` 10/15, `currentBenefits` 8/15, `county` 5/15, `housingStatus` 3/15,
+`hasSchoolAgeChild` 2/15, and six facts — `city`, `facingLossOfHousing`, `utilityShutoffRisk`,
+`paysHeatingCost`, `isPregnantOrPostpartum`, `hasChildUnder5` — each gate exactly 1/15. The
+five deferred facts above (`age`, `citizenshipStatus`, `employmentStatus`, `isVeteran`,
+`hasDisability`) gate 0/15, confirming they stay deferred; nothing in the corpus contradicts
+that decision.
+
+The naive reading of "gates 1/15 programs" is "demote it to an `eligibilityCaveat`." That
+reading is wrong, and worth recording so nobody re-derives and re-applies it: every one of
+those six single-use facts already rides inside an existing checklist —
+`facingLossOfHousing`/`utilityShutoffRisk`/`paysHeatingCost` in the housing-trouble flags
+question, `isPregnantOrPostpartum`/`hasChildUnder5`/`hasSchoolAgeChild` in the
+household-members flags question — at **zero marginal question cost**. The checklist screen
+renders either way; demoting one of its facts to a caveat wouldn't shorten anyone's interview,
+it would only strip the engine's ability to resolve WHEAP crisis assistance or eviction
+prevention to a definite "eligible"/"ruled out", pushing them into "might qualify" for
+*everyone* instead. That is a regression dressed as a simplification. The right test for
+whether a fact earns a question is **marginal cost**, not raw frequency — and by that test all
+13 currently-asked facts already clear the bar. See `tests/data/vocabulary.test.ts`'s existing
+"asks nothing the rules never consult" check, which already enforced the corollary (nothing
+here was a dead question) without anyone having spelled out why demoting them would be wrong.
+
+The same marginal-cost logic runs the other way for `BENEFIT_ENROLLMENTS`: Lifeline's own
+verified source note (`lifeline-phone-internet.ts`) named "Federal Public Housing Assistance"
+as one of its categorical-eligibility programs, previously left out of the shared
+`currentBenefits` checklist. Since that checklist is already one `multi` question, adding the
+option costs nothing extra to ask — and the alternative (a caveat) would leave someone in
+federal public housing above the income limit *wrongly ruled out*, rather than correctly
+matched. Added to `BENEFIT_ENROLLMENTS` rather than a caveat for that reason.
+
+### Recent income (issue #9)
+
+The "Known gaps" section below used to note that WHEAP's real income test didn't match our
+annual-income question, and that the model should eventually carry a recent-income fact. That
+gap is now closed, deliberately narrowly:
+
+- **`recentIncomeDrop` is a boolean ("has your income dropped recently?"), not a dollar
+  figure.** A precise recent-month income number is hard to estimate accurately mid-crisis,
+  and even a precise one couldn't be safely compared against the WHEAP income table without
+  parameterising `incomeAtOrBelow`'s fact source in the engine (`src/engine/evaluate.ts`,
+  `src/domain/criteria.ts`) — a real change, filed as #34 rather than bundled here. The
+  boolean version and the numeric version resolve the same way operationally either
+  way (a household that answers "yes" is routed to their county agency, because this app
+  cannot responsibly compute WHEAP eligibility from a self-estimated figure) — what the
+  numeric version would buy is a *definite* answer instead of "might qualify", which is a real
+  but separable improvement.
+- **It can only rescue a `fail`, never manufacture a `pass`.** `wheap-energy-assistance.ts`,
+  `wheap-crisis-assistance.ts`, and `wisconsin-weatherization.ts` each add a third `anyOf`
+  branch: `allOf(isTrue('recentIncomeDrop'), manualReview(...))`. Because `manualReview`
+  always evaluates `unknown`, this branch can only hold a program at "might qualify" instead
+  of letting it be wrongly ruled out on an annual figure that may no longer reflect the
+  household's situation — it can never turn the branch, or the program, into an outright
+  `pass`. That asymmetry is deliberate: under-claiming beats over-claiming, always.
+  Weatherization's rescue branch is worded more cautiously than the two WHEAP-named records
+  ("this program's income test *may* look at recent income...") because the "Home Energy Plus"
+  umbrella link connecting it to WHEAP's own PY26-manual citation is inferential, not
+  independently confirmed for Weatherization's income-test timing specifically — flagged in
+  that file's own comment for whoever next verifies the record.
+- **Placement had to fight the impact ranking, twice, not just use it.** The question lives on
+  its own screen (`recent-income`), gated by a `showIf` requiring `housingStatus` and
+  `paysHeatingCost` to already be known. Two earlier placements were tried and both failed a
+  real test before this one, worth recording so nobody repeats either attempt:
+  1. On the `household` screen (alongside income), with no guard: every WHEAP-family program
+     starts out undecided, so `recentIncomeDrop` sat in their `missingFacts` before annual
+     income was even known — asked of nearly everyone in Wisconsin.
+  2. Sharing the `situation` screen with `current-benefits`, gated by `showIf` alone: this
+     fixed problem 1, but `current-benefits` alone often has enough independent impact to make
+     `situation` outrank `housing` in the impact sort *before* `recentIncomeDrop`'s `showIf`
+     ever turns true. Screens are never revisited once shown (the back-button-trustworthiness
+     invariant), so `situation` got "used up" on `current-benefits` alone and this question
+     silently never got offered — a real Playwright run against the actual UI caught this; the
+     unit-test harness in `tests/interview/flow.test.ts` did not, because it always answers
+     whatever's on a screen the instant it's shown, which never exercises "a screen was visited
+     before this question's precondition became true."
+
+  A dedicated single-question screen fixes both: with only one question and a `showIf` guard,
+  `screenImpact` (flow.ts, which skips `showIf`-hidden questions) is forced to zero until
+  `housingStatus` and `paysHeatingCost` are both known, so the screen itself is never
+  *relevant* — and therefore never visited — until its precondition holds. It cannot be "used
+  up" by an unrelated question the way sharing a screen allowed. Every WHEAP-family program
+  also gates directly (outside the income `anyOf`) on one of those facts, which guarantees the
+  `housing` screen stays relevant and gets shown first, so there is no circular wait between
+  the two screens. See `src/interview/screens.ts`'s `recent-income` screen comment and
+  `tests/interview/flow.test.ts`'s "the recent income drop question (issue #9)" block for the
+  mechanism-level proof, and `tests/e2e/personas.spec.ts`'s `LAYOFF_MADISON` persona for the
+  real-browser regression test that caught attempt 2.
+- **Measured cost.** Zero extra questions for a household that already passes on annual income
+  (`madisonFamily`-shaped personas) or is out of state — `recentIncomeDrop` never enters their
+  `answers` at all. Zero extra questions for a household ruled out by a non-income fact first
+  (doesn't pay heat, no shutoff risk, doesn't rent or own). Exactly one extra question — at the
+  very end of the interview, after everything else is settled — for a household whose annual
+  income and current benefits both fail the WHEAP-family test and who does pay heat/rent or
+  own. That population gaining one question is the fix working as intended, not a cost to
+  apologize for.
+
 ## Visual design
 
 Issue #10 asked for a deliberate pass: "approachable yet professional... calm, uncluttered,
@@ -497,14 +597,15 @@ bucket.
   [data-authoring.md](data-authoring.md).
 - **No Spanish or Hmong.** Both matter for this audience in Dane County. No i18n framework
   is wired in yet, and retrofitting one will touch every string.
-- **Income is asked as an annual figure**, but WHEAP actually counts a single prior month,
-  annualized (×12) — not the "last three months" this note previously (and incorrectly)
-  claimed. Per the WHEAP PY26 Manual: "The HE+ Program uses a prior month income test which
-  is annualized to determine program income eligibility." This cuts the other way from what
-  was assumed here: a one-month test is *more* forgiving to someone recently laid off than
-  our annual-income question implies, since only their now-lower most recent month counts,
-  not an average that still includes higher pre-layoff earnings. The model should eventually
-  carry a recent-income fact so the interview can ask what WHEAP actually asks, rather than
-  approximating it with a full-year figure.
+- ~~Income is asked as an annual figure, but WHEAP actually counts a single prior month,
+  annualized~~ — **addressed in issue #9.** `recentIncomeDrop` (a boolean, not a recomputed
+  dollar figure — see "Recent income" above for why) now keeps `wheap-energy-assistance`,
+  `wheap-crisis-assistance`, and `wisconsin-weatherization` from being wrongly ruled out on an
+  annual figure that may no longer reflect a household's situation after a recent layoff. What
+  remains open: a *numeric* version — parameterising `incomeAtOrBelow`'s fact source so the
+  engine could test a household-size-adjusted, prior-month-annualized figure directly instead
+  of routing to a manual check — would convert "might qualify, call to check" into a definite
+  answer. That needs engine changes (`src/domain/criteria.ts`, `src/engine/evaluate.ts`,
+  `src/engine/thresholds.ts`) outside issue #9's scope; filed as #34.
 - **Screens are ordered by impact but grouped by hand.** Fine at 15 programs; worth
   revisiting well before 100.

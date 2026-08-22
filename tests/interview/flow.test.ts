@@ -107,6 +107,44 @@ const outOfState: Answers = {
   city: 'other',
 };
 
+// Issue #9: a household whose annual income is too high for WHEAP, but who
+// pays a heating bill and rents (so wheap-energy-assistance and
+// wisconsin-weatherization stay genuinely undecided on income alone), and
+// who has no recent income change. Distinct from `wellOffNoHeat` below only
+// in `paysHeatingCost`/`utilityShutoffRisk`/`housingStatus` -- that
+// difference is the whole point of the persona pair.
+const wellOffStable: Answers = {
+  state: 'WI',
+  county: 'dane',
+  city: 'other',
+  householdSize: 2,
+  annualHouseholdIncome: 200_000,
+  hasChildUnder5: false,
+  isPregnantOrPostpartum: false,
+  hasSchoolAgeChild: false,
+  housingStatus: 'renting',
+  paysHeatingCost: true,
+  facingLossOfHousing: false,
+  utilityShutoffRisk: false,
+  currentBenefits: [],
+  recentIncomeDrop: false,
+};
+
+// Same household, but a recent layoff explains the high annual figure.
+const recentlyLaidOff: Answers = { ...wellOffStable, recentIncomeDrop: true };
+
+// Same income and benefits as `wellOffStable`, but doesn't pay a heating
+// bill, isn't at shutoff risk, and doesn't rent or own -- every WHEAP-family
+// program is ruled out by a fact other than income before the dedicated
+// `recent-income` screen's `showIf` could ever turn true, so the screen
+// itself never becomes relevant and the question never comes up.
+const wellOffNoHeat: Answers = {
+  ...wellOffStable,
+  housingStatus: 'living-with-others',
+  paysHeatingCost: false,
+  utilityShutoffRisk: false,
+};
+
 // --- Compound questions ---------------------------------------------------
 
 describe('one answer settles as many facts as it can', () => {
@@ -252,6 +290,17 @@ describe('a screen can anchor one question ahead of the impact sort', () => {
     // more than "the anchor gets dropped like anything else" -- the whole
     // screen resolves, proving the anchor cannot keep a screen alive on its
     // own once nothing on it, anchored or not, is still undecided.
+    //
+    // `recentIncomeDrop: false` is load-bearing here, not incidental (issue
+    // #9): the three wi-smi programs now carry a rescue branch that keeps
+    // them at "maybe" -- regardless of the income test failing -- until this
+    // fact is known, precisely so a $200k/year household who was laid off
+    // last month isn't wrongly ruled out. This persona explicitly has not
+    // had a recent drop, which is what lets the income failure resolve the
+    // programs outright and the housing screen fall away. Omitting it would
+    // leave utilityShutoffRisk/paysHeatingCost genuinely relevant again
+    // (they're an independent path to ruling the programs out), which is
+    // correct new behaviour, not a bug -- see wheap-crisis-assistance.ts.
     const answers = {
       state: 'WI',
       county: 'dane',
@@ -260,6 +309,7 @@ describe('a screen can anchor one question ahead of the impact sort', () => {
       annualHouseholdIncome: 200_000,
       currentBenefits: [] as string[],
       facingLossOfHousing: false,
+      recentIncomeDrop: false,
     };
     const result = matchAll(PROGRAMS, answers);
     const housing = SCREENS.find((s) => s.id === 'housing')!;
@@ -443,6 +493,87 @@ describe('the interview as a whole', () => {
       const notes = match.reasons.filter((r) => r.note !== undefined);
       expect(notes.length, `${match.program.id} has no explanation`).toBeGreaterThan(0);
     }
+  });
+});
+
+// --- Recent income drop (issue #9) -----------------------------------------
+
+/**
+ * WHEAP's real income test looks at one prior month, annualized, not the
+ * whole year -- so someone whose annual figure fails could still pass the
+ * real test after a recent layoff (see facts.ts's `recentIncomeDrop` and the
+ * WHEAP program records). These tests prove the fix does its job on both
+ * ends: it rescues the household it exists for, and it costs nothing extra
+ * for households it doesn't apply to -- interview length, measured directly
+ * via `runInterview`'s question count, not asserted by description.
+ */
+describe('the recent income drop question (issue #9)', () => {
+  it('is never asked when WHEAP-family programs already resolve on annual income', () => {
+    // madisonFamily's $30,000 income for a household of 4 is comfortably
+    // under wi-smi -- the anyOf resolves to `pass` before `recentIncomeDrop`
+    // ever matters, so the fact is never among the facts this persona is
+    // asked about at all.
+    const { answers } = runInterview(madisonFamily);
+    expect('recentIncomeDrop' in answers).toBe(false);
+  });
+
+  it('is never asked of someone outside Wisconsin', () => {
+    const { answers } = runInterview(outOfState);
+    expect('recentIncomeDrop' in answers).toBe(false);
+  });
+
+  it('is never asked when WHEAP-family programs are already ruled out by a non-income fact', () => {
+    // Same income and benefits as `wellOffStable` below, but doesn't pay
+    // heat, isn't at shutoff risk, and doesn't rent or own -- every
+    // WHEAP-family program fails on `paysHeatingCost` / `utilityShutoffRisk`
+    // / `housingStatus`, which are exactly the facts the dedicated
+    // `recent-income` screen's `showIf` waits on -- so that screen never
+    // even becomes relevant, and the question never surfaces.
+    const { answers } = runInterview(wellOffNoHeat);
+    expect('recentIncomeDrop' in answers).toBe(false);
+  });
+
+  it('is asked, and correctly rules WHEAP-family programs out, for a well-off household with no recent change', () => {
+    const run = runInterview(wellOffStable);
+    expect(run.answers.recentIncomeDrop).toBe(false);
+
+    const result = matchAll(PROGRAMS, run.answers);
+    const bucket = (id: string) => result.all.find((m) => m.program.id === id)?.bucket;
+    expect(bucket('wheap-energy-assistance')).toBe('ruledOut');
+    expect(bucket('wheap-crisis-assistance')).toBe('ruledOut');
+    expect(bucket('wisconsin-weatherization')).toBe('ruledOut');
+  });
+
+  it('prevents a wrongful "ruled out" for a household with a recent income drop -- the error this app cares most about', () => {
+    const run = runInterview(recentlyLaidOff);
+    expect(run.answers.recentIncomeDrop).toBe(true);
+
+    const result = matchAll(PROGRAMS, run.answers);
+    const bucket = (id: string) => result.all.find((m) => m.program.id === id)?.bucket;
+    // Never ruled out on income once a recent drop is reported -- the
+    // `manualReview` branch can only hold the verdict at "maybe", never
+    // push it to "eligible" outright.
+    expect(bucket('wheap-energy-assistance')).toBe('maybe');
+    expect(bucket('wisconsin-weatherization')).toBe('maybe');
+    // wheap-crisis-assistance is unaffected by recentIncomeDrop in this
+    // persona: it's independently ruled out by utilityShutoffRisk being
+    // false, proving the fix is scoped to the income test and doesn't mask
+    // an unrelated, correctly-failing criterion.
+    expect(bucket('wheap-crisis-assistance')).toBe('ruledOut');
+  });
+
+  it('costs exactly one extra question for the population it exists to protect, and nothing for anyone else', () => {
+    // The direct, numeric version of the interview-length claim: holding
+    // household composition, geography, income, and benefits fixed, the only
+    // thing separating `wellOffNoHeat` (never asked) from `wellOffStable`
+    // (asked) is whether a WHEAP-family program is still undecided on income
+    // once the dedicated `recent-income` screen's `showIf` precondition is
+    // met. `runInterview` counts real questions presented, not facts known,
+    // so this also covers the "asked but declined to answer" case, not just
+    // "fact ends up set."
+    const withoutHeat = runInterview(wellOffNoHeat).questionsAsked;
+    const withHeat = runInterview(wellOffStable).questionsAsked;
+    expect(withHeat).toBe(withoutHeat + 1);
   });
 });
 

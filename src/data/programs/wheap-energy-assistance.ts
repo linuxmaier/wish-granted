@@ -1,10 +1,23 @@
 import type { Program } from '@/domain/program';
-import { allOf, anyOf, hasAnyOf, incomeAtOrBelow, isTrue, livesIn } from '@/domain/criteria';
+import { allOf, anyOf, hasAnyOf, incomeAtOrBelow, isTrue, manualReview, livesIn } from '@/domain/criteria';
 
 /**
  * WHEAP is Wisconsin's LIHEAP. Its limit is 60% of state median income, and the
  * stored table already holds the 60% figures, so the rule asks for 100% of the
  * `wi-smi` scale rather than 60% of it. See data/reference/income-tables.ts.
+ *
+ * The income test itself is a prior-month figure, annualized -- not the full
+ * year `annualHouseholdIncome` asks for. Per the WHEAP PY26 Manual (quoted in
+ * docs/design.md, issue #3/#9): "The HE+ Program uses a prior month income
+ * test which is annualized to determine program income eligibility." So a
+ * household whose annual figure fails can still pass the real test after a
+ * recent layoff. The third `anyOf` branch below is the fix: if
+ * `recentIncomeDrop` is true, `manualReview` keeps this program undecided
+ * ("might qualify") instead of ruling it out on an annual figure that may no
+ * longer reflect the household's situation -- it can never turn the branch
+ * into a `pass`, only prevent a wrongful `fail`. See facts.ts's
+ * `recentIncomeDrop` doc comment for why this is a self-reported boolean
+ * rather than a recomputed dollar figure.
  */
 export const wheapEnergyAssistance: Program = {
   id: 'wheap-energy-assistance',
@@ -25,10 +38,19 @@ export const wheapEnergyAssistance: Program = {
     anyOf(
       incomeAtOrBelow('wi-smi', 100),
       hasAnyOf('currentBenefits', ['snap-foodshare', 'w2-tanf', 'ssi']),
+      allOf(
+        isTrue('recentIncomeDrop'),
+        manualReview(
+          'WHEAP looks at your income from the most recent month, not the whole year, so a recent drop can still qualify you. Contact your county energy agency to check.',
+        ),
+      ),
     ),
   ),
   eligibilityCaveats: [
-    'Income is counted over the three months before you apply, not the whole year, so a recent drop in income can qualify you even if the annual figure does not.',
+    // Corrected per issue #3/#9: the WHEAP PY26 Manual states a single prior
+    // month, annualized -- not "the three months before you apply" this
+    // caveat previously (and incorrectly) claimed. See docs/design.md.
+    'Income is counted from the most recent month, annualized, not the whole year, so a recent drop in income can qualify you even if the annual figure above does not. Tell us if your income has recently dropped and we will flag this for you.',
     'Renters qualify even when heat is included in the rent.',
     'You can receive this once per heating season.',
     // Sourced verbatim from the program's own page (see source note below).
