@@ -1,5 +1,5 @@
 import type { Program } from '@/domain/program';
-import { allOf, incomeAtOrBelow, isTrue, livesIn } from '@/domain/criteria';
+import { allOf, anyOf, incomeAtOrBelow, isTrue, manualReview, livesIn } from '@/domain/criteria';
 
 export const wheapCrisisAssistance: Program = {
   id: 'wheap-crisis-assistance',
@@ -23,7 +23,24 @@ export const wheapCrisisAssistance: Program = {
   // emergency crisis assistance. Fixed to a hard income test to match the
   // documented rule; `utilityShutoffRisk` below already implies the
   // household has a heating bill it is at risk of losing.
-  eligibility: allOf(livesIn.wisconsin, isTrue('utilityShutoffRisk'), incomeAtOrBelow('wi-smi', 100)),
+  // The income test shares the same "prior month, annualized" mechanic as
+  // regular WHEAP (see wheap-energy-assistance.ts's comment, citing the WHEAP
+  // PY26 Manual). The `recentIncomeDrop` branch is the same fix: it can only
+  // keep this program undecided pending a manual check, never turn a fail
+  // into a pass.
+  eligibility: allOf(
+    livesIn.wisconsin,
+    isTrue('utilityShutoffRisk'),
+    anyOf(
+      incomeAtOrBelow('wi-smi', 100),
+      allOf(
+        isTrue('recentIncomeDrop'),
+        manualReview(
+          'WHEAP looks at your income from the most recent month, not the whole year, so a recent drop can still qualify you. Contact your county energy agency to check.',
+        ),
+      ),
+    ),
+  ),
   eligibilityCaveats: [
     'You generally need to qualify for regular WHEAP first, and can apply for both at the same time.',
     'Furnace repair and replacement is for homeowners. Renters should contact their local agency, which will work with the landlord.',

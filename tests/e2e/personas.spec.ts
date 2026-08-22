@@ -44,6 +44,23 @@ const WELL_OFF_MADISON: Persona = {
   'best describes your housing': { radio: 'I own my home' },
   'Is any of this happening': { check: ['I pay a heating'] },
   'already receive any of these': { none: true },
+  // Issue #9: with income this far above WHEAP's threshold and no benefits
+  // checked, wheap-energy-assistance / wisconsin-weatherization are only
+  // still undecided by the time this question is reached because of the
+  // `recentIncomeDrop` rescue branch -- answering "No" here is what lets
+  // them resolve to ruled out rather than sitting at "might qualify"
+  // indefinitely. See the paired LAYOFF_MADISON persona below.
+  'income dropped significantly': { radio: 'No' },
+};
+
+// Same household as WELL_OFF_MADISON -- same $250,000 annual figure, same
+// benefits, same housing -- but a recent layoff explains the high annual
+// number. WHEAP's real income test looks at one prior month, annualized, not
+// the whole year (see docs/design.md, issue #9), so this household may still
+// qualify even though the annual figure says otherwise.
+const LAYOFF_MADISON: Persona = {
+  ...WELL_OFF_MADISON,
+  'income dropped significantly': { radio: 'Yes' },
 };
 
 /** Answers whatever question is on screen, then advances. Returns when done. */
@@ -124,6 +141,28 @@ test.describe('the interview end to end', () => {
     // this engine, deliberately, since it does not apply to all of their
     // services and a false "ruled out" is the worse failure here.)
     expect(eligible).toContain('The River Food Pantry');
+
+    // Issue #9: no recent income drop reported, so WHEAP-family programs
+    // resolve to ruled out on the annual figure alone -- not left dangling
+    // as a "might qualify" lead. The paired test below shows the contrast.
+    const maybe = await bucket(page, /might qualify/i);
+    expect(eligible).not.toContain('Wisconsin Home Energy Assistance Program (WHEAP)');
+    expect(maybe).not.toContain('Wisconsin Home Energy Assistance Program (WHEAP)');
+  });
+
+  test('a recent income drop keeps WHEAP as a lead instead of wrongly ruling it out', async ({
+    page,
+  }) => {
+    // Same income, benefits, and housing as the "well off" persona above --
+    // only the recent-drop answer differs. This is the case issue #9 exists
+    // for: WHEAP's real income test looks at one prior month, annualized, so
+    // a household with a high annual figure but a recent layoff can still
+    // qualify, and this app must not tell them otherwise.
+    await runInterview(page, LAYOFF_MADISON);
+
+    const maybe = await bucket(page, /might qualify/i);
+    expect(maybe).toContain('Wisconsin Home Energy Assistance Program (WHEAP)');
+    expect(maybe).toContain('Wisconsin Weatherization Assistance Program');
   });
 
   test('enrolling in SSI overrides the income test', async ({ page }) => {

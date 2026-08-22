@@ -1,5 +1,5 @@
 import type { Program } from '@/domain/program';
-import { allOf, anyOf, hasAnyOf, incomeAtOrBelow, livesIn, oneOf } from '@/domain/criteria';
+import { allOf, anyOf, hasAnyOf, incomeAtOrBelow, isTrue, manualReview, livesIn, oneOf } from '@/domain/criteria';
 
 export const wisconsinWeatherization: Program = {
   id: 'wisconsin-weatherization',
@@ -14,12 +14,31 @@ export const wisconsinWeatherization: Program = {
   benefit:
     'Free energy audit and home improvements. There is no cost to the household and nothing to repay.',
 
+  // The `recentIncomeDrop` branch below is the same WHEAP-family fix as
+  // wheap-energy-assistance.ts / wheap-crisis-assistance.ts, extended here on
+  // an inferential basis: this record's own source note above ties
+  // Weatherization to WHEAP under the same "Home Energy Plus (HE+)" umbrella
+  // and the same county-agency network, but that note was not independently
+  // confirmed against Weatherization's own income-test *timing* specifically
+  // -- only its 60% SMI *threshold*. Worded as "may look at" rather than
+  // asserting the one-month rule as fact for this program, and flagged here
+  // for whoever next verifies this record: confirm whether Weatherization's
+  // income test actually uses the same prior-month-annualized mechanic as
+  // WHEAP, or a plain annual figure. Given the asymmetry of the two possible
+  // errors -- a false exclusion (serious) vs. an over-inclusive "might
+  // qualify, call and check" lead (mild) -- this branch stays in either way.
   eligibility: allOf(
     livesIn.wisconsin,
     oneOf('housingStatus', ['renting', 'own-home']),
     anyOf(
       incomeAtOrBelow('wi-smi', 100),
       hasAnyOf('currentBenefits', ['wheap-energy-assistance', 'snap-foodshare', 'ssi', 'w2-tanf']),
+      allOf(
+        isTrue('recentIncomeDrop'),
+        manualReview(
+          "This program's income test may look at recent income rather than the full year, so a recent drop may still qualify you. Contact your local weatherization agency to check.",
+        ),
+      ),
     ),
   ),
   eligibilityCaveats: [

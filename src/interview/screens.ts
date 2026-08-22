@@ -305,6 +305,64 @@ export const SCREENS: readonly Screen[] = [
       },
     ],
   },
+
+  {
+    // A dedicated screen, not folded into `situation` -- that was tried
+    // first and broke two different ways (issue #9), worth recording so
+    // nobody repeats the attempt:
+    //
+    // 1. Without a `showIf` guard, this question showed up as "relevant"
+    //    from the very first screen: every WHEAP-family program starts out
+    //    undecided, so `recentIncomeDrop` sat in their `missingFacts` before
+    //    annual income was even known -- asked of nearly everyone.
+    // 2. Adding `showIf` (requiring housingStatus/paysHeatingCost to already
+    //    be known) fixed that, but sharing a screen with `current-benefits`
+    //    created a *second*, worse problem: `current-benefits` alone often
+    //    has enough independent impact to make the `situation` screen rank
+    //    ahead of `housing` in the impact sort -- before this question's
+    //    `showIf` has ever turned true. Screens are never revisited once
+    //    shown (the back-button-trustworthiness invariant, see flow.ts), so
+    //    `situation` would get "used up" on `current-benefits` alone and
+    //    this question would silently never be offered, permanently. A real
+    //    e2e run caught this; no unit test did, because `runInterview`'s
+    //    unit harness always answers whatever's on a screen the moment it's
+    //    shown, which never exposed the "screen visited before this
+    //    question's precondition was true" case (see
+    //    tests/e2e/personas.spec.ts).
+    //
+    // A dedicated screen sidesteps both: with only one question and a
+    // `showIf` guard, this screen's own impact is forced to zero (see
+    // `screenImpact` in flow.ts, which skips `showIf`-hidden questions)
+    // until housingStatus and paysHeatingCost are both known -- so the
+    // screen itself is never relevant, and therefore never visited, until
+    // its precondition holds. It cannot get "used up" by an unrelated
+    // question the way sharing a screen allowed.
+    id: 'recent-income',
+    title: 'One more thing',
+    questions: [
+      {
+        // Every WHEAP-family program (see wheap-energy-assistance.ts) also
+        // gates directly (outside the income `anyOf`) on a heating/housing
+        // fact -- paysHeatingCost, utilityShutoffRisk, or housingStatus --
+        // asked on the *housing* screen. That guarantees the housing screen
+        // stays relevant and gets shown before this one's `showIf` can ever
+        // turn true, so there is no circular wait between the two screens.
+        // See tests/interview/flow.test.ts's issue #9 describe block for the
+        // mechanism-level proof, not just the outcome.
+        id: 'recent-income-drop',
+        prompt: 'Has your income dropped significantly in the last month or two?',
+        help: 'For example, a job loss or a big cut in hours. Programs that pay for heat sometimes look at your most recent income instead of the whole year, so this can help even if the number you gave above says you are over the limit.',
+        input: {
+          type: 'choice',
+          choices: [
+            { value: 'yes', label: 'Yes', implies: { recentIncomeDrop: true } },
+            { value: 'no', label: 'No', implies: { recentIncomeDrop: false } },
+          ],
+        },
+        showIf: (answers) => answers.housingStatus !== undefined && answers.paysHeatingCost !== undefined,
+      },
+    ],
+  },
 ];
 
 export const ALL_QUESTIONS: readonly Question[] = SCREENS.flatMap((s) => s.questions);
