@@ -1,5 +1,6 @@
 import type { Program } from '@/domain/program';
 
+import { badgercarePlus } from './badgercare-plus';
 import { daneEvictionPrevention } from './dane-eviction-prevention';
 import { daneJoiningForcesForFamilies } from './dane-joining-forces-for-families';
 import { foodshareSnapWi } from './foodshare-snap-wi';
@@ -14,6 +15,7 @@ import { wheapCrisisAssistance } from './wheap-crisis-assistance';
 import { wheapEnergyAssistance } from './wheap-energy-assistance';
 import { wi211 } from './wi-211';
 import { wicWisconsin } from './wic-wisconsin';
+import { wisconsinSharesChildCare } from './wisconsin-shares-child-care';
 import { wisconsinWeatherization } from './wisconsin-weatherization';
 
 /**
@@ -50,6 +52,12 @@ export const PROGRAMS: readonly Program[] = [
   madisonWaterBillAssistance,
   daneEvictionPrevention,
   lifelinePhoneInternet,
+
+  // Health & disability
+  badgercarePlus,
+
+  // Childcare & education
+  wisconsinSharesChildCare,
 
   // Cross-cutting referral services
   daneJoiningForcesForFamilies,
