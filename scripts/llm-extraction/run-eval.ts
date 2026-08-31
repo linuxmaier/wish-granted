@@ -75,8 +75,14 @@ async function callModel(evalCase: EvalCase, apiKey: string): Promise<unknown> {
         {
           name: 'emit_eligibility_criterion',
           description: 'Emit the extracted eligibility rule as a Criterion tree, or manualReview if it cannot be extracted precisely.',
+          // No `strict: true`. Strict structured output cannot express a
+          // recursive expression language: even inlined to depth 3, the schema
+          // trips the union-count limit (54 vs 16), and depth 1 is far too
+          // shallow for real rules. See criterion-schema.ts's docblock and
+          // docs/eligibility-extraction.md 4.5. The schema still guides the
+          // model; schema-gate.ts does the actual enforcing, which was always
+          // the real safety net.
           input_schema: buildCriterionJsonSchema(),
-          strict: true,
         },
       ],
       tool_choice: { type: 'tool', name: 'emit_eligibility_criterion' },
