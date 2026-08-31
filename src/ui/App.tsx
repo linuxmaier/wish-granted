@@ -140,7 +140,16 @@ export function App() {
                   <div className="progress__bar" style={{ width: `${interview.progress * 100}%` }} />
                 </div>
                 <p className="progress__label">
-                  Step {stepNumber} of about {stepTotal}
+                  {/*
+                    aria-hidden because the progressbar above already carries
+                    exactly this string as its accessible name -- without this,
+                    a screen reader announced "Step 1 of about 4" twice in a
+                    row (issue #27). The jump note below is NOT hidden: it is
+                    real information that appears nowhere else.
+                  */}
+                  <span aria-hidden="true">
+                    Step {stepNumber} of about {stepTotal}
+                  </span>
                   {showJumpNote && (
                     <span className="progress__note">
                       {' '}

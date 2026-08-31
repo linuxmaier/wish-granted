@@ -34,8 +34,18 @@ export function QuestionField({
       <legend className="question__prompt">{question.prompt}</legend>
       {question.help && <p className="question__help">{question.help}</p>}
 
+      {/*
+        The choices div below carries no role="radiogroup" and no aria-label.
+        The wrapping <fieldset> already forms a group named by its <legend>, so
+        a second, identically named container nested inside it made a screen
+        reader announce the same question prompt twice on the way in -- once
+        for the fieldset, once for the radiogroup. Reported by a first NVDA
+        pass as the interface feeling "repetitive with groups and sections"
+        (issue #27). Native fieldset + legend is the well-supported pattern;
+        this div is layout only.
+      */}
       {input.type === 'choice' && (
-        <div className="choices" role="radiogroup" aria-label={question.prompt}>
+        <div className="choices">
           {input.choices.map((choice) => {
             const id = `${groupId}-${choice.value}`;
             return (
