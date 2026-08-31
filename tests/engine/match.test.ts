@@ -51,6 +51,22 @@ describe('bucketing', () => {
     expect(eligible).toContain('wic-wisconsin');
     expect(eligible).toContain('school-meals-wi');
     expect(eligible).toContain('wheap-energy-assistance');
+    // madisonFamily's $30,000 income for a household of 4 clears even
+    // BadgerCare's 100% FPL "adult" tier ($33,000), so the whole household
+    // qualifies outright, not just the children -- see badgercare-plus.ts.
+    expect(eligible).toContain('badgercare-plus');
+  });
+
+  it('keeps Wisconsin Shares at "might qualify" even when income and children clear, because the approved-activity requirement is never encoded as a pass', () => {
+    // This is the manualReview cap's safety property: wisconsin-shares-child-
+    // care.ts can never resolve to `pass` because it has no fact to confirm
+    // the approved-activity requirement (work/school/training) against, only
+    // a manualReview leaf. Asserting `maybe` here, not just "not ruled out",
+    // means deleting that leaf later would break this test rather than
+    // silently starting to promise a subsidy the app never actually checked.
+    const result = matchAll(PROGRAMS, madisonFamily);
+    expect(ids(result.maybe)).toContain('wisconsin-shares-child-care');
+    expect(ids(result.eligible)).not.toContain('wisconsin-shares-child-care');
   });
 
   const outOfState = {
