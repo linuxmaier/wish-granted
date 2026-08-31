@@ -45,7 +45,8 @@ corroboration, not a bug report, and say so explicitly.
   in this spike** -- no `ANTHROPIC_API_KEY` was available in the sandboxed environment
   this spike ran in. `scripts/llm-extraction/run-eval.ts` is real, runnable code with a
   9-case eval set grounded entirely in text this spike actually fetched; it reports
-  `SKIPPED` for every case without a key rather than fabricating a result. This is stated
+  `SKIPPED` for every case without a key rather than fabricating a result. **Since measured
+  live -- see Section 4.4.** This is stated
   as a gap, not glossed over -- see [Section 4](#4-tier-3-the-llm-question-scoped-and-prototyped-not-yet-measured).
 - **The headline cost-model number is reviewer-minutes, not tokens.** At a few hundred
   programs, the token bill stays trivially small; a one-person review queue does not. See
@@ -273,30 +274,83 @@ specifically against `dane-eviction-prevention.ts`'s existing `incomeAtOrBelow('
 correctly-abstaining extractor would have caught this, not caused it. See
 [Section 8](#8-findings-to-hand-off-not-fixed-here).
 
-### 4.4 What was and was not measured
+### 4.4 Measured: the live run (issue #23)
 
-**Not measured: an observed abstention rate.** `scripts/llm-extraction/run-eval.ts` is
-real, complete, runnable code -- correct request shape, forced tool schema, the scoring
-logic distinguishes "correct abstention" from "dangerous over-claim" from "correct
-extraction" from "over-cautious" -- but **no `ANTHROPIC_API_KEY` was available in the
-sandboxed environment this spike ran in**, so it was never executed against the live API.
-Every case reports `SKIPPED` rather than a fabricated pass/fail; run it with
-`npm run eval:llm-extraction` once a key is available. This is stated as a gap because it
-is one: the issue's acceptance criteria explicitly asks for an observed abstention rate,
-and this spike does not have one to report.
+**Run on 2026-08-21 against `claude-sonnet-5`, three times, with identical results each
+time.** Nine cases per run, 27 case-evaluations total.
 
-**What was measured instead:** `tests/data/llm-extraction-eval.test.ts` checks the harness
-itself -- every hand-authored "correct extraction" target is itself schema-valid (the
-ground truth is held to the same bar a model's output would be), every eval case is
-grounded in a real citation and a non-trivial excerpt, and the gate genuinely agrees with
-the production test suite on the real dataset. That is real verification of the mechanism;
-it is not a substitute for running the mechanism against a model.
+| Outcome | Per run | Across 3 runs |
+|---|---|---|
+| Correct abstentions (of 5 abstain cases) | **5 / 5** | 15 / 15 |
+| **Dangerous over-claims** | **0** | **0 / 15** |
+| Correct extractions (of 4 extract cases) | 3 / 4 | 9 / 12 |
+| Gate failures | 1 (`madcap-categorical`) | 3 / 12 |
 
-**Recommendation:** run `npm run eval:llm-extraction` with a real key before treating LLM
-extraction as validated. Nine cases is enough to sanity-check the design, not enough to
-certify an abstention rate with statistical confidence -- a production rollout should grow
-this set substantially, weighted toward Tier 3's real shape (roughly half categorical/
-percent-of-FPL prose, half the "doesn't fit" list from #4), before being trusted unattended.
+These are reported separately and deliberately never blended into an accuracy figure. A
+model that is 95% right and confidently wrong the rest is worse for this product than one
+that is 80% right and abstains: a wrong threshold reaches a person in financial crisis as
+a stated fact, an abstention reaches a human reviewer first.
+
+**The abstention result is the headline: 5/5, three times running.** Every trap held --
+SNAP's shelter-deduction stack, the alien-status test, ABAWD work requirements, the
+Tenant Resource Center's funding-contingent language, and the self-referential
+`dane-eviction-prevention` case built from this project's own unsourceable 80%-AMI
+finding. Zero dangerous over-claims across all three runs.
+
+**The one failure is the gate doing its job, not the model inventing a rule.** On
+`madcap-categorical` the model emitted human-readable benefit names -- `"FoodShare"`,
+`"Section 8"`, `"SNAP"`, `"WIC"` -- where `currentBenefits` declares the slugs
+`snap-foodshare`, `housing-choice-voucher`, and so on. Semantically correct, mechanically
+wrong, and **caught before it could reach a human reviewer**, exactly as designed. JSON
+Schema cannot express "this value must be one of *that specific fact's* options" (a
+cross-field constraint), which is precisely why `schema-gate.ts` exists as a second check.
+
+The obvious fix is to list each enum fact's valid values in the system prompt. It is
+**deliberately not applied here**: tuning the prompt against a nine-case set and then
+re-reporting the same set would be measuring the tuning, not the model. That belongs to
+whoever builds the real pipeline, with a held-out set.
+
+**How much to read into this.** Not much, honestly. Nine cases, one model, one prompt,
+three runs. Perfect stability across runs is reassuring about determinism, not about
+coverage. A production rollout needs a substantially larger set weighted toward Tier 3's
+real shape, plus a held-out split. What this **does** establish is that the design works
+end to end -- the model abstains when asked to, the gate catches what the model gets
+wrong, and nothing dangerous reached the far end of the pipe.
+
+### 4.5 What it took to make the harness actually run
+
+The harness had never executed. Getting it to took four fixes, each a hard API constraint
+the original design did not anticipate. They are recorded because anyone building on this
+will hit them in the same order.
+
+1. **`Circular reference detected in schema definitions: criterion -> criterion.`**
+   `Criterion` is genuinely recursive, so the natural encoding is a `$defs.criterion` that
+   `$ref`s itself. Self-referencing tool schemas are rejected outright. Fixed by inlining
+   the tree to a bounded depth (3), which no real rule in the dataset exceeds.
+2. **`Schema type 'oneOf' is not supported.`** Every branch became `anyOf`.
+3. **`Too many optional parameters (239) ... limit: 24.`** `Criterion`'s optional `label`
+   is optional on *every* node kind, and inlining multiplies it. Dropped from the
+   extraction schema entirely -- which the design wanted anyway, since `docs/design.md`
+   generates explanations by walking the evaluated tree precisely so they cannot go stale.
+   A model-authored label would reintroduce exactly the hand-written prose that avoids.
+4. **`Too many parameters with union types (54) ... limit: 16.`** Each nesting level is a
+   union, and combinators embed a full copy of their child, so unions grow multiplicatively
+   with depth. Only depth 1 fits under the limit -- far too shallow for real rules.
+
+**The structural finding: a recursive expression language cannot be enforced by strict
+structured output.** Constraints 3 and 4 are grammar-compilation limits of `strict: true`.
+Dropping `strict` resolved both and the harness ran immediately. The schema still guides
+the model; `schema-gate.ts` does the enforcing. That was always the design's real safety
+net -- the strict flag was belt-and-braces, and it turns out the belt does not fit.
+
+For the cost model: the inlined schema is **~79 KB of JSON on every request**. That is a
+non-trivial input-token cost per call and Section 6 does not currently account for it.
+Prompt caching is the obvious mitigation since the schema is identical across calls.
+
+**What was also measured, separately:** `tests/data/llm-extraction-eval.test.ts` checks the
+harness itself -- every hand-authored "correct extraction" target is schema-valid (ground
+truth held to the same bar as model output), every case is grounded in a real citation, and
+the gate agrees with the production suite on the real dataset.
 
 ---
 
@@ -514,13 +568,16 @@ in a spike whose deliverable is a document and a prototype, not dataset edits:
 
 ## 9. Recommendation
 
-0. **The LLM path is not validated yet, and no reader should come away from this document
-   thinking it is.** Abstention rate -- not extraction accuracy -- is this spike's headline
-   metric (Section 4.4, Section 4.3's trap-heavy eval set), and it is currently
-   **unmeasured**: no `ANTHROPIC_API_KEY` was available in this sandboxed environment, so
-   `scripts/llm-extraction/run-eval.ts` has never been run against a real model. Issue #23
-   has been filed to run it live once a key is available. Every recommendation below about
-   Tier 3 / the LLM path is conditional on #23's result, not a substitute for it.
+0. **The LLM path is now measured, and the result is encouraging but thin.** Abstention
+   rate -- not extraction accuracy -- is this spike's headline metric, and it is
+   **5/5 correct abstentions with 0 dangerous over-claims, stable across three runs**
+   (Section 4.4, issue #23). The one failure was the schema gate catching a slug-vs-display-name
+   mismatch before it reached a human, which is the safety net working rather than a model
+   inventing a threshold. Read it as "the design works end to end at n=9", not as
+   certification: nine cases, one model, one prompt. A production rollout needs a
+   substantially larger, held-out set. Note also that making the harness run at all
+   required dropping `strict: true` -- a recursive expression language cannot be enforced
+   by strict structured output (Section 4.5).
 1. **Ship a deterministic extractor for income-table refreshes -- #24 already has, and it is
    now the production path, not this spike's.** `scripts/extract-income-tables.mjs` was
    built and measured here to answer the tiering question with real code, and its 4/4

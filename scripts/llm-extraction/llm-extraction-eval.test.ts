@@ -39,8 +39,11 @@ import { manualReview, oneOf, type Criterion } from '../../src/domain/criteria';
 describe('Criterion JSON Schema (for the extraction tool-use call)', () => {
   it('builds a schema that enumerates the real fact vocabulary, not a stale copy', () => {
     const schema = buildCriterionJsonSchema();
-    const criterionDef = schema.$defs.criterion;
-    const compareBranch = criterionDef.oneOf.find(
+    // The schema is depth-bounded and inlined rather than a self-referencing
+    // $defs.criterion -- the API rejects circular schema references outright
+    // (issue #23). Walk to the top-level criterion's branches instead.
+    const criterionDef = schema.properties.criterion;
+    const compareBranch = criterionDef.anyOf.find(
       (branch) => 'properties' in branch && branch.properties.kind?.const === 'compare',
     );
     expect(compareBranch).toBeDefined();
@@ -56,9 +59,31 @@ describe('Criterion JSON Schema (for the extraction tool-use call)', () => {
 
   it('every node kind requires additionalProperties: false, so the model cannot smuggle extra fields', () => {
     const schema = buildCriterionJsonSchema();
-    for (const branch of schema.$defs.criterion.oneOf) {
-      expect(branch.additionalProperties).toBe(false);
-    }
+    // Recurse: with the tree inlined, combinator branches carry their whole
+    // child schema rather than a $ref, so the invariant has to hold at every
+    // depth -- not just the top level, which is all the $defs version checked.
+    let nodesChecked = 0;
+    const walk = (node: unknown): void => {
+      if (typeof node !== 'object' || node === null) return;
+      const obj = node as Record<string, unknown>;
+      if (Array.isArray(obj.anyOf)) {
+        for (const branch of obj.anyOf) {
+          // Only criterion node schemas -- those are the ones with a `kind`
+          // discriminator. VALUE_SCHEMA is also a oneOf, of bare primitives,
+          // and additionalProperties is meaningless there.
+          const props = (branch as { properties?: Record<string, unknown> }).properties;
+          if (props && 'kind' in props) {
+            expect((branch as { additionalProperties?: unknown }).additionalProperties).toBe(false);
+            nodesChecked += 1;
+          }
+          walk(branch);
+        }
+      }
+      for (const value of Object.values(obj)) walk(value);
+    };
+    walk(schema.properties.criterion);
+    // Guard against the walk silently finding nothing and passing vacuously.
+    expect(nodesChecked).toBeGreaterThan(20);
   });
 });
 
