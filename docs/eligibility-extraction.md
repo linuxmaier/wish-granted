@@ -227,8 +227,8 @@ JSON Schema alone cannot express "the value compared against an enum fact must b
 is the second, ground-truth check: it **duplicates the exact logic** in
 `tests/data/vocabulary.test.ts`'s "criteria are well formed" block (deliberately, so it
 works standalone in a build-time pipeline without pulling in the whole test suite), and
-`tests/data/llm-extraction-eval.test.ts` asserts it agrees with the real test suite by
-running it against every one of the 15 real program records already in the dataset. A
+`scripts/llm-extraction/llm-extraction-eval.test.ts` asserts it agrees with the real test
+suite by running it against every one of the real program records already in the dataset. A
 model output that fails this gate must never reach a human reviewer as a candidate rule --
 it goes back for another attempt or gets logged as a failed extraction. This is the
 concrete implementation of "output must validate against the existing schema gate."
