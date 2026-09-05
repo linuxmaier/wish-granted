@@ -338,6 +338,53 @@ because the script was run on `main`/`master` (it never advances the committed b
 without a PR, same rule as `refresh-income-tables`); **2** at least one record is
 changed / gone / unreachable.
 
+## Descriptive-field ingestion (scripts/ingest-descriptive)
+
+Issue #14, item 3 of `docs/data-sources.md`'s "Recommended ingestion order". Where
+`check-sources` says only "this page's text moved, go look", this goes one step further for
+the **descriptive half** of a record: it names the field, the proposed new value, and the
+verbatim source excerpt it came from, so a reviewer's job is verification, not research.
+
+```
+npm run ingest:descriptive                       # fetch all, update proposals.json, print the report
+npm run ingest:descriptive -- --dry-run           # fetch and report, write nothing
+npm run ingest:descriptive -- --id=sun-bucks-wi   # just one record (repeatable)
+npm run ingest:descriptive -- --report-file=out.md
+```
+
+Scope, deliberately narrow:
+
+- **`source.url` health** -- `ok` / `redirected` (same host, new path) / **`moved`** (a
+  different host -- the FNS->FNA case from `docs/data-sources.md`, distinct from both
+  `changed` and `gone`) / `gone` (404/410) / `unreachable` / `blocked`. A `moved` or
+  `redirected` result becomes a concrete `source.url` proposal; `gone` only flags (finding
+  the right replacement page is a human call).
+- **`howToApply.phone`** -- if the record has no phone and the page has exactly one, that is
+  a low-confidence proposal with its excerpt. If the record has a phone that is no longer on
+  the page, or the page has several candidates, that is a review flag, never a guess.
+- **`status`** -- high-precision phrases ("not currently accepting applications", "placed on
+  a waitlist") that disagree with the recorded status become a review flag.
+
+What it does **not** do: it never reads, extracts, proposes, or writes an `eligibility`
+rule. The LLM extractor in `scripts/llm-extraction/` is built but deliberately not wired in
+-- its held-out eval produced a schema-valid dangerous over-claim (issue #51). See
+`scripts/ingest-descriptive/eligibility-seam.ts`.
+
+The output is `scripts/ingest-descriptive/proposals.json` -- a committed, diffable review
+queue with the same fixed-point property as `source-hashes.json` (an unchanged run
+reproduces it byte-for-byte, so the monthly workflow opens nothing). It is not a direct
+edit to `src/data/programs/*.ts` or `snapshot.json`: the record modules are hand-authored
+with load-bearing source comments, `snapshot.json` is generated, and the repo's curation
+model is "git is the database, PR review is the write gate" (see `design.md`). Resolving a
+proposal means landing the accepted change in the record file and running
+`npm run build:snapshot`, exactly as for any hand edit; the entry then drops out of the
+queue on the next run.
+
+Sources that currently yield nothing: `energyandhousing.wi.gov` (SharePoint; the WHEAP and
+Weatherization pages normalize to zero readable text) stays hand-authored, and
+`211wisconsin.communityos.org` is on the hard-deny list (`scripts/ingest-descriptive/lib/robots.ts`)
+alongside findhelp.org.
+
 ## Adding a new program
 
 1. Create `src/data/programs/<id>.ts` exporting a `Program`. Copy the nearest existing
@@ -407,16 +454,28 @@ The schema is built so a pipeline could populate it later — Grants.gov, Benefi
 WI DHS, Dane County and City of Madison open data, 211 Wisconsin. Every field except
 `eligibility` is flat and machine-fillable.
 
+The "plausible middle path" below — ingest descriptive fields automatically, flag changed
+source text for a human, automate the noticing not the judgement — is now partly built:
+`scripts/ingest-descriptive` (issue #14) does the descriptive half, and the section above
+describes it. What remains future work: descriptive **prose** (`summary`, `benefit`,
+`howToApply.steps`) is still hand-authored — auto-diffing free text against a stripped page
+produces noise, and rewriting it well needs the same judgement `eligibility` does — and
+Tier-1 directory ingestion of *new* programs (where cross-source deduplication actually
+bites) has no confirmed access path per `docs/data-sources.md`.
+
 `eligibility` is the hard part and should stay hand-authored for the foreseeable future.
 Eligibility rules are written for humans in prose, and the failure mode of getting them
-subtly wrong at scale is severe. A plausible middle path: ingest the descriptive fields
-automatically, flag records whose source text changed since `lastVerified`, and route those
-to a human. Automate the noticing, not the judgement.
+subtly wrong at scale is severe — issue #51 is a concrete example: an LLM extractor lifted a
+real threshold out of a conditional branch and dropped the conditions, producing a
+schema-valid rule that would tell people they qualify when they do not.
 
-The pipeline's output target is the snapshot, not the record files directly — see
-[design.md](design.md), "The shippable snapshot" (issue #8). An ingestion run
-(#14) produces or amends entries and lands them as a PR that includes the regenerated
-`snapshot.json`; the app only ever consumes the snapshot. The curation "database" is the
-git repo itself: history is the change log, PR review is the write gate. A committed SQLite
-DB was considered and deferred — it is not justified until cross-source deduplication stops
-being something a human can catch in review (argued in design.md).
+The curation "database" is the git repo itself: history is the change log, PR review is the
+write gate — see [design.md](design.md), "The shippable snapshot" (issue #8). The first
+ingestion pipeline (#14) took this literally: rather than machine-editing the hand-authored
+record modules or the generated `snapshot.json`, it maintains a committed review queue
+(`scripts/ingest-descriptive/proposals.json`) and opens a PR against it. A human lands each
+accepted proposal in the record file and regenerates the snapshot, the same as any hand
+edit. If a later pipeline stage ever writes records directly, the snapshot stays its output
+target and `SnapshotRecord` carries the per-record `provenance` field reserved for it. A
+committed SQLite DB was considered and deferred — it is not justified until cross-source
+deduplication stops being something a human can catch in review (argued in design.md).

@@ -1,0 +1,83 @@
+name: Descriptive-field ingestion
+
+# Opt-in, scheduled, never a PR gate -- same shape as check-sources.yml.
+#
+# Fetches every program's source.url (issue #14, item 3 of docs/data-sources.md's
+# "Recommended ingestion order"), extracts DESCRIPTIVE candidates only -- source
+# URL health (ok / redirected / moved / gone / unreachable / blocked),
+# howToApply.phone, and status signals -- and updates the committed review queue
+# scripts/ingest-descriptive/proposals.json. When that file changes it opens (or
+# updates) a single pull request carrying the report as its body.
+#
+# It never reads or writes an `eligibility` rule (scripts/ingest-descriptive/eligibility-seam.ts).
+# A run that finds nothing new reproduces proposals.json byte-for-byte and opens
+# nothing. Monthly is enough: steady-state change on these sources is roughly
+# annual (docs/eligibility-extraction.md Section 5), and scripts/check-sources
+# plus stalePrograms() cover the gap between runs.
+on:
+  schedule:
+    - cron: '0 15 1 * *' # 1st of the month, 15:00 UTC (an hour after check-sources)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  ingest-descriptive:
+    name: Propose descriptive-field updates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # actions/checkout leaves a detached HEAD, so the script's "never write on
+      # main" guard does not trip -- it writes proposals.json into the workspace,
+      # and the git diff below decides whether that matters.
+      - name: Ingest descriptive fields
+        run: |
+          set +e
+          npm run ingest:descriptive -- --report-file="$RUNNER_TEMP/report.md"
+          code=$?
+          set -e
+          # 0 = clean; 2 = there is something for a human to look at (expected,
+          # the PR step handles it). Anything else is a real failure.
+          if [ "$code" != "0" ] && [ "$code" != "2" ]; then
+            echo "::error::ingest:descriptive exited $code"
+            exit "$code"
+          fi
+
+      - name: Open or update the ingestion PR
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: automation/descriptive-ingestion
+        run: |
+          if git diff --quiet -- scripts/ingest-descriptive/proposals.json; then
+            echo "No change to the proposal queue. Nothing to open."
+            exit 0
+          fi
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          git add scripts/ingest-descriptive/proposals.json
+          git commit -m "Descriptive ingestion: queue update $(date -u +%Y-%m-%d)"
+          git push --force origin "$BRANCH"
+
+          if gh pr list --head "$BRANCH" --state open --json number --jq 'length' | grep -q '^0$'; then
+            gh pr create \
+              --base main --head "$BRANCH" \
+              --title "Descriptive-field ingestion: review proposed updates" \
+              --body-file "$RUNNER_TEMP/report.md"
+          else
+            echo "PR already open for $BRANCH; the force-push above updated it."
+            gh pr comment --body-file "$RUNNER_TEMP/report.md" "$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')"
+          fi

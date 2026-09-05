@@ -18,8 +18,15 @@
  * This is the ONLY direction that is allowed: scripts/ may read src/, never the
  * reverse (see docs/design.md). Nothing here runs in, or changes, the browser
  * bundle.
+ *
+ * There is also a `load` hook: `src/data/programs/index.ts` does
+ * `import rawSnapshot from './snapshot.json'` with no `with { type: 'json' }`
+ * attribute (issue #8; Vite does not require one). Node 20.19+/22.12+ needs the
+ * attribute or an explicit `--experimental-...` flag, so the `load` hook stamps
+ * `format: 'json'` on any `.json` URL. Without this, both `check:sources` and
+ * `ingest:descriptive` fail at startup on the repo's pinned Node (.nvmrc).
  */
-import { statSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const SRC = new URL('../../src/', import.meta.url).href;
@@ -57,4 +64,15 @@ export async function resolve(specifier, context, nextResolve) {
     }
     throw err;
   }
+}
+
+export async function load(url, context, nextLoad) {
+  if (url.endsWith('.json')) {
+    return {
+      format: 'json',
+      source: readFileSync(fileURLToPath(url), 'utf8'),
+      shortCircuit: true,
+    };
+  }
+  return nextLoad(url, context);
 }
