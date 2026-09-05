@@ -1,68 +1,39 @@
 import type { Program } from '@/domain/program';
-
-import { badgercarePlus } from './badgercare-plus';
-import { daneEvictionPrevention } from './dane-eviction-prevention';
-import { daneJoiningForcesForFamilies } from './dane-joining-forces-for-families';
-import { foodshareSnapWi } from './foodshare-snap-wi';
-import { lifelinePhoneInternet } from './lifeline-phone-internet';
-import { madisonHousingChoiceVoucher } from './madison-housing-choice-voucher';
-import { madisonWaterBillAssistance } from './madison-water-bill-assistance';
-import { schoolMealsWi } from './school-meals-wi';
-import { secondHarvestSouthernWi } from './second-harvest-southern-wi';
-import { sunBucksWi } from './sun-bucks-wi';
-import { theRiverFoodPantry } from './the-river-food-pantry';
-import { wheapCrisisAssistance } from './wheap-crisis-assistance';
-import { wheapEnergyAssistance } from './wheap-energy-assistance';
-import { wi211 } from './wi-211';
-import { wicWisconsin } from './wic-wisconsin';
-import { wisconsinSharesChildCare } from './wisconsin-shares-child-care';
-import { wisconsinWeatherization } from './wisconsin-weatherization';
+import type { FactKey } from '@/domain/facts';
+import rawSnapshot from './snapshot.json';
+import { assertValidSnapshot } from './snapshot-schema';
+import type { ProgramSnapshot } from './snapshot-schema';
 
 /**
- * The v1 seed dataset.
+ * The program dataset, as the app consumes it.
  *
- * One file per program, hand-curated. A file each -- rather than one big JSON
- * blob -- because curation is per-program: each record carries its own
- * `lastVerified` date and gets re-checked on its own schedule, and a per-file
- * diff makes "what changed when we re-verified this" legible in review.
+ * The source of truth is the hand-authored records in `./records.ts`, one file
+ * per program. The app does not import those directly -- `npm run build:snapshot`
+ * serializes them into `./snapshot.json`, a build-time artifact committed to the
+ * repo and compiled into the bundle here. There is no runtime fetch: the whole
+ * corpus ships eagerly, which keeps the privacy guarantee (issue #1: "what the
+ * client requests must not depend on the user's answers") trivially true. See
+ * `./snapshot-schema.ts` and docs/design.md, "The shippable snapshot".
  *
- * ==================== THIS DATA IS NOT YET VERIFIED =========================
- * Every record here was drafted from secondary knowledge and carries
- * `lastVerified: null`. The thresholds, program names, and application details
- * are plausible but UNCONFIRMED. Each one must be checked against its `source`
- * URL by a human before this is shown to the public. See docs/data-authoring.md
- * for the procedure, and note that the app displays a prominent warning banner
- * for as long as any record is unverified.
- * ============================================================================
+ * `assertValidSnapshot` runs at module load, so a malformed snapshot fails every
+ * path that executes this file -- `npm test`, `npm run dev`, the jsdom smoke
+ * test. `npm run build` additionally runs `build:snapshot -- --check`, because
+ * `vite build` bundles this module without executing it.
  */
-export const PROGRAMS: readonly Program[] = [
-  // Food & basic needs
-  foodshareSnapWi,
-  wicWisconsin,
-  schoolMealsWi,
-  sunBucksWi,
-  secondHarvestSouthernWi,
-  theRiverFoodPantry,
 
-  // Housing & utilities
-  wheapEnergyAssistance,
-  wheapCrisisAssistance,
-  wisconsinWeatherization,
-  madisonHousingChoiceVoucher,
-  madisonWaterBillAssistance,
-  daneEvictionPrevention,
-  lifelinePhoneInternet,
+// The runtime assertion above is the real gate; the cast only tells the compiler
+// what `assertValidSnapshot` has already proven about the parsed JSON.
+assertValidSnapshot(rawSnapshot);
+export const SNAPSHOT = rawSnapshot as unknown as ProgramSnapshot;
 
-  // Health & disability
-  badgercarePlus,
+export const PROGRAMS: readonly Program[] = SNAPSHOT.records;
 
-  // Childcare & education
-  wisconsinSharesChildCare,
-
-  // Cross-cutting referral services
-  daneJoiningForcesForFamilies,
-  wi211,
-];
+/** ISO 8601 UTC instant the snapshot was assembled. Feeds issue #44's "data as of" indicator. */
+export const SNAPSHOT_GENERATED_AT: string = SNAPSHOT.generatedAt;
+/** Snapshot format version (`snapshot-schema.ts`), for a loader that needs to branch on it. */
+export const SNAPSHOT_VERSION: number = SNAPSHOT.snapshotVersion;
+/** Every fact key the shipped rules reference, sorted. The pipeline↔interview seam (issue #8). */
+export const SNAPSHOT_FACT_VOCABULARY: readonly FactKey[] = SNAPSHOT.factVocabulary;
 
 export function programById(id: string): Program | undefined {
   return PROGRAMS.find((p) => p.id === id);

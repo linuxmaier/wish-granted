@@ -266,8 +266,13 @@ outcome the issue calls out.
    `the-river-food-pantry.ts` for something with no income test.
 2. Write `eligibility` with the builders from `@/domain/criteria` (`allOf`, `anyOf`,
    `incomeAtOrBelow`, `livesIn.madison`, …) rather than raw object literals.
-3. Register it in `src/data/programs/index.ts`.
-4. Run `npm test`.
+3. Register it in `src/data/programs/records.ts` (the hand-authored source of truth), in the
+   right locality group. Array order is preserved into the snapshot verbatim.
+4. Run `npm run build:snapshot` and commit the regenerated
+   `src/data/programs/snapshot.json` alongside your record. The app loads the snapshot, not
+   `records.ts`, so a new program is invisible until it is regenerated — `npm run build`
+   fails if the committed snapshot is stale, and so does `npm test`.
+5. Run `npm test`.
 
 ### If a rule needs a fact that does not exist yet
 
@@ -284,6 +289,12 @@ until all three are done:
 
 Every fact must be written by exactly **one** question. Two questions writing the same fact
 will silently overwrite each other, and the vocabulary test rejects it.
+
+The snapshot's `factVocabulary` (see [design.md](design.md), "The shippable snapshot") is
+recomputed from the rules on every `npm run build:snapshot`, so a new fact appears there
+automatically once some rule references it — you do not edit it by hand. `npm run build`
+and `tests/data/snapshot.test.ts` fail if a shipped rule references a fact the interview
+cannot ask.
 
 ## Things the engine should not model
 
@@ -320,3 +331,11 @@ Eligibility rules are written for humans in prose, and the failure mode of getti
 subtly wrong at scale is severe. A plausible middle path: ingest the descriptive fields
 automatically, flag records whose source text changed since `lastVerified`, and route those
 to a human. Automate the noticing, not the judgement.
+
+The pipeline's output target is the snapshot, not the record files directly — see
+[design.md](design.md), "The shippable snapshot" (issue #8). An ingestion run
+(#14) produces or amends entries and lands them as a PR that includes the regenerated
+`snapshot.json`; the app only ever consumes the snapshot. The curation "database" is the
+git repo itself: history is the change log, PR review is the write gate. A committed SQLite
+DB was considered and deferred — it is not justified until cross-source deduplication stops
+being something a human can catch in review (argued in design.md).

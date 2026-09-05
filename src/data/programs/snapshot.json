@@ -1,0 +1,1187 @@
+{
+  "factVocabulary": [
+    "annualHouseholdIncome",
+    "city",
+    "county",
+    "currentBenefits",
+    "facingLossOfHousing",
+    "hasChildUnder5",
+    "hasSchoolAgeChild",
+    "householdSize",
+    "housingStatus",
+    "isPregnantOrPostpartum",
+    "paysHeatingCost",
+    "recentIncomeDrop",
+    "state",
+    "utilityShutoffRisk"
+  ],
+  "generatedAt": "2026-09-05T21:21:40.204Z",
+  "generator": "scripts/build-snapshot",
+  "recordCount": 17,
+  "records": [
+    {
+      "administeredBy": "Wisconsin Department of Health Services",
+      "benefit": "A monthly food benefit on a QUEST card. The amount depends on household size, income, and expenses.",
+      "categories": [
+        "food-basic-needs"
+      ],
+      "eligibility": {
+        "kind": "allOf",
+        "of": [
+          {
+            "fact": "state",
+            "kind": "compare",
+            "op": "eq",
+            "value": "WI"
+          },
+          {
+            "kind": "anyOf",
+            "of": [
+              {
+                "kind": "incomeAtOrBelow",
+                "percent": 200,
+                "scale": "fpl"
+              },
+              {
+                "fact": "currentBenefits",
+                "kind": "set",
+                "op": "includesAny",
+                "values": [
+                  "ssi",
+                  "w2-tanf"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "eligibilityCaveats": [
+        "Adults aged 18-52 without dependents may need to meet work requirements to keep benefits beyond three months.",
+        "Some households face an asset limit. Most do not, but it is checked during the application.",
+        "Immigration status affects eligibility for some household members. Children are often eligible even when adults are not.",
+        "If your household includes someone who is elderly, blind, or disabled, you may still qualify even with gross income above 200% of the poverty line — a different rule based on income after deductions applies. Check with your county agency or ACCESS Wisconsin."
+      ],
+      "howToApply": {
+        "phone": "1-800-362-3002",
+        "steps": [
+          "Apply online through ACCESS Wisconsin, by phone, or in person at your county agency.",
+          "Complete an interview, usually by phone.",
+          "Send proof of income and expenses if asked."
+        ],
+        "url": "https://access.wi.gov/s/"
+      },
+      "id": "foodshare-snap-wi",
+      "jurisdiction": "state",
+      "name": "FoodShare Wisconsin (SNAP)",
+      "provider": "government",
+      "requiredDocuments": [
+        "Photo ID",
+        "Proof of income for everyone in the household",
+        "Proof of housing and utility costs"
+      ],
+      "source": {
+        "lastVerified": "2026-08-21",
+        "name": "Wisconsin DHS — FoodShare",
+        "url": "https://www.dhs.wisconsin.gov/foodshare/index.htm"
+      },
+      "status": "open",
+      "summary": "Wisconsin’s version of SNAP, once called food stamps. Money is loaded onto a QUEST card each month that you use like a debit card at grocery stores and many farmers markets."
+    },
+    {
+      "administeredBy": "Wisconsin Department of Health Services",
+      "benefit": "A monthly benefit for specific foods — milk, eggs, produce, infant formula, whole grains — plus nutrition counseling and health referrals.",
+      "categories": [
+        "food-basic-needs",
+        "health-disability"
+      ],
+      "eligibility": {
+        "kind": "allOf",
+        "of": [
+          {
+            "fact": "state",
+            "kind": "compare",
+            "op": "eq",
+            "value": "WI"
+          },
+          {
+            "kind": "anyOf",
+            "of": [
+              {
+                "fact": "isPregnantOrPostpartum",
+                "kind": "compare",
+                "op": "eq",
+                "value": true
+              },
+              {
+                "fact": "hasChildUnder5",
+                "kind": "compare",
+                "op": "eq",
+                "value": true
+              }
+            ]
+          },
+          {
+            "kind": "anyOf",
+            "of": [
+              {
+                "kind": "incomeAtOrBelow",
+                "percent": 185,
+                "scale": "fpl"
+              },
+              {
+                "fact": "currentBenefits",
+                "kind": "set",
+                "op": "includesAny",
+                "values": [
+                  "snap-foodshare",
+                  "medicaid-badgercare",
+                  "w2-tanf"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "eligibilityCaveats": [
+        "A WIC clinic also checks for a nutritional or medical need at the first appointment. Most applicants meet this.",
+        "Fathers, grandparents, and foster parents can apply on behalf of an eligible child."
+      ],
+      "howToApply": {
+        "phone": "608-267-1111",
+        "steps": [
+          "Call the Madison and Dane County WIC office (or your county’s WIC agency if outside Dane County) to book an appointment.",
+          "Bring ID, proof of address, and proof of income.",
+          "Attend a short appointment where height, weight, and iron levels are checked."
+        ],
+        "url": "https://www.dhs.wisconsin.gov/wic/index.htm"
+      },
+      "id": "wic-wisconsin",
+      "jurisdiction": "state",
+      "name": "Wisconsin WIC",
+      "provider": "government",
+      "requiredDocuments": [
+        "Photo ID",
+        "Proof of Wisconsin address",
+        "Proof of income"
+      ],
+      "source": {
+        "lastVerified": "2026-08-21",
+        "name": "Wisconsin DHS — WIC",
+        "url": "https://www.dhs.wisconsin.gov/wic/index.htm"
+      },
+      "status": "open",
+      "summary": "Nutrition support for pregnant people, new parents, infants, and children under 5. WIC covers specific healthy foods, plus breastfeeding support and nutrition checkups."
+    },
+    {
+      "administeredBy": "Wisconsin Department of Public Instruction and your school district",
+      "benefit": "Free or reduced-price school breakfast and lunch during the school year.",
+      "categories": [
+        "food-basic-needs",
+        "childcare-education"
+      ],
+      "eligibility": {
+        "kind": "allOf",
+        "of": [
+          {
+            "fact": "state",
+            "kind": "compare",
+            "op": "eq",
+            "value": "WI"
+          },
+          {
+            "fact": "hasSchoolAgeChild",
+            "kind": "compare",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "kind": "anyOf",
+            "of": [
+              {
+                "kind": "incomeAtOrBelow",
+                "percent": 185,
+                "scale": "fpl"
+              },
+              {
+                "fact": "currentBenefits",
+                "kind": "set",
+                "op": "includesAny",
+                "values": [
+                  "snap-foodshare",
+                  "w2-tanf"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "eligibilityCaveats": [
+        "Below 130% of the poverty level meals are free; between 130% and 185% they are reduced-price.",
+        "Some Wisconsin schools serve free meals to every student regardless of income. Check with your district first.",
+        "Households already receiving FoodShare are usually enrolled automatically."
+      ],
+      "howToApply": {
+        "steps": [
+          "Get the household application from your district, usually online or in the enrollment packet.",
+          "List every child and the household income.",
+          "Return it to the school. You can apply at any point in the school year."
+        ],
+        "url": "https://dpi.wi.gov/school-nutrition/program-requirements/free-reduced-meal-eligibility"
+      },
+      "id": "school-meals-wi",
+      "jurisdiction": "state",
+      "name": "Free and Reduced-Price School Meals",
+      "provider": "government",
+      "source": {
+        "lastVerified": "2026-08-21",
+        "name": "Wisconsin DPI — School Nutrition Programs",
+        "url": "https://dpi.wi.gov/school-nutrition/program-requirements/free-reduced-meal-eligibility"
+      },
+      "status": "open",
+      "summary": "Free or low-cost breakfast and lunch at school for children in households under the income limit. One application covers every child in the household."
+    },
+    {
+      "administeredBy": "Wisconsin Department of Health Services",
+      "benefit": "A summer grocery benefit per eligible child, on a card usable at grocery stores.",
+      "categories": [
+        "food-basic-needs"
+      ],
+      "eligibility": {
+        "kind": "allOf",
+        "of": [
+          {
+            "fact": "state",
+            "kind": "compare",
+            "op": "eq",
+            "value": "WI"
+          },
+          {
+            "fact": "hasSchoolAgeChild",
+            "kind": "compare",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "kind": "anyOf",
+            "of": [
+              {
+                "kind": "incomeAtOrBelow",
+                "percent": 185,
+                "scale": "fpl"
+              },
+              {
+                "fact": "currentBenefits",
+                "kind": "set",
+                "op": "includesAny",
+                "values": [
+                  "snap-foodshare",
+                  "medicaid-badgercare",
+                  "w2-tanf"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "eligibilityCaveats": [
+        "Most eligible children are enrolled automatically — the state matches records from FoodShare, W-2, Medicaid, and school meal applications. Apply directly only if you are not contacted and believe your child qualifies.",
+        "The child must attend a school that takes part in the National School Lunch Program. Children at schools that don’t (including homeschooled or fully virtual students) cannot get this through a direct application — check with the school."
+      ],
+      "howToApply": {
+        "steps": [
+          "Check whether your child was already enrolled automatically — most eligible children are.",
+          "If not, and your child’s school participates in the National School Lunch Program, apply directly online during the summer application window."
+        ],
+        "url": "https://www.dhs.wisconsin.gov/sebt/index.htm"
+      },
+      "id": "sun-bucks-wi",
+      "jurisdiction": "state",
+      "name": "Summer EBT (SUN Bucks)",
+      "provider": "government",
+      "seasonalNote": "Benefits are issued over the summer and the direct-application window is limited.",
+      "source": {
+        "lastVerified": "2026-08-21",
+        "name": "Wisconsin DHS — Summer EBT",
+        "url": "https://www.dhs.wisconsin.gov/sebt/index.htm"
+      },
+      "status": "seasonal",
+      "summary": "A summer grocery benefit for school-age children, meant to replace the school meals they lose when classes are out."
+    },
+    {
+      "administeredBy": "Second Harvest Foodbank of Southern Wisconsin",
+      "benefit": "Free groceries from a local pantry or mobile distribution. They also help people apply for FoodShare.",
+      "categories": [
+        "food-basic-needs"
+      ],
+      "eligibility": {
+        "kind": "allOf",
+        "of": [
+          {
+            "fact": "state",
+            "kind": "compare",
+            "op": "eq",
+            "value": "WI"
+          },
+          {
+            "fact": "county",
+            "kind": "compare",
+            "op": "eq",
+            "value": "dane"
+          }
+        ]
+      },
+      "eligibilityCaveats": [
+        "Second Harvest also serves Adams, Columbia, Crawford, Dodge, Grant, Green, Iowa, Jefferson, Juneau, Lafayette, Monroe, Richland, Rock, Sauk, and Vernon counties — if you live in one of those, you are also covered even though this tool only checked Dane County.",
+        "Individual pantries may set their own limits on how often you can visit, or ask for proof of address.",
+        "Their FoodShare outreach team will help you apply for SNAP for free, over the phone."
+      ],
+      "howToApply": {
+        "phone": "1-877-366-3635",
+        "steps": [
+          "Use the pantry finder to locate a site near you and check its hours.",
+          "Go during open hours. Most sites do not need an appointment."
+        ],
+        "url": "https://www.secondharvestsw.org/find-help/"
+      },
+      "id": "second-harvest-southern-wi",
+      "jurisdiction": "county",
+      "name": "Second Harvest Foodbank of Southern Wisconsin",
+      "provider": "nonprofit",
+      "source": {
+        "lastVerified": "2026-08-21",
+        "name": "Second Harvest Foodbank of Southern Wisconsin",
+        "url": "https://www.secondharvestsw.org/find-help/"
+      },
+      "status": "open",
+      "summary": "A network of food pantries and mobile food distributions across a 16-county region of southern Wisconsin, including Dane County. No income test and no application — pantries are open to anyone who needs food."
+    },
+    {
+      "administeredBy": "The River Food Pantry",
+      "benefit": "Weekly groceries, take-home prepared meals, community meals, and a mobile delivery route for people who cannot travel to the pantry.",
+      "categories": [
+        "food-basic-needs"
+      ],
+      "eligibility": {
+        "kind": "allOf",
+        "of": [
+          {
+            "fact": "state",
+            "kind": "compare",
+            "op": "eq",
+            "value": "WI"
+          },
+          {
+            "fact": "county",
+            "kind": "compare",
+            "op": "eq",
+            "value": "dane"
+          }
+        ]
+      },
+      "eligibilityCaveats": [
+        "Groceries and FAM take-home meals require self-attesting that your household income is at or below 200% of the Federal Poverty Level (Wisconsin’s TEFAP guideline) — no proof is required. This does not appear to apply to their on-site Community Meals.",
+        "You can pick up groceries and FAM meals once per week; their week runs Tuesday through Friday.",
+        "New clients register online (ePantry / curbside registration) or in person; the site does not specify a documentation requirement."
+      ],
+      "howToApply": {
+        "phone": "608-442-8815",
+        "steps": [
+          "Check the current hours on their site — they change seasonally.",
+          "Register as a new client online, or come during open hours. No appointment or referral is needed."
+        ],
+        "url": "https://www.riverfoodpantry.org/"
+      },
+      "id": "the-river-food-pantry",
+      "jurisdiction": "county",
+      "name": "The River Food Pantry",
+      "provider": "nonprofit",
+      "source": {
+        "lastVerified": "2026-08-21",
+        "name": "The River Food Pantry",
+        "url": "https://www.riverfoodpantry.org/"
+      },
+      "status": "open",
+      "summary": "Dane County’s busiest food pantry. Groceries, take-home and mobile meals, and no referral needed — but groceries and take-home meals do require self-attesting your income, unlike a typical no-questions-asked pantry."
+    },
+    {
+      "administeredBy": "Wisconsin Department of Administration, through local agencies",
+      "benefit": "A one-time annual payment toward heating costs, plus a separate electric benefit. The amount depends on income, household size, fuel type, and energy use.",
+      "categories": [
+        "housing-utilities"
+      ],
+      "eligibility": {
+        "kind": "allOf",
+        "of": [
+          {
+            "fact": "state",
+            "kind": "compare",
+            "op": "eq",
+            "value": "WI"
+          },
+          {
+            "fact": "paysHeatingCost",
+            "kind": "compare",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "kind": "anyOf",
+            "of": [
+              {
+                "kind": "incomeAtOrBelow",
+                "percent": 100,
+                "scale": "wi-smi"
+              },
+              {
+                "fact": "currentBenefits",
+                "kind": "set",
+                "op": "includesAny",
+                "values": [
+                  "snap-foodshare",
+                  "w2-tanf",
+                  "ssi"
+                ]
+              },
+              {
+                "kind": "allOf",
+                "of": [
+                  {
+                    "fact": "recentIncomeDrop",
+                    "kind": "compare",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "kind": "manualReview",
+                    "note": "WHEAP looks at your income from the most recent month, not the whole year, so a recent drop can still qualify you. Contact your county energy agency to check."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "eligibilityCaveats": [
+        "Income is counted from the most recent month, annualized, not the whole year, so a recent drop in income can qualify you even if the annual figure above does not. Tell us if your income has recently dropped and we will flag this for you.",
+        "Renters qualify even when heat is included in the rent.",
+        "You can receive this once per heating season.",
+        "Funding is limited each program year. When it runs out, no more benefits are issued for that year even to households who qualify."
+      ],
+      "howToApply": {
+        "phone": "1-866-432-8947",
+        "steps": [
+          "Find the agency for your county — in Dane County this is Energy Services of Dane County.",
+          "Apply online, by phone, or in person.",
+          "Provide proof of income for the last three months and a recent energy bill."
+        ],
+        "url": "https://energyandhousing.wi.gov/Pages/AgencyResources/energy-assistance.aspx"
+      },
+      "id": "wheap-energy-assistance",
+      "jurisdiction": "state",
+      "name": "Wisconsin Home Energy Assistance Program (WHEAP)",
+      "provider": "government",
+      "requiredDocuments": [
+        "Photo ID",
+        "Proof of income for the last three months for everyone 18 and over",
+        "A recent heating and electric bill",
+        "Social Security numbers for household members"
+      ],
+      "seasonalNote": "The regular heating season runs from October 1 through May 15.",
+      "source": {
+        "lastVerified": "2026-08-21",
+        "name": "Wisconsin Energy and Housing — Energy Assistance",
+        "url": "https://energyandhousing.wi.gov/Pages/AgencyResources/energy-assistance.aspx"
+      },
+      "status": "seasonal",
+      "summary": "A once-a-year payment toward your heating and electric costs. The money goes straight to your energy company, not to you."
+    },
+    {
+      "administeredBy": "Wisconsin Department of Administration, through local agencies",
+      "benefit": "Emergency payment to restore or keep service, and repair or replacement of a broken furnace for homeowners. Available 24 hours a day.",
+      "categories": [
+        "housing-utilities"
+      ],
+      "eligibility": {
+        "kind": "allOf",
+        "of": [
+          {
+            "fact": "state",
+            "kind": "compare",
+            "op": "eq",
+            "value": "WI"
+          },
+          {
+            "fact": "utilityShutoffRisk",
+            "kind": "compare",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "kind": "anyOf",
+            "of": [
+              {
+                "kind": "incomeAtOrBelow",
+                "percent": 100,
+                "scale": "wi-smi"
+              },
+              {
+                "kind": "allOf",
+                "of": [
+                  {
+                    "fact": "recentIncomeDrop",
+                    "kind": "compare",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "kind": "manualReview",
+                    "note": "WHEAP looks at your income from the most recent month, not the whole year, so a recent drop can still qualify you. Contact your county energy agency to check."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "eligibilityCaveats": [
+        "You generally need to qualify for regular WHEAP first, and can apply for both at the same time.",
+        "Furnace repair and replacement is for homeowners. Renters should contact their local agency, which will work with the landlord.",
+        "Wisconsin also bans heat disconnection from November 1 to April 15 for residential customers, separately from this program."
+      ],
+      "howToApply": {
+        "phone": "1-866-432-8947",
+        "steps": [
+          "Call your county agency right away — do not wait for the regular application.",
+          "Explain that you have a shutoff notice or no heat.",
+          "Emergency situations are handled outside normal office hours."
+        ],
+        "url": "https://energyandhousing.wi.gov/Pages/AgencyResources/energy-assistance.aspx"
+      },
+      "id": "wheap-crisis-assistance",
+      "jurisdiction": "state",
+      "name": "WHEAP Crisis Assistance and Emergency Furnace Repair",
+      "provider": "government",
+      "source": {
+        "lastVerified": "2026-08-21",
+        "name": "Wisconsin Energy and Housing — Crisis Assistance",
+        "url": "https://energyandhousing.wi.gov/Pages/AgencyResources/energy-assistance.aspx"
+      },
+      "status": "open",
+      "summary": "Emergency help when your heat has been shut off, is about to be, or your furnace has stopped working. This moves much faster than the regular energy assistance process."
+    },
+    {
+      "administeredBy": "Wisconsin Department of Administration, through local agencies",
+      "benefit": "Free energy audit and home improvements. There is no cost to the household and nothing to repay.",
+      "categories": [
+        "housing-utilities"
+      ],
+      "eligibility": {
+        "kind": "allOf",
+        "of": [
+          {
+            "fact": "state",
+            "kind": "compare",
+            "op": "eq",
+            "value": "WI"
+          },
+          {
+            "fact": "housingStatus",
+            "kind": "set",
+            "op": "in",
+            "values": [
+              "renting",
+              "own-home"
+            ]
+          },
+          {
+            "kind": "anyOf",
+            "of": [
+              {
+                "kind": "incomeAtOrBelow",
+                "percent": 100,
+                "scale": "wi-smi"
+              },
+              {
+                "fact": "currentBenefits",
+                "kind": "set",
+                "op": "includesAny",
+                "values": [
+                  "wheap-energy-assistance",
+                  "snap-foodshare",
+                  "ssi",
+                  "w2-tanf"
+                ]
+              },
+              {
+                "kind": "allOf",
+                "of": [
+                  {
+                    "fact": "recentIncomeDrop",
+                    "kind": "compare",
+                    "op": "eq",
+                    "value": true
+                  },
+                  {
+                    "kind": "manualReview",
+                    "note": "This program's income test may look at recent income rather than the full year, so a recent drop may still qualify you. Contact your local weatherization agency to check."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "eligibilityCaveats": [
+        "Renters need the property owner’s written consent before work can start.",
+        "Households already receiving WHEAP are usually automatically income-eligible.",
+        "There is often a waiting list, and homes with the highest energy use are usually prioritised."
+      ],
+      "howToApply": {
+        "phone": "1-866-432-8947",
+        "steps": [
+          "Contact the weatherization agency serving your county.",
+          "Complete an application and provide proof of income.",
+          "An auditor visits to assess the home and decide what work is needed."
+        ],
+        "url": "https://energyandhousing.wi.gov/Pages/AgencyResources/weatherization.aspx"
+      },
+      "id": "wisconsin-weatherization",
+      "jurisdiction": "state",
+      "name": "Wisconsin Weatherization Assistance Program",
+      "provider": "government",
+      "source": {
+        "lastVerified": "2026-08-21",
+        "name": "Wisconsin Energy and Housing — Weatherization",
+        "url": "https://energyandhousing.wi.gov/Pages/AgencyResources/weatherization.aspx"
+      },
+      "status": "waitlist",
+      "summary": "Free home energy improvements — insulation, air sealing, furnace repair or replacement — to permanently lower your energy bills. Renters qualify too, with the landlord’s consent."
+    },
+    {
+      "administeredBy": "Community Development Authority of the City of Madison",
+      "benefit": "Ongoing monthly rent assistance paid to your landlord.",
+      "categories": [
+        "housing-utilities"
+      ],
+      "eligibility": {
+        "kind": "allOf",
+        "of": [
+          {
+            "fact": "state",
+            "kind": "compare",
+            "op": "eq",
+            "value": "WI"
+          },
+          {
+            "fact": "housingStatus",
+            "kind": "set",
+            "op": "in",
+            "values": [
+              "renting",
+              "unhoused-or-temporary",
+              "living-with-others"
+            ]
+          },
+          {
+            "kind": "incomeAtOrBelow",
+            "percent": 50,
+            "scale": "dane-ami"
+          },
+          {
+            "kind": "manualReview",
+            "note": "The Section 8 waiting list has been closed to new applications since April 2023. The CDA is not currently accepting applications; check cityofmadison.com/dpced/housing/applicants for a reopening."
+          }
+        ]
+      },
+      "eligibilityCaveats": [
+        "Applicants do not need to currently live in the City of Madison, but Madison residents get application preference when a list is open.",
+        "Waits are commonly measured in years once a list opens.",
+        "A criminal background check and rental history review are part of the process.",
+        "Vouchers can usually be transferred to another housing authority after the first year."
+      ],
+      "howToApply": {
+        "phone": "608-266-4675",
+        "steps": [
+          "Check whether the waiting list is currently open — it has been closed since April 2023.",
+          "Apply online while it is open — the window is often short.",
+          "Keep your contact details current; applications are removed if the CDA cannot reach you."
+        ],
+        "url": "https://www.cityofmadison.com/dpced/housing/applicants"
+      },
+      "id": "madison-housing-choice-voucher",
+      "jurisdiction": "city",
+      "name": "Housing Choice Voucher (Section 8)",
+      "provider": "government",
+      "seasonalNote": "The Section 8 voucher waiting list has been closed to new applications since April 2023. (The CDA’s separate public housing waiting list is open; this record covers Section 8 vouchers only.)",
+      "source": {
+        "lastVerified": "2026-08-21",
+        "name": "City of Madison CDA Housing — Applicants",
+        "url": "https://www.cityofmadison.com/dpced/housing/applicants"
+      },
+      "status": "closed",
+      "summary": "A voucher that pays part of your rent directly to a private landlord. You find the apartment; the voucher covers the difference between roughly 30% of your income and the rent. The waiting list has been closed since 2023 — this is a lead to check on, not an active program to apply to today."
+    },
+    {
+      "administeredBy": "City of Madison",
+      "benefit": "A monthly credit of up to $30 on your municipal services bill. Never needs to be repaid.",
+      "categories": [
+        "housing-utilities"
+      ],
+      "eligibility": {
+        "kind": "allOf",
+        "of": [
+          {
+            "kind": "allOf",
+            "of": [
+              {
+                "fact": "state",
+                "kind": "compare",
+                "op": "eq",
+                "value": "WI"
+              },
+              {
+                "fact": "county",
+                "kind": "compare",
+                "op": "eq",
+                "value": "dane"
+              },
+              {
+                "fact": "city",
+                "kind": "compare",
+                "op": "eq",
+                "value": "madison"
+              }
+            ]
+          },
+          {
+            "kind": "anyOf",
+            "of": [
+              {
+                "kind": "incomeAtOrBelow",
+                "percent": 50,
+                "scale": "dane-ami"
+              },
+              {
+                "fact": "currentBenefits",
+                "kind": "set",
+                "op": "includesAny",
+                "values": [
+                  "snap-foodshare",
+                  "housing-choice-voucher",
+                  "wic"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "eligibilityCaveats": [
+        "You must apply — eligible households are not enrolled automatically — and reapply every year.",
+        "The account generally has to be in your name at your current Madison address.",
+        "Unpaid municipal services bills are placed on the property tax roll, so this matters for homeowners as well as renters.",
+        "If you are behind on your bill or facing a shutoff, call Madison Water Utility about a payment plan separately from applying for this credit."
+      ],
+      "howToApply": {
+        "phone": "608-266-4651",
+        "steps": [
+          "Gather income verification — a tax return, Social Security statement, or proof you receive FoodShare, a Housing Choice Voucher, or WIC.",
+          "Apply online or print and submit the PDF application."
+        ],
+        "url": "https://www.cityofmadison.com/pay/madcap"
+      },
+      "id": "madison-water-bill-assistance",
+      "jurisdiction": "city",
+      "name": "Madison Customer Assistance Program (MadCAP)",
+      "provider": "government",
+      "source": {
+        "lastVerified": "2026-08-21",
+        "name": "City of Madison — Madison Customer Assistance Program (MadCAP)",
+        "url": "https://www.cityofmadison.com/pay/madcap"
+      },
+      "status": "open",
+      "summary": "A monthly credit on your City of Madison municipal services bill (water, sewer, stormwater, and urban forestry charges) for low-income households. You have to apply and reapply every year — it is not automatic."
+    },
+    {
+      "administeredBy": "Tenant Resource Center, with Dane County and City of Madison funding",
+      "benefit": "One-time payment toward back rent or a security deposit, plus free tenant counseling and help communicating with a landlord.",
+      "categories": [
+        "housing-utilities"
+      ],
+      "eligibility": {
+        "kind": "allOf",
+        "of": [
+          {
+            "kind": "allOf",
+            "of": [
+              {
+                "fact": "state",
+                "kind": "compare",
+                "op": "eq",
+                "value": "WI"
+              },
+              {
+                "fact": "county",
+                "kind": "compare",
+                "op": "eq",
+                "value": "dane"
+              }
+            ]
+          },
+          {
+            "fact": "facingLossOfHousing",
+            "kind": "compare",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "fact": "housingStatus",
+            "kind": "set",
+            "op": "in",
+            "values": [
+              "renting",
+              "unhoused-or-temporary",
+              "living-with-others"
+            ]
+          },
+          {
+            "kind": "manualReview",
+            "note": "Income limits and funding availability change and are not published in a way we can check automatically. Contact the Tenant Resource Center to find out whether you qualify."
+          }
+        ]
+      },
+      "eligibilityCaveats": [
+        "Funding is limited and runs out at points during the year. Apply as early as you can.",
+        "You usually need a lease or a written demand for rent, plus a landlord willing to accept payment.",
+        "Tenant counseling is free and available to everyone regardless of income — call even if you do not qualify for the payment."
+      ],
+      "howToApply": {
+        "phone": "608-257-0006",
+        "steps": [
+          "Call the housing help desk, or start online.",
+          "Have your lease, your eviction notice if you have one, and proof of income ready.",
+          "A counselor will talk through your options, including ones that are not money."
+        ],
+        "url": "https://www.tenantresourcecenter.org/"
+      },
+      "id": "dane-eviction-prevention",
+      "jurisdiction": "county",
+      "name": "Eviction Prevention and Rent Assistance",
+      "provider": "nonprofit",
+      "requiredDocuments": [
+        "Lease or proof of tenancy",
+        "Any eviction or late-rent notice",
+        "Proof of income"
+      ],
+      "source": {
+        "lastVerified": null,
+        "name": "Tenant Resource Center",
+        "url": "https://www.tenantresourcecenter.org/"
+      },
+      "status": "open",
+      "summary": "Help paying overdue rent, and free advice on your rights as a tenant, for people at risk of losing their housing in Dane County."
+    },
+    {
+      "administeredBy": "Federal Communications Commission, via the Universal Service Administrative Company",
+      "benefit": "A monthly discount of up to $9.25 on one phone or internet bill per household, with a larger discount on Tribal lands.",
+      "categories": [
+        "housing-utilities"
+      ],
+      "eligibility": {
+        "kind": "anyOf",
+        "of": [
+          {
+            "kind": "incomeAtOrBelow",
+            "percent": 135,
+            "scale": "fpl"
+          },
+          {
+            "fact": "currentBenefits",
+            "kind": "set",
+            "op": "includesAny",
+            "values": [
+              "snap-foodshare",
+              "medicaid-badgercare",
+              "ssi",
+              "housing-choice-voucher",
+              "federal-public-housing"
+            ]
+          }
+        ]
+      },
+      "eligibilityCaveats": [
+        "One discount per household, not per person.",
+        "You must recertify each year or the discount stops.",
+        "You choose a participating provider; not every carrier takes part."
+      ],
+      "howToApply": {
+        "phone": "1-800-234-9473",
+        "steps": [
+          "Check that a participating provider serves your address.",
+          "Apply online through the National Verifier.",
+          "Contact the provider you chose to apply the discount to your bill."
+        ],
+        "url": "https://www.lifelinesupport.org/"
+      },
+      "id": "lifeline-phone-internet",
+      "jurisdiction": "federal",
+      "name": "Lifeline (phone and internet discount)",
+      "provider": "government",
+      "requiredDocuments": [
+        "Proof of income or proof of benefit enrollment",
+        "Photo ID"
+      ],
+      "source": {
+        "lastVerified": "2026-08-21",
+        "name": "Lifeline Support — Universal Service Administrative Company",
+        "url": "https://www.lifelinesupport.org/"
+      },
+      "status": "open",
+      "summary": "A monthly discount on phone or internet service. Available in every state, including for people who move."
+    },
+    {
+      "administeredBy": "Wisconsin Department of Health Services",
+      "benefit": "Full health insurance: doctor visits, prescriptions, urgent and emergency care, lab tests, mental health care, and more, through a ForwardHealth card.",
+      "categories": [
+        "health-disability"
+      ],
+      "eligibility": {
+        "kind": "allOf",
+        "of": [
+          {
+            "fact": "state",
+            "kind": "compare",
+            "op": "eq",
+            "value": "WI"
+          },
+          {
+            "kind": "anyOf",
+            "of": [
+              {
+                "kind": "incomeAtOrBelow",
+                "percent": 100,
+                "scale": "fpl"
+              },
+              {
+                "kind": "allOf",
+                "of": [
+                  {
+                    "kind": "anyOf",
+                    "of": [
+                      {
+                        "fact": "isPregnantOrPostpartum",
+                        "kind": "compare",
+                        "op": "eq",
+                        "value": true
+                      },
+                      {
+                        "fact": "hasChildUnder5",
+                        "kind": "compare",
+                        "op": "eq",
+                        "value": true
+                      },
+                      {
+                        "fact": "hasSchoolAgeChild",
+                        "kind": "compare",
+                        "op": "eq",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "incomeAtOrBelow",
+                    "percent": 306,
+                    "scale": "fpl"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "eligibilityCaveats": [
+        "Adults — both parents/caretaker relatives and adults without children — are capped at 100% of the federal poverty level regardless of household composition. Only pregnant people and children under 19 qualify up to 306% FPL, so at some income levels only your children may qualify, not you. Apply anyway.",
+        "Children ages 1–18 with family income over 201% FPL are charged a monthly premium (no more than 5% of counted income). Coverage does not end for not paying it.",
+        "Covers ages 0–64 only. If everyone in the household is 65 or older, or needs disability- or long-term-care-related Medicaid, a different pathway applies — contact your agency.",
+        "A new federal work requirement (from the One Big Beautiful Bill Act) starts affecting some members ages 19–64 beginning January 2027. Pregnant people, parents/caretakers of a child under 19, people with disabilities, and several other groups are exempt.",
+        "Immigration status affects eligibility for some household members. Children are often eligible even when adults are not."
+      ],
+      "howToApply": {
+        "phone": "1-800-362-3002",
+        "steps": [
+          "Apply online through ACCESS Wisconsin, by phone, or in person at your county or Tribal agency — there is no enrollment period, so you can apply any time.",
+          "Have Social Security numbers, income, and household details ready for everyone applying.",
+          "After approval, you will get a ForwardHealth card in the mail."
+        ],
+        "url": "https://access.wi.gov/s/?language=en_US"
+      },
+      "id": "badgercare-plus",
+      "jurisdiction": "state",
+      "name": "BadgerCare Plus",
+      "provider": "government",
+      "source": {
+        "lastVerified": "2026-08-31",
+        "name": "Wisconsin DHS — BadgerCare Plus",
+        "url": "https://www.dhs.wisconsin.gov/badgercareplus/index.htm"
+      },
+      "status": "open",
+      "summary": "Wisconsin’s Medicaid program — full health coverage for people ages 0–64 with low income, including pregnant people, children, parents, and caretaker relatives. There is no enrollment period; you can apply any time."
+    },
+    {
+      "administeredBy": "Wisconsin Department of Children and Families",
+      "benefit": "A monthly child care subsidy covering part of your child care costs. The amount depends on your family’s size, income, and approved activity hours.",
+      "categories": [
+        "childcare-education"
+      ],
+      "eligibility": {
+        "kind": "allOf",
+        "of": [
+          {
+            "fact": "state",
+            "kind": "compare",
+            "op": "eq",
+            "value": "WI"
+          },
+          {
+            "kind": "anyOf",
+            "of": [
+              {
+                "fact": "hasChildUnder5",
+                "kind": "compare",
+                "op": "eq",
+                "value": true
+              },
+              {
+                "fact": "hasSchoolAgeChild",
+                "kind": "compare",
+                "op": "eq",
+                "value": true
+              }
+            ]
+          },
+          {
+            "kind": "incomeAtOrBelow",
+            "percent": 200,
+            "scale": "fpl"
+          },
+          {
+            "kind": "manualReview",
+            "note": "Wisconsin Shares requires a parent or caregiver to be working, in school, or in an approved job-training or W-2/FoodShare Employment and Training activity. Contact your local agency to confirm your activity qualifies."
+          }
+        ]
+      },
+      "eligibilityCaveats": [
+        "A parent, foster parent, or kinship caregiver must be working, attending school, or in an approved job-training, apprenticeship, or W-2/FoodShare Employment and Training (FSET) activity to receive the subsidy.",
+        "Children must be under 13, or under 19 if the child has a disability, to qualify. This app’s \"school-age child\" answer covers ages 5–18 (K–12), which is broader than that cutoff — if your only child is a teenager 13 or older without a disability, you likely do not qualify even if this program appears.",
+        "Children receiving the subsidy must be U.S. citizens or qualifying immigrants; parents do not need to be.",
+        "Once approved, you can stay eligible until your income reaches 85% of the state median income, which is higher than the 200% FPL limit to first qualify — an income increase after enrolling usually does not end your subsidy right away.",
+        "The child care provider must be licensed, certified, or operated by a Wisconsin public school board, and must have a YoungStar quality rating of at least 2 stars."
+      ],
+      "howToApply": {
+        "steps": [
+          "Apply online through ACCESS Wisconsin, or contact your county or Tribal Income Maintenance agency to apply by phone or in person.",
+          "Complete an eligibility interview and report your family size, income, and approved activity.",
+          "After approval, complete a child care needs assessment within 30 days to set your subsidy amount."
+        ],
+        "url": "https://access.wi.gov/s/?language=en_US"
+      },
+      "id": "wisconsin-shares-child-care",
+      "jurisdiction": "state",
+      "name": "Wisconsin Shares Child Care Subsidy",
+      "provider": "government",
+      "source": {
+        "lastVerified": "2026-08-31",
+        "name": "Wisconsin DCF — Wisconsin Shares for Parents and Caregivers",
+        "url": "https://dcf.wisconsin.gov/wishares/parents"
+      },
+      "status": "open",
+      "summary": "Helps pay for child care so parents and caregivers can work, go to school, or take part in an approved job-training program. Funds are loaded onto an EBT card you use to pay your child care provider."
+    },
+    {
+      "administeredBy": "Dane County Department of Human Services",
+      "benefit": "One-to-one help from a social worker who knows the local programs, including help filling out applications and small amounts of emergency assistance.",
+      "categories": [
+        "housing-utilities",
+        "food-basic-needs"
+      ],
+      "eligibility": {
+        "kind": "allOf",
+        "of": [
+          {
+            "fact": "state",
+            "kind": "compare",
+            "op": "eq",
+            "value": "WI"
+          },
+          {
+            "fact": "county",
+            "kind": "compare",
+            "op": "eq",
+            "value": "dane"
+          }
+        ]
+      },
+      "eligibilityCaveats": [
+        "Workers are assigned by neighborhood, so which office you contact depends on where you live.",
+        "This is the best starting point if your situation does not fit neatly into any single program."
+      ],
+      "howToApply": {
+        "steps": [
+          "Find the JFF office for your neighborhood using the county site’s office finder.",
+          "Explain your situation — there is no application form to start."
+        ],
+        "url": "https://www.danecountyhumanservices.org/Children-Youth-and-Family/Community-Programs/Joining-Forces-for-Families"
+      },
+      "id": "dane-joining-forces-for-families",
+      "jurisdiction": "county",
+      "name": "Joining Forces for Families",
+      "provider": "government",
+      "source": {
+        "lastVerified": "2026-08-21",
+        "name": "Dane County Human Services — Joining Forces for Families",
+        "url": "https://www.danecountyhumanservices.org/Children-Youth-and-Family/Community-Programs/Joining-Forces-for-Families"
+      },
+      "status": "open",
+      "summary": "Neighborhood social workers who help Dane County residents find and apply for whatever they need — rent help, food, utilities, childcare, health care. Free, and you do not need to qualify for anything first."
+    },
+    {
+      "administeredBy": "United Way of Wisconsin",
+      "benefit": "A referral specialist who searches a database of local programs with you and makes warm handoffs. Available 24 hours a day.",
+      "categories": [
+        "housing-utilities",
+        "food-basic-needs",
+        "health-disability"
+      ],
+      "eligibility": {
+        "fact": "state",
+        "kind": "compare",
+        "op": "eq",
+        "value": "WI"
+      },
+      "eligibilityCaveats": [
+        "This is a referral service, not a source of money itself.",
+        "Useful when nothing else here fits, or when a program has closed its waiting list.",
+        "Outside Wisconsin, dialing 211 reaches your own local referral service instead."
+      ],
+      "howToApply": {
+        "phone": "211",
+        "steps": [
+          "Dial 211, or text your ZIP code to 898211.",
+          "Describe what you need."
+        ],
+        "url": "https://211wisconsin.communityos.org/"
+      },
+      "id": "wi-211",
+      "jurisdiction": "state",
+      "name": "211 Wisconsin",
+      "provider": "nonprofit",
+      "source": {
+        "lastVerified": "2026-08-21",
+        "name": "211 Wisconsin",
+        "url": "https://211wisconsin.communityos.org/"
+      },
+      "status": "open",
+      "summary": "A free, confidential helpline that connects you to local assistance of any kind. Dial 211 from any phone, any time, in any language."
+    }
+  ],
+  "snapshotVersion": 1
+}
