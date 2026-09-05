@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '@/ui/App';
+import { SNAPSHOT_GENERATED_AT } from '@/data/programs';
 
 /**
  * End-to-end smoke test through the real DOM.
@@ -34,6 +35,25 @@ describe('the app', () => {
   it('warns that the seed data is unverified', () => {
     render(<App />);
     expect(screen.getByRole('alert').textContent).toMatch(/not yet been checked/i);
+  });
+
+  it('stamps when the dataset was assembled, separately from verification (issue #44)', () => {
+    render(<App />);
+
+    // The assembled date comes from the snapshot's real generatedAt, formatted
+    // without a date library, and carries a machine-readable datetime.
+    const stamp = screen.getByText(/program data assembled/i);
+    const time = within(stamp).getByText(/\d{1,2} \w+ \d{4}/);
+    expect(time.tagName).toBe('TIME');
+    expect(time.getAttribute('datetime')).toBe(SNAPSHOT_GENERATED_AT);
+    expect(Number.isNaN(new Date(time.getAttribute('datetime')!).getTime())).toBe(false);
+
+    // Assembled is explicitly not verified: the line says so and gives the
+    // verification state as its own count. In the shipping 16-of-17 state the
+    // one outstanding record (dane-eviction-prevention, #45) reads as
+    // "never been checked".
+    expect(stamp.textContent).toMatch(/not when their sources were last checked/i);
+    expect(stamp.textContent).toMatch(/never been checked/i);
   });
 
   it('updates the results as soon as a question is answered', async () => {
