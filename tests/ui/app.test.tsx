@@ -43,7 +43,9 @@ describe('the app', () => {
     // The assembled date comes from the snapshot's real generatedAt, formatted
     // without a date library, and carries a machine-readable datetime.
     const stamp = screen.getByText(/program data assembled/i);
-    const time = within(stamp).getByText(/\d{1,2} \w+ \d{4}/);
+    // US month-first, matching the app's audience and its only other Intl call
+    // (`src/engine/evaluate.ts` formats currency as en-US).
+    const time = within(stamp).getByText(/\w+ \d{1,2}, \d{4}/);
     expect(time.tagName).toBe('TIME');
     expect(time.getAttribute('datetime')).toBe(SNAPSHOT_GENERATED_AT);
     expect(Number.isNaN(new Date(time.getAttribute('datetime')!).getTime())).toBe(false);

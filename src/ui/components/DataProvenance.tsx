@@ -39,7 +39,12 @@ import {
 const VERIFICATION_WINDOW_DAYS = 180;
 
 /**
- * Format an ISO 8601 instant as e.g. "5 September 2026", in UTC.
+ * Format an ISO 8601 instant as e.g. "September 5, 2026", in UTC.
+ *
+ * `en-US`, not the viewer's locale: this app serves Madison, Wisconsin, and
+ * month-first is what that audience reads without pausing. It also matches the
+ * only other `Intl` call in the codebase (`src/engine/evaluate.ts` formats
+ * currency as `en-US`).
  *
  * UTC, not the viewer's zone: `SNAPSHOT_GENERATED_AT` is a UTC instant and the
  * `<time datetime>` carries it in full, so the visible text should name the
@@ -50,7 +55,7 @@ const VERIFICATION_WINDOW_DAYS = 180;
 export function formatSnapshotDate(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
-  return new Intl.DateTimeFormat('en-GB', {
+  return new Intl.DateTimeFormat('en-US', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
