@@ -48,8 +48,13 @@ corroboration, not a bug report, and say so explicitly.
   `SKIPPED` for every case without a key rather than fabricating a result. **Since measured
   live against the nine-case tuning set -- see Section 4.4 -- and since hardened by issue
   #43 with a 33-case set, a frozen held-out split, the enum-slug fix, and schema prompt
-  caching (Section 4.6-4.7). The held-out run is itself still `SKIPPED`: no key was
-  available for #43 either.** This is stated
+  caching (Section 4.6-4.7). ~~The held-out run is itself still `SKIPPED`: no key was
+  available for #43 either.~~ **The held-out split has now been run live (2026-09-05):
+  the enum-slug fix and caching both work -- zero gate failures across 19 held-out cases,
+  83% input-cost saving -- but the run returned one dangerous over-claim and is therefore
+  BLOCKING. The model lifted a real 200%-FPL threshold out of a survivor-only branch and
+  dropped every condition gating it; the output is schema-valid, so no gate catches it.
+  Tracked as #51. The extractor is not cleared for #14's eligibility path.** This is stated
   as a gap, not glossed over -- see [Section 4](#4-tier-3-the-llm-question-scoped-and-prototyped-not-yet-measured).
 - **The headline cost-model number is reviewer-minutes, not tokens.** At a few hundred
   programs, the token bill stays trivially small; a one-person review queue does not. See
@@ -405,11 +410,11 @@ and `schoolmeals-direct-certification` (DPI direct certification) -- each requir
 model to collapse synonyms to one slug and drop programs with no slug rather than invent
 one. That is where the fix has to be demonstrated, not on `madcap-categorical`.
 
-**Measured result: `SKIPPED`.** No `ANTHROPIC_API_KEY` and no `ant` CLI credential were
+~~**Measured result: `SKIPPED`.** No `ANTHROPIC_API_KEY` and no `ant` CLI credential were
 available in the environment this issue was implemented in, exactly as in the original
-spike. `npm run eval:llm-extraction` reports `SKIPPED` for every case rather than
-fabricating a pass/fail, and the four-number summary per split shows all zeros with a
-`SKIPPED` count. The harness is complete and runnable:
+spike.~~ **Superseded 2026-09-05 -- the held-out split has now been run live. See
+"Measured: the held-out run" immediately below.** The harness reports `SKIPPED` rather than
+fabricating a pass/fail when no key is present, and is runnable as:
 
 ```
 npm run eval:llm-extraction                      # held-out split, fix + caching on
@@ -421,9 +426,48 @@ npm run eval:llm-extraction -- --caching=off     # A/B caching cost
 The four numbers -- **correct abstentions / dangerous over-claims / correct extractions /
 gate failures** -- are printed per split, never blended. A single dangerous over-claim on
 the held-out split trips a non-zero exit and is called out as **BLOCKING**, not reported as
-a percentage. This section must be updated with real numbers by whoever first runs it with
-a key, superseding this `SKIPPED` the way #23 superseded the spike's original `SKIPPED` --
-visibly, not silently.
+a percentage.
+
+#### Measured: the held-out run (2026-09-05)
+
+Run against `claude-sonnet-5`, 19 held-out cases (15 abstain, 4 extract), enum-vocab on,
+caching on. **The result is BLOCKING.**
+
+| Metric | Held-out |
+|---|---|
+| Correct abstentions | 14 / 15 |
+| **Dangerous over-claims** | **1** -- BLOCKING |
+| Correct extractions | 3 / 4 |
+| Gate failures | **0** |
+| Over-cautious (abstained where extraction expected) | 1 |
+
+**Two of the three things #43 set out to fix are confirmed fixed.** Gate failures went from
+1-in-4 on the tuning set to **zero across 19 held-out cases**, including the two
+`currentBenefits` cases (`wic-adjunctive-eligibility`, `schoolmeals-direct-certification`)
+the prompt was never tuned against -- the enum-vocab block does what §4.6 claimed. Caching
+saved **83% of input cost** (§4.7).
+
+**The third thing is not fixed, and the held-out set is what caught it.** One dangerous
+over-claim: `lifeline-survivor-extended`. The excerpt carries a genuine, extractable-looking
+"200% of the Federal Poverty Guidelines" clause -- but that clause is *extended* eligibility
+available only to survivors of domestic violence or trafficking, gated additionally on
+"proof of an attempted line separation request" and "experiencing financial hardship." None
+of the three gates is a fact in the vocabulary. The model emitted the income rule and
+dropped the gates.
+
+The consequence is concrete: general Lifeline eligibility is 135% FPL. A rule saying 200%
+FPL, with the survivor condition silently discarded, tells someone between those thresholds
+that they qualify when they do not. **This is a new failure class, not the one #23 found.**
+`madcap-categorical` was a vocabulary mismatch the gate caught mechanically. This one is
+semantically coherent, schema-valid, and passes every automated check -- the model correctly
+read a real threshold out of a passage whose *scope* it failed to carry. No schema gate can
+catch that, because nothing about the output is malformed.
+
+**The nine-case tuning set never contained a conditional-scope trap.** Building the held-out
+split found a failure the original spike's set structurally could not. That is the held-out
+methodology earning its cost on the first run, and it is the strongest argument in this
+document for having refused to tune against the small set. Tracked as issue #51 -- the
+extractor is **not** cleared for the #14 ingestion path until it is resolved.
 
 ### 4.7 Prompt caching (issue #43)
 
@@ -438,12 +482,32 @@ after the breakpoints. `run-eval.ts` accumulates `usage.cache_creation_input_tok
   token (i.e. caching off),
 
 priced at Section 6.1's dated Sonnet 5 rates ($2.00 / MTok input, $2.50 cache write, $0.20
-cache read). **Not measured live** (same `SKIPPED` as 4.6). The expected shape, not yet
-confirmed against real `usage`: call 1 pays a ~1.25x cache-write premium on the schema,
-calls 2..N pay ~0.1x for it, so across a 19-case split the schema's contribution drops by
-roughly 85%. On a run this small the absolute saving is fractions of a cent; the reason to
-wire it in now is that Section 6.4's steady-state model and any real ingestion run (#14)
-re-extract the same schema thousands of times.
+cache read). ~~**Not measured live** (same `SKIPPED` as 4.6).~~ **Measured 2026-09-05, on
+the same held-out run as §4.6:**
+
+| | 19 calls, caching on |
+|---|---|
+| Fresh input tokens | 7,706 |
+| Cache **write** tokens | 47,965 |
+| Cache **read** tokens | 863,370 |
+| Output tokens | 5,517 |
+| Input cost, caching **on** | **$0.308** |
+| Input cost, counterfactual **off** | $1.838 |
+| **Saved** | **$1.530 (83%)** |
+| Total run cost (input + output) | $0.363 |
+
+The predicted shape held: 83% measured against the ~85% estimated. Note the schema measures
+**99 KB** once the enum-vocab block is included, not the ~79 KB §4.5 recorded for the bare
+schema -- the enum listing is not free, and it is on every call.
+
+Two corrections this run makes to the numbers above and in §6:
+
+- **Cache reads dominate everything.** 863,370 cache-read tokens against 7,706 fresh input
+  is a 112:1 ratio. Effectively the entire input bill is the same schema re-read 19 times.
+- **§6.4's steady-state model is now measurable rather than structural**, at least on the
+  cost axis: at $0.019/case all-in, the re-extraction cost of a Tier-3 corpus is not the
+  constraint at any scale this project will reach. §6.5's reviewer-throughput argument is
+  unaffected and remains the real one.
 
 ---
 
@@ -672,8 +736,9 @@ in a spike whose deliverable is a document and a prototype, not dataset edits:
 
 ## 9. Recommendation
 
-0. **The LLM path is measured on the tuning set, encouraging but thin; the held-out
-   measurement is built and still unrun.** Abstention rate -- not extraction accuracy -- is
+0. ~~**The LLM path is measured on the tuning set, encouraging but thin; the held-out
+   measurement is built and still unrun.**~~ **The held-out split has now been run, and it
+   is BLOCKING (#51).** Abstention rate -- not extraction accuracy -- is
    the headline metric, and against the nine-case tuning set it is **5/5 correct
    abstentions with 0 dangerous over-claims, stable across three runs** (Section 4.4,
    issue #23). The one failure was the schema gate catching a slug-vs-display-name mismatch
@@ -681,12 +746,25 @@ in a spike whose deliverable is a document and a prototype, not dataset edits:
    Issue #43 then did what Section 4.4 said the real pipeline had to: built a 33-case set
    with a **frozen held-out split** (19 cases, Tier-3-weighted), applied the enum-slug fix
    (valid slugs now listed in the prompt), and added prompt caching on the ~79 KB schema
-   (Section 4.6-4.7). But #43 had no API key either, so the held-out run is **`SKIPPED`** --
-   `npm run eval:llm-extraction` is complete and reports the four numbers per split, it
-   just has not been pointed at a live model yet. Do not treat the LLM path as validated
-   until someone runs the held-out split and this document carries its numbers. Note also
-   that making the harness run at all required dropping `strict: true` -- a recursive
-   expression language cannot be enforced by strict structured output (Section 4.5).
+   (Section 4.6-4.7). ~~But #43 had no API key either, so the held-out run is
+   **`SKIPPED`**.~~ **The held-out split was run live on 2026-09-05 and the answer is
+   BLOCKING** (Section 4.6). Two of the three fixes landed: **zero gate failures across 19
+   held-out cases** (the enum-slug fix works, demonstrated on cases the prompt never saw)
+   and an **83% input-cost saving** from caching. But one dangerous over-claim --
+   `lifeline-survivor-extended`, where a real 200%-FPL threshold was lifted out of a
+   survivor-only extended-eligibility branch with all three gating conditions dropped.
+
+   **That failure is a different class from #23's and the more troubling one.**
+   `madcap-categorical` was mechanically malformed, so the gate caught it. This output is
+   schema-valid and semantically coherent; the model read a real number out of a passage
+   whose *scope* it failed to carry, and no schema gate can detect that. The nine-case
+   tuning set contained no conditional-scope trap and structurally could not have found it
+   -- the held-out methodology earned its cost on its first run.
+
+   **Do not treat the LLM path as validated, and do not wire it into #14's eligibility
+   path, until #51 is resolved.** Note also that making the harness run at all required
+   dropping `strict: true` -- a recursive expression language cannot be enforced by strict
+   structured output (Section 4.5).
 1. **Ship a deterministic extractor for income-table refreshes -- #24 already has, and it is
    now the production path, not this spike's.** `scripts/extract-income-tables.mjs` was
    built and measured here to answer the tiering question with real code, and its 4/4
