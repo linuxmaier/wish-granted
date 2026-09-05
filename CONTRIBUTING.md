@@ -38,12 +38,14 @@ Do not violate these without agreement first.
 ## Commands
 
 ```
-npm test                        # vitest, 120 tests
+npm test                        # vitest, 134 tests
 npm run test:refresh-income-tables   # Node's own runner, 19 tests (different runner)
 npm run test:e2e                # Playwright, 81 tests, 3 viewports
 npm run test:e2e:prod           # Playwright vs the production build + headers, 4 tests
 npm run typecheck
-npm run build
+npm run build                   # runs build:snapshot -- --check first, then tsc + vite
+npm run build:snapshot          # regenerate src/data/programs/snapshot.json from records.ts
+npm run build:snapshot -- --measure   # print the per-record size budget
 npm run check:links             # opt-in; --strict fails on dead links, never redirects
 ```
 
@@ -77,6 +79,10 @@ If a port is unexpectedly busy, find out what is on it rather than moving along.
 
 - `src/domain/` — fact vocabulary, the criteria expression language, the `Program`
   record shape. Framework-free.
+- `src/data/programs/` — one hand-authored record per file, aggregated by `records.ts`.
+  The app loads the compiled `snapshot.json` (built by `npm run build:snapshot`), not the
+  records directly — see `docs/design.md`, "The shippable snapshot". Edit a record →
+  regenerate → commit both.
 - `src/engine/` — three-valued (Kleene) evaluation. Every criterion is `pass` / `fail`
   / `unknown`; the three result buckets fall out of that logic. Criteria are **data,
   not functions**, so the engine walks the evaluated tree to generate explanations.

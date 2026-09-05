@@ -136,11 +136,105 @@ derivation correct.
 
 ### Where records live
 
-One file per program under `src/data/programs/`, re-exported from `index.ts`. Curation is
-per-program: each record carries its own `lastVerified` and gets re-checked on its own
-schedule, so a per-file diff makes "what changed when we re-verified this" legible in
-review. A single consolidated file would turn every verification pass into one large,
-unreadable diff.
+One file per program under `src/data/programs/`, aggregated by
+[`records.ts`](../src/data/programs/records.ts). Curation is per-program: each record carries
+its own `lastVerified` and gets re-checked on its own schedule, so a per-file diff makes
+"what changed when we re-verified this" legible in review. A single consolidated file would
+turn every verification pass into one large, unreadable diff.
+
+### The shippable snapshot (issue #8)
+
+The app does **not** import `records.ts`. `npm run build:snapshot` serializes those records
+into [`src/data/programs/snapshot.json`](../src/data/programs/snapshot.json) — a build-time
+artifact, committed to the repo, compiled into the bundle by Vite like any other module.
+`src/data/programs/index.ts` loads *that*, and nothing else, so the app only ever sees one
+shape of the dataset regardless of whether a record was hand-typed or (later, per #1/#14)
+ingested.
+
+Why a compiled artifact and not just the TS array:
+
+- **It is the pipeline's write target.** #1's architecture ends in "export static snapshot →
+  snapshot compiled into the bundle at build time". This is that file. The app never changes
+  shape again when ingestion lands; only what writes `records.ts` (or its successor) does.
+- **It is validated as data, at build time.** [`snapshot-schema.ts`](../src/data/programs/snapshot-schema.ts)
+  hand-rolls a validator (no new dependency). `npm run build` runs `build:snapshot -- --check`
+  before `tsc`/`vite`, so a malformed *or stale* snapshot fails the build rather than
+  shipping — `vite build` bundles `index.ts` without executing it, so the runtime
+  `assertValidSnapshot` in that file (which does catch it under `npm test` / `npm run dev`)
+  is not sufficient on its own. Both gates exist deliberately.
+- **It carries provenance the raw array cannot.** `generatedAt` (ISO 8601 UTC — the field
+  #44's "data as of" indicator consumes; it means *assembled*, not *verified*),
+  `snapshotVersion`, `generator`, and `factVocabulary`.
+
+**The fact-vocabulary seam.** `factVocabulary` is the sorted set of every fact key the
+shipped `eligibility` rules reference. It is *declared* in the snapshot rather than left to
+be re-derived, because it is the seam between the pipeline and the interview model: a rule
+that references a fact no question asks strands its program in "might qualify" for everyone,
+forever, and nothing in the running app surfaces that. `tests/data/vocabulary.test.ts` and
+`tests/data/snapshot.test.ts` both check the declared set against what the rules actually
+touch and against what the interview can ask; `--check` re-runs the cross-check in the
+build. When records become pipeline-generated, a record format that ships compiled criteria
+instead of full trees can still state its vocabulary here.
+
+**Round-trip fidelity.** `Program` is flat and `Criterion` is a data tree with no closures,
+so JSON serialization only drops `undefined`-valued optional keys and re-orders object keys
+— neither of which the engine observes (`evaluate.ts` reads `criterion.label` as
+`undefined` whether the key is absent or explicitly unset). `tests/data/snapshot.test.ts`
+asserts `matchAll` sees an identical corpus, and the full existing unit + e2e suites pass
+unmodified. `generatedAt` is held stable across a no-op rebuild (the generator carries the
+previous value forward when the record content is byte-for-byte unchanged), so regenerating
+without editing a record produces no diff.
+
+**Size budget.** Measured 2026-09-05 on the 17-record seed dataset, gzipped (`level 9`),
+via `npm run build:snapshot -- --measure`:
+
+| | gzipped |
+| --- | --- |
+| whole `snapshot.json` | 9,785 B (46,693 B raw) |
+| per record, **amortised** (records array gzipped ÷ 17) | **524 B** |
+| — of which `eligibility` tree | ~63 B |
+| — of which prose (`summary` + `benefit` + caveats + steps) | ~364 B |
+| per record, gzipped standalone (spread, includes ~18 B framing each) | 618–1,330 B |
+
+The budget number is the amortised one — that is how the records actually ship, one stream
+with a shared dictionary. It comes in a little above #1's original ~460 B/record estimate
+(that measurement predates the BadgerCare Plus and Wisconsin Shares records). The
+`eligibility`-tree figure is *far* below #1's ~250 B guess: the trees are small and highly
+repetitive (`{kind:"compare",fact:"state",op:"eq",value:"WI"}` recurs across most records),
+so gzip crushes them once amortised. Prose is the real cost and the natural lazy-load target
+if the corpus ever outgrows one bundle — but per #1, detail must be fetched for the whole
+match set at once or not at all, and chunking is explicitly out of scope here (~524 B/record
+means 1,000 programs is ~512 KB gzipped, comfortably inside "serve everything"). No prose is
+abbreviated today: the results UI renders all of it, so trimming it would be a behaviour
+change. The format simply keeps the full record; an abbreviated-prose variant is a future
+`SnapshotRecord` change, not a schema-version bump.
+
+**Bundle cost of this change:** production JS went 79.67 KB → 81.86 KB gzipped (+2.19 KB).
+The 17 record modules leave the bundle; `snapshot.json` (~8.9 KB gzipped) and the runtime
+validator (~1.5 KB gzipped) enter it. JSON is slightly less compressible than the
+builder-call TS form it replaces, which is most of the net increase. The validator ships to
+the browser deliberately — an invalid snapshot failing loudly at load is the point.
+
+**Where the curation database lives — decided: git.** #1 left this open ("where the curation
+DB lives and who can write to it, given the app itself has no backend"). The answer for now
+is that there is no separate database: the records are files in the repo, git history *is*
+the change history, and PRs are both the write path and the review gate. This satisfies
+#14's "land changes as PRs, never write directly to the published dataset" for free, needs
+zero new infrastructure, and suits a one-person part-time maintainer. Per-record provenance
+for hand-authored records is `git blame` plus the record's own source-comment (the
+convention `docs/data-authoring.md` already enforces). #14's richer per-record provenance
+(source URL, fetch timestamp, the text span an extracted rule came from) attaches as an
+optional `provenance` field on `SnapshotRecord` when #14 lands — adding it is a
+non-breaking schema change, not a rework.
+
+A committed SQLite curation DB with the snapshot exported from it would be better at two
+things: deduplicating a program that appears in both a state list and a county directory
+(#1's open question), and answering provenance queries at scale. It is not justified yet —
+17 hand-authored records have no dedup problem, and it would add a binary artifact to git
+plus a tool every contributor must install. What would change the decision: the first Tier-1
+directory ingestion (#14) landing hundreds of records with real cross-source overlap, at
+which point dedup stops being hypothetical. Until then, dedup is a human noticing two
+records during PR review.
 
 ## Rules engine
 

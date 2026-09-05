@@ -1,0 +1,14 @@
+# The program snapshot is a generated artifact compared byte-for-byte against
+# the generator's output (`npm run build:snapshot -- --check`, and
+# tests/data/snapshot.test.ts). Pin it to LF so the check behaves identically on
+# a Windows checkout (git's autocrlf would otherwise rewrite it to CRLF on
+# checkout, and the LF-writing generator would then report spurious drift).
+src/data/programs/snapshot.json text eol=lf
+
+# Same reasoning for the snapshot tooling and its inputs -- keeps the generator,
+# its tests, and CI reading the exact same bytes regardless of platform.
+src/data/programs/records.ts text eol=lf
+src/data/programs/build-snapshot.ts text eol=lf
+src/data/programs/snapshot-schema.ts text eol=lf
+scripts/build-snapshot/** text eol=lf
+tests/data/snapshot.test.ts text eol=lf
