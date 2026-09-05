@@ -68,6 +68,8 @@ const FACT_KEY_SCHEMA = { type: 'string', enum: [...FACT_KEYS] } as const;
 
 const VALUE_SCHEMA = {
   anyOf: [{ type: 'number' }, { type: 'string' }, { type: 'boolean' }],
+  description:
+    'For a string value against an enum fact, this must be one of that fact\'s exact declared slugs -- see the ENUM FACT VALUES list in the system prompt. JSON Schema cannot enforce this cross-field constraint; schema-gate.ts rejects a wrong slug after the fact.',
 } as const;
 
 /** Node kinds with no child criteria -- legal at any depth, including 0. */
@@ -108,7 +110,12 @@ const LEAF_SCHEMAS = [
       kind: { const: 'set' },
       fact: FACT_KEY_SCHEMA,
       op: { enum: ['in', 'notIn', 'includesAny', 'includesAll', 'excludes'] },
-      values: { type: 'array', items: { type: 'string' } },
+      values: {
+        type: 'array',
+        items: { type: 'string' },
+        description:
+          'Each entry must be one of the referenced fact\'s exact declared slugs (see the ENUM FACT VALUES list in the system prompt) -- never a display name or source phrase. Drop any program the source names that has no slug; do not invent one.',
+      },
     },
     required: ['kind', 'fact', 'op', 'values'],
     additionalProperties: false,
@@ -159,7 +166,7 @@ function combinatorSchemas(child: object) {
 }
 
 /** Inlines the criterion tree to `depth` levels of nesting. No `$ref`. */
-function criterionAtDepth(depth: number): object {
+function criterionAtDepth(depth: number): { anyOf: object[] } {
   if (depth <= 0) return { anyOf: [...LEAF_SCHEMAS] };
   return { anyOf: [...LEAF_SCHEMAS, ...combinatorSchemas(criterionAtDepth(depth - 1))] };
 }

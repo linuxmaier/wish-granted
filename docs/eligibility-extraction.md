@@ -46,7 +46,10 @@ corroboration, not a bug report, and say so explicitly.
   this spike ran in. `scripts/llm-extraction/run-eval.ts` is real, runnable code with a
   9-case eval set grounded entirely in text this spike actually fetched; it reports
   `SKIPPED` for every case without a key rather than fabricating a result. **Since measured
-  live -- see Section 4.4.** This is stated
+  live against the nine-case tuning set -- see Section 4.4 -- and since hardened by issue
+  #43 with a 33-case set, a frozen held-out split, the enum-slug fix, and schema prompt
+  caching (Section 4.6-4.7). The held-out run is itself still `SKIPPED`: no key was
+  available for #43 either.** This is stated
   as a gap, not glossed over -- see [Section 4](#4-tier-3-the-llm-question-scoped-and-prototyped-not-yet-measured).
 - **The headline cost-model number is reviewer-minutes, not tokens.** At a few hundred
   programs, the token bill stays trivially small; a one-person review queue does not. See
@@ -245,7 +248,13 @@ undecidable.
 
 ### 4.3 The eval set
 
-`scripts/llm-extraction/eval-cases.ts` -- 9 cases, every excerpt real text this spike
+> **Superseded by issue #43 (see [Section 4.6](#46-hardening-issue-43)).** The set is now
+> 33 cases split into a frozen held-out partition (19) and a tuning partition (14, the
+> nine below plus five). Every excerpt is still real fetched text, and the nine original
+> cases are unchanged and all live in the tuning split. The description below is kept for
+> history; `eval-cases.ts` is the current source of truth.
+
+`scripts/llm-extraction/eval-cases.ts` -- ~~9 cases~~, every excerpt real text this spike
 fetched (never invented for the eval, the same rule the brief applies to the shipped
 dataset):
 
@@ -275,6 +284,13 @@ correctly-abstaining extractor would have caught this, not caused it. See
 [Section 8](#8-findings-to-hand-off-not-fixed-here).
 
 ### 4.4 Measured: the live run (issue #23)
+
+> **Not superseded, but re-scoped by issue #43.** The numbers below stand as what they
+> always were: a measurement of the model against the **nine-case tuning set**, before the
+> enum-slug fix. They are *not* a held-out result and were never meant to be read as one
+> (the last two paragraphs of this section say so). [Section 4.6](#46-hardening-issue-43)
+> is where the held-out measurement lives. The one deliberate hedge below -- "the obvious
+> fix ... is deliberately not applied here" -- is the thing #43 exists to close.
 
 **Run on 2026-08-21 against `claude-sonnet-5`, three times, with identical results each
 time.** Nine cases per run, 27 case-evaluations total.
@@ -343,14 +359,91 @@ Dropping `strict` resolved both and the harness ran immediately. The schema stil
 the model; `schema-gate.ts` does the enforcing. That was always the design's real safety
 net -- the strict flag was belt-and-braces, and it turns out the belt does not fit.
 
-For the cost model: the inlined schema is **~79 KB of JSON on every request**. That is a
-non-trivial input-token cost per call and Section 6 does not currently account for it.
-Prompt caching is the obvious mitigation since the schema is identical across calls.
+For the cost model: the inlined schema is **~79 KB of JSON on every request** (measured:
+80,476 bytes serialized, `buildCriterionJsonSchema()` at depth 3). That is a non-trivial
+input-token cost per call and Section 6 does not currently account for it. Prompt caching
+is the obvious mitigation since the schema is identical across calls -- **implemented in
+#43, see [Section 4.7](#47-prompt-caching-issue-43).**
 
-**What was also measured, separately:** `tests/data/llm-extraction-eval.test.ts` checks the
-harness itself -- every hand-authored "correct extraction" target is schema-valid (ground
-truth held to the same bar as model output), every case is grounded in a real citation, and
-the gate agrees with the production suite on the real dataset.
+**What was also measured, separately:** `scripts/llm-extraction/llm-extraction-eval.test.ts`
+checks the harness itself -- every hand-authored "correct extraction" target is schema-valid
+(ground truth held to the same bar as model output), every case is grounded in a real
+citation, and the gate agrees with the production suite on the real dataset. (This file
+moved from `tests/data/` to sit beside the code it tests; see its docblock.)
+
+### 4.6 Hardening (issue #43)
+
+Issue #43 closes the three gaps Section 4.4 explicitly left open: a held-out split, the
+enum-slug fix, and prompt caching. The ordering mattered and was followed: **the held-out
+split was built and frozen before the prompt was touched.**
+
+**The eval set is now 33 cases, `scripts/llm-extraction/eval-cases.ts`:**
+
+| Split | Cases | Abstain | Extract | Tier 3 | Purpose |
+|---|---|---|---|---|---|
+| `tuning` | 14 | 8 | 6 | 8 | The nine #23 cases plus five; the enum-slug fix was designed against this. Fair game for iteration. |
+| `heldout` | 19 | 15 | 4 | 18 | Fetched and frozen 2026-09-05, before the fix was written. Never inspected while tuning. Weighted hard toward Tier 3. |
+
+Every excerpt is real text fetched from the cited URL on the date in each case's
+`fetchedOn` field, with a desktop-Chrome user agent (Section 1's finding -- WI state and
+some nonprofit sites 403 a naive fetcher). Typographic punctuation is normalised to ASCII
+to match the existing dataset; no wording is invented or paraphrased. The held-out set
+leans on the genuinely hard corners: the SNAP deduction stack and ABAWD exemption tree
+(7 CFR 273), WI DHS landing-page prose that names "eligibility" everywhere and a threshold
+nowhere, the FoodShare public-charge paragraph, a Section 8 dollar table with no scale, a
+CDA page that says residency is *not* required, and the WHEAP "Commitment to Community"
+utility carve-out that no fact in `facts.ts` can decide.
+
+**The enum-slug fix (`scripts/llm-extraction/enum-vocab.ts`).** The system prompt now
+carries a generated block listing every enum / enumSet fact and its exact slugs, each with
+the display label the source is likely to use ("Section 8" -> `housing-choice-voucher`,
+"food stamps"/"SNAP"/"FoodShare" -> `snap-foodshare`). Built from `FACTS` at call time so
+it cannot list a stale value. The `set`/`compare` value schemas also point at that list.
+The held-out split carries two `currentBenefits` extraction cases the prompt was never
+tuned against -- `wic-adjunctive-eligibility` (WIC's adjunctive-eligibility program list)
+and `schoolmeals-direct-certification` (DPI direct certification) -- each requiring the
+model to collapse synonyms to one slug and drop programs with no slug rather than invent
+one. That is where the fix has to be demonstrated, not on `madcap-categorical`.
+
+**Measured result: `SKIPPED`.** No `ANTHROPIC_API_KEY` and no `ant` CLI credential were
+available in the environment this issue was implemented in, exactly as in the original
+spike. `npm run eval:llm-extraction` reports `SKIPPED` for every case rather than
+fabricating a pass/fail, and the four-number summary per split shows all zeros with a
+`SKIPPED` count. The harness is complete and runnable:
+
+```
+npm run eval:llm-extraction                      # held-out split, fix + caching on
+npm run eval:llm-extraction -- --split=all
+npm run eval:llm-extraction -- --enum-vocab=off  # A/B the fix
+npm run eval:llm-extraction -- --caching=off     # A/B caching cost
+```
+
+The four numbers -- **correct abstentions / dangerous over-claims / correct extractions /
+gate failures** -- are printed per split, never blended. A single dangerous over-claim on
+the held-out split trips a non-zero exit and is called out as **BLOCKING**, not reported as
+a percentage. This section must be updated with real numbers by whoever first runs it with
+a key, superseding this `SKIPPED` the way #23 superseded the spike's original `SKIPPED` --
+visibly, not silently.
+
+### 4.7 Prompt caching (issue #43)
+
+The request is assembled `tools` -> `system` -> `messages`. The ~79 KB schema tool and the
+stable system prefix (base prompt + enum-vocab block, both byte-identical across calls) now
+carry `cache_control: {type: "ephemeral"}`; only the per-case excerpt in `messages` varies,
+after the breakpoints. `run-eval.ts` accumulates `usage.cache_creation_input_tokens` /
+`cache_read_input_tokens` / `input_tokens` and prints, at the end of a run:
+
+- the actual input-token cost with caching on, and
+- the counterfactual cost if every cache-read token had been a full-price fresh input
+  token (i.e. caching off),
+
+priced at Section 6.1's dated Sonnet 5 rates ($2.00 / MTok input, $2.50 cache write, $0.20
+cache read). **Not measured live** (same `SKIPPED` as 4.6). The expected shape, not yet
+confirmed against real `usage`: call 1 pays a ~1.25x cache-write premium on the schema,
+calls 2..N pay ~0.1x for it, so across a 19-case split the schema's contribution drops by
+roughly 85%. On a run this small the absolute saving is fractions of a cent; the reason to
+wire it in now is that Section 6.4's steady-state model and any real ingestion run (#14)
+re-extract the same schema thousands of times.
 
 ---
 
@@ -440,7 +533,7 @@ as necessary.
 |---|---|---|
 | Tier-3 pages, current scale | 7 | Measured, Section 2 |
 | Tier-3 pages, regional-expansion scale | ~140 (33% of a ~430-page corpus at ~20x program count) | Scaled from the measured 33% share, not re-measured |
-| Tokens per page (excerpt + system prompt + schema + tool-use overhead) | ~3,000 input / ~600 output | Typical excerpt length observed in this spike's fetches (a few hundred to ~2,000 words) plus schema/prompt overhead; not a measured average across a large sample |
+| Tokens per page (excerpt + system prompt + schema + tool-use overhead) | ~~~3,000 input~~ **~25,000 input** / ~600 output | ~~Typical excerpt length ... plus schema/prompt overhead~~ **Corrected per #43: the inlined schema alone is ~79 KB (~23K tokens, rough); the "~3,000" figure omitted it entirely. See the caching correction below.** Still not a measured average. |
 | Retry/validation overhead | 1.3x | One retry in ~3 cases (gate failure or abstention-worth-a-second-look), a placeholder pending real data from a live run |
 | Change rate, Tier 1 (income tables) | 100%/year, once, on a known date | Section 5 |
 | Change rate, Tier 3 (prose rules) | ~15%/year, structural estimate | Section 5 -- explicitly not measured; #7 should replace this once it has months of real verified-baseline data |
@@ -456,6 +549,17 @@ is not a cost question -- it's a five-minute API bill.
 
 At the ~430-page / ~140-Tier-3-page regional-expansion scale: 140 × the same per-page cost
 ≈ **$1.80** (Sonnet 5) or **$9.10** (Opus 5). Still trivial in absolute terms.
+
+**Correction (#43), and why the conclusion holds anyway.** The `~3,000 input` figure above
+left out the ~79 KB / ~23K-token inlined schema that rides on *every* request (Section 4.5,
+4.7). At ~25K input tokens/page the honest current-scale number is closer to 7 × (25,000 ×
+$2.00 + 600 × $10.00) / 1e6 × 1.3 ≈ **$0.51** non-batch (Sonnet 5), and regional-expansion
+≈ **$10** -- about 6x the old estimate. Prompt caching on the schema (implemented in #43)
+brings the marginal per-page schema cost back down by roughly 85% once the cache is warm,
+so a warm-cache batch run lands near the original figures. The section's headline is
+unchanged: even at 6x, and even uncached, initial extraction is a sub-$15 API bill at every
+scale modeled here, and reviewer-minutes (Section 6.5) remain the real constraint. These
+are still estimates, not `usage`-measured numbers -- #43 could not run live either.
 
 ### 6.4 Steady state (monthly)
 
@@ -568,16 +672,21 @@ in a spike whose deliverable is a document and a prototype, not dataset edits:
 
 ## 9. Recommendation
 
-0. **The LLM path is now measured, and the result is encouraging but thin.** Abstention
-   rate -- not extraction accuracy -- is this spike's headline metric, and it is
-   **5/5 correct abstentions with 0 dangerous over-claims, stable across three runs**
-   (Section 4.4, issue #23). The one failure was the schema gate catching a slug-vs-display-name
-   mismatch before it reached a human, which is the safety net working rather than a model
-   inventing a threshold. Read it as "the design works end to end at n=9", not as
-   certification: nine cases, one model, one prompt. A production rollout needs a
-   substantially larger, held-out set. Note also that making the harness run at all
-   required dropping `strict: true` -- a recursive expression language cannot be enforced
-   by strict structured output (Section 4.5).
+0. **The LLM path is measured on the tuning set, encouraging but thin; the held-out
+   measurement is built and still unrun.** Abstention rate -- not extraction accuracy -- is
+   the headline metric, and against the nine-case tuning set it is **5/5 correct
+   abstentions with 0 dangerous over-claims, stable across three runs** (Section 4.4,
+   issue #23). The one failure was the schema gate catching a slug-vs-display-name mismatch
+   before it reached a human -- the safety net working, not a model inventing a threshold.
+   Issue #43 then did what Section 4.4 said the real pipeline had to: built a 33-case set
+   with a **frozen held-out split** (19 cases, Tier-3-weighted), applied the enum-slug fix
+   (valid slugs now listed in the prompt), and added prompt caching on the ~79 KB schema
+   (Section 4.6-4.7). But #43 had no API key either, so the held-out run is **`SKIPPED`** --
+   `npm run eval:llm-extraction` is complete and reports the four numbers per split, it
+   just has not been pointed at a live model yet. Do not treat the LLM path as validated
+   until someone runs the held-out split and this document carries its numbers. Note also
+   that making the harness run at all required dropping `strict: true` -- a recursive
+   expression language cannot be enforced by strict structured output (Section 4.5).
 1. **Ship a deterministic extractor for income-table refreshes -- #24 already has, and it is
    now the production path, not this spike's.** `scripts/extract-income-tables.mjs` was
    built and measured here to answer the tiering question with real code, and its 4/4
