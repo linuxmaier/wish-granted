@@ -28,7 +28,10 @@
     "check:links": "node scripts/check-links.mjs",
     "check:sources": "node --use-system-ca --import ./scripts/check-sources/register.mjs scripts/check-sources/index.ts",
     "test:check-sources": "node --test scripts/check-sources/lib/__tests__/*.test.ts",
-    "typecheck:check-sources": "tsc -p scripts/check-sources/tsconfig.json --noEmit"
+    "typecheck:check-sources": "tsc -p scripts/check-sources/tsconfig.json --noEmit",
+    "ingest:descriptive": "node --use-system-ca --import ./scripts/ingest-descriptive/register.mjs scripts/ingest-descriptive/index.ts",
+    "test:ingest-descriptive": "node --test scripts/ingest-descriptive/lib/__tests__/*.test.ts",
+    "typecheck:ingest-descriptive": "tsc -p scripts/ingest-descriptive/tsconfig.json --noEmit"
   },
   "dependencies": {
     "react": "^19.0.0",

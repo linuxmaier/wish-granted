@@ -61,6 +61,12 @@ jobs:
       - name: Unit tests (Node test runner -- scripts/check-sources)
         run: npm run test:check-sources
 
+      # scripts/ingest-descriptive (#14): robots.txt matching, phone/status
+      # extraction, and the new/changed/moved/gone classification. Also Node's
+      # test runner, also network-free (the fetcher is injected).
+      - name: Unit tests (Node test runner -- scripts/ingest-descriptive)
+        run: npm run test:ingest-descriptive
+
       - name: Build
         run: npm run build
 
