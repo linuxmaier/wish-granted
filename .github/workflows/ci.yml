@@ -54,6 +54,13 @@ jobs:
       - name: Unit tests (Node test runner -- scripts/refresh-income-tables)
         run: npm run test:refresh-income-tables
 
+      # Also Node's test runner, also deterministic and network-free (the
+      # fetcher is injected). This is where scripts/check-sources's
+      # normalization -- the run-to-run stability guarantee from issue #7 --
+      # is regression-tested.
+      - name: Unit tests (Node test runner -- scripts/check-sources)
+        run: npm run test:check-sources
+
       - name: Build
         run: npm run build
 

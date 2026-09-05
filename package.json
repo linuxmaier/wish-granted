@@ -21,7 +21,10 @@
     "extract:income-tables": "node scripts/extract-income-tables.mjs",
     "eval:llm-extraction": "node --env-file-if-exists=.env scripts/llm-extraction/run-eval.ts",
     "typecheck:llm-extraction": "tsc -p scripts/llm-extraction --noEmit",
-    "check:links": "node scripts/check-links.mjs"
+    "check:links": "node scripts/check-links.mjs",
+    "check:sources": "node --use-system-ca --import ./scripts/check-sources/register.mjs scripts/check-sources/index.ts",
+    "test:check-sources": "node --test scripts/check-sources/lib/__tests__/*.test.ts",
+    "typecheck:check-sources": "tsc -p scripts/check-sources/tsconfig.json --noEmit"
   },
   "dependencies": {
     "react": "^19.0.0",

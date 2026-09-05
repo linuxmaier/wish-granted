@@ -1,0 +1,86 @@
+name: Check sources
+
+# Opt-in, scheduled, never a PR gate -- same shape as check-links.yml.
+#
+# This fetches every program's source.url, reduces each page to its meaningful
+# text (scripts/check-sources/lib/normalize.ts), hashes it, and compares against
+# the committed baseline in scripts/check-sources/source-hashes.json. When a
+# page's text has moved -- or 404'd, or gone unreachable -- it opens (or updates)
+# a single pull request that advances the baseline and carries the report as its
+# body. That PR is the "tracked item" from issue #7: a human re-verifies the
+# flagged records against docs/data-authoring.md's re-verification loop, then
+# either sets a fresh lastVerified or lands the correction, on top of the
+# baseline bump.
+#
+# An all-unchanged run does nothing and says nothing -- no PR, no noise. Monthly
+# is enough: steady-state change on these sources is roughly annual (see
+# docs/eligibility-extraction.md Section 5), and stalePrograms() covers the
+# time-based half between runs.
+on:
+  schedule:
+    - cron: '0 14 1 * *' # 1st of the month, 14:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check-sources:
+    name: Detect changed source pages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # actions/checkout leaves a detached HEAD, so the script's "never write on
+      # main" guard does not trip here -- it writes source-hashes.json into the
+      # workspace, and the git diff below is what decides whether that matters.
+      - name: Check sources
+        run: |
+          set +e
+          npm run check:sources -- --report-file="$RUNNER_TEMP/report.md"
+          code=$?
+          set -e
+          # 0 = all clean; 2 = something changed/gone/unreachable (expected, the
+          # PR step handles it). Anything else (crash, or the on-main write
+          # guard, which shouldn't trip on a detached HEAD) is a real failure.
+          if [ "$code" != "0" ] && [ "$code" != "2" ]; then
+            echo "::error::check:sources exited $code"
+            exit "$code"
+          fi
+
+      - name: Open or update the re-verification PR
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: automation/source-change-detection
+        run: |
+          if git diff --quiet -- scripts/check-sources/source-hashes.json; then
+            echo "No baseline change. Nothing to open."
+            exit 0
+          fi
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          git add scripts/check-sources/source-hashes.json
+          git commit -m "Source change detection: baseline update $(date -u +%Y-%m-%d)"
+          git push --force origin "$BRANCH"
+
+          if gh pr list --head "$BRANCH" --state open --json number --jq 'length' | grep -q '^0$'; then
+            gh pr create \
+              --base main --head "$BRANCH" \
+              --title "Source change detection: re-verify flagged records" \
+              --body-file "$RUNNER_TEMP/report.md"
+          else
+            echo "PR already open for $BRANCH; the force-push above updated it."
+            gh pr comment --body-file "$RUNNER_TEMP/report.md" "$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')"
+          fi
