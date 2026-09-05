@@ -13,8 +13,17 @@ export interface FetchTextResult {
   text: string;
 }
 
-export async function fetchText(url: string): Promise<FetchTextResult> {
-  const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT, Accept: '*/*' } });
+/** Optional per-call knobs. Callers that pass nothing get the original behaviour. */
+export interface FetchOptions {
+  /** Abort signal, e.g. from `AbortSignal.timeout(ms)` -- used by scripts/check-sources (#7). */
+  signal?: AbortSignal;
+}
+
+export async function fetchText(url: string, opts: FetchOptions = {}): Promise<FetchTextResult> {
+  const res = await fetch(url, {
+    headers: { 'User-Agent': USER_AGENT, Accept: '*/*' },
+    ...(opts.signal ? { signal: opts.signal } : {}),
+  });
   const text = await res.text();
   return { status: res.status, ok: res.ok, text };
 }

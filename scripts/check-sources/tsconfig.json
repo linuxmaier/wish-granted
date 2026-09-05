@@ -1,0 +1,28 @@
+{
+  // `module`/`moduleResolution` are "bundler" (matching the root tsconfig), not
+  // NodeNext like scripts/refresh-income-tables, for one reason: this script
+  // imports `@/data/programs`, which transitively pulls in src/ files that use
+  // extensionless relative imports (`./facts`). NodeNext rejects those. Node
+  // itself runs this fine -- see scripts/check-sources/resolve-hook.mjs, which
+  // fills in the extensions at runtime. tsconfig is only consumed by
+  // `typecheck:check-sources`.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "types": ["node"],
+    "paths": { "@/*": ["../../src/*"] }
+  },
+  "include": ["**/*.ts"]
+}

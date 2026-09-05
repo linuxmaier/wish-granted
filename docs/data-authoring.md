@@ -259,6 +259,85 @@ already the script's behavior), and treat exit code 1 as a failed CI run rather 
 change" -- silently swallowing a `parse-failed` as "nothing to do" is exactly the dangerous
 outcome the issue calls out.
 
+## Source change detection (scripts/check-sources)
+
+Issue #7 built the other half of "keeping data fresh": a scheduled job that notices when a
+program's `source.url` page *changes*, not just when its `lastVerified` date gets old. It
+automates the noticing, never the judgement — a detected change opens a PR and a human does
+the re-verification.
+
+```
+npm run check:sources                       # fetch all, update source-hashes.json, print the report
+npm run check:sources -- --dry-run           # fetch and report, write nothing
+npm run check:sources -- --id=wic-wisconsin  # just one record (repeatable)
+npm run check:sources -- --stale-days=90      # widen/narrow the stalePrograms() window in the report
+npm run check:sources -- --report-file=out.md
+```
+
+No extra tools to install (it reuses `scripts/refresh-income-tables/lib/http.ts`, so it
+sends a desktop-Chrome UA — WI state and some nonprofit sites 403 anything else). It reads
+the live `PROGRAMS` array via a small `node:module` resolve hook
+(`scripts/check-sources/resolve-hook.mjs`), so the ids and URLs it checks are always the
+real ones.
+
+### What it does, and the one hard part
+
+For each record it fetches `source.url`, reduces the page to its **meaningful text**, hashes
+that, and compares to the committed baseline in
+`scripts/check-sources/source-hashes.json` (one entry per program id, sorted, pretty-printed
+— a real change is a one- or two-line diff a reviewer can read).
+
+The reduction step is the whole ballgame. `docs/eligibility-extraction.md` Section 5
+measured that byte-level change on these sources is dominated by incidental churn — render
+timestamps, CSRF tokens, rotating announcement banners, session ids in links, analytics
+blobs — on pages whose actual figures move once a year. Three automatic change signals were
+tried there and all three rejected. So `lib/normalize.ts` strips the page hard: drop
+`<script>/<style>/<form>/<head>`, narrow to `<main>` when the page marks it (government CMS
+templates put everything volatile *outside* `<main>`), drop remaining nav/header/footer,
+strip all tags and attributes, decode entities, fold typographic Unicode to ASCII, and
+scrub date/timestamp/copyright/"N views"/opaque-token text patterns. It errs aggressive: a
+missed edit is caught on the next run or by the time-based check; a false "changed" trains
+the reviewer to ignore the job. Run-to-run stability is proven, not asserted, in
+`lib/__tests__/normalize.test.ts` (and was verified against all 17 live pages: two
+consecutive real fetches, zero baseline churn).
+
+### The four outcomes, and why they are kept distinct
+
+| Outcome | Means | What a human does |
+|---|---|---|
+| **unchanged** | normalized text hashes to the stored value | nothing — silent, no PR |
+| **new** | no baseline yet (first run, or the URL changed) | nothing — baseline recorded |
+| **changed** | reachable, 200, normalized text moved | re-verify the record against the source (below) |
+| **gone** | 404 / 410 — the page was removed, not edited | find the current official page; fix `source.url` in the record **and** in `source-hashes.json`; note "moved" vs "never correct" per the section above; then re-verify |
+| **unreachable** | timeout, 403, 5xx, network error | usually transient — the last good hash is kept; if it persists across runs, treat as "gone" |
+
+A 404 is deliberately not an "edit" — see "Moved vs. never correct" above, and issue #14.
+
+The report also prints `stalePrograms(days)` (from `src/data/programs/index.ts`) on the same
+run — the time-based half of the same question, now wired up.
+
+### The re-verification loop
+
+The scheduled workflow (`.github/workflows/check-sources.yml`, monthly) runs the script on a
+detached HEAD, and if `source-hashes.json` changed it force-pushes
+`automation/source-change-detection` and opens (or updates) one PR with the report as its
+body. That PR is the tracked item. To close it:
+
+1. For each **changed** record, do the full "Verifying a program record" procedure above
+   against the (new) source text. The hash moving is not proof the *eligibility rule*
+   changed — it might be reworded prose or a new caveat — so read it like any re-verification.
+2. Land any correction, and set a fresh `lastVerified` (or leave it `null` with a
+   `manualReview`, per the rules above), as edits **on top of** the baseline bump the bot
+   committed.
+3. For **gone** records, fix the URL first (in the record and in `source-hashes.json`), then
+   re-verify.
+4. Merge. The baseline advances with the reviewed state.
+
+Exit codes: **0** clean (nothing changed, nothing unreachable); **1** a write was refused
+because the script was run on `main`/`master` (it never advances the committed baseline
+without a PR, same rule as `refresh-income-tables`); **2** at least one record is
+changed / gone / unreachable.
+
 ## Adding a new program
 
 1. Create `src/data/programs/<id>.ts` exporting a `Program`. Copy the nearest existing
@@ -318,7 +397,9 @@ window, defaulting to 180 days. Program details drift constantly: waiting lists 
 close, funding runs out mid-year, phone numbers change. A record verified two years ago is
 not meaningfully better than an unverified one.
 
-Re-verification is the same procedure as above, ending in a new `lastVerified` date.
+Re-verification is the same procedure as above, ending in a new `lastVerified` date. Two
+things surface which records need it: the time-based `stalePrograms()` check, and the
+page-based "Source change detection" job above — both report on the same schedule.
 
 ## Future ingestion
 
