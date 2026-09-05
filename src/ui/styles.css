@@ -827,6 +827,23 @@ body {
   color: var(--ink-soft);
 }
 
+/* The "data as of" provenance line (issue #44). One step quieter again than the
+   rest of the already-quiet footer: text-xs, no bolding anywhere in it (the
+   assembled date is a fact inside a sentence, not a callout), inheriting the
+   footer's --ink-soft, which sits at ~6.7:1 on --bg in light and clears AA for
+   this size in dark too. Meaning is carried entirely by words -- no colour, no
+   icon, nothing a greyscale or high-contrast render would lose. */
+.footer__provenance {
+  margin-top: var(--space-4);
+  font-size: var(--text-xs);
+}
+
+.footer__provenance time {
+  /* Keep "5 September 2026" from breaking across lines mid-date; it reads as
+     one token even though it is three words. */
+  white-space: nowrap;
+}
+
 a {
   color: var(--accent);
 }
