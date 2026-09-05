@@ -48,8 +48,13 @@ corroboration, not a bug report, and say so explicitly.
   `SKIPPED` for every case without a key rather than fabricating a result. **Since measured
   live against the nine-case tuning set -- see Section 4.4 -- and since hardened by issue
   #43 with a 33-case set, a frozen held-out split, the enum-slug fix, and schema prompt
-  caching (Section 4.6-4.7). The held-out run is itself still `SKIPPED`: no key was
-  available for #43 either.** This is stated
+  caching (Section 4.6-4.7). ~~The held-out run is itself still `SKIPPED`: no key was
+  available for #43 either.~~ **The held-out split has now been run live (2026-09-05):
+  the enum-slug fix and caching both work -- zero gate failures across 19 held-out cases,
+  83% input-cost saving -- but the run returned one dangerous over-claim and is therefore
+  BLOCKING. The model lifted a real 200%-FPL threshold out of a survivor-only branch and
+  dropped every condition gating it; the output is schema-valid, so no gate catches it.
+  Tracked as #51. The extractor is not cleared for #14's eligibility path.** This is stated
   as a gap, not glossed over -- see [Section 4](#4-tier-3-the-llm-question-scoped-and-prototyped-not-yet-measured).
 - **The headline cost-model number is reviewer-minutes, not tokens.** At a few hundred
   programs, the token bill stays trivially small; a one-person review queue does not. See
@@ -731,8 +736,9 @@ in a spike whose deliverable is a document and a prototype, not dataset edits:
 
 ## 9. Recommendation
 
-0. **The LLM path is measured on the tuning set, encouraging but thin; the held-out
-   measurement is built and still unrun.** Abstention rate -- not extraction accuracy -- is
+0. ~~**The LLM path is measured on the tuning set, encouraging but thin; the held-out
+   measurement is built and still unrun.**~~ **The held-out split has now been run, and it
+   is BLOCKING (#51).** Abstention rate -- not extraction accuracy -- is
    the headline metric, and against the nine-case tuning set it is **5/5 correct
    abstentions with 0 dangerous over-claims, stable across three runs** (Section 4.4,
    issue #23). The one failure was the schema gate catching a slug-vs-display-name mismatch
@@ -740,12 +746,25 @@ in a spike whose deliverable is a document and a prototype, not dataset edits:
    Issue #43 then did what Section 4.4 said the real pipeline had to: built a 33-case set
    with a **frozen held-out split** (19 cases, Tier-3-weighted), applied the enum-slug fix
    (valid slugs now listed in the prompt), and added prompt caching on the ~79 KB schema
-   (Section 4.6-4.7). But #43 had no API key either, so the held-out run is **`SKIPPED`** --
-   `npm run eval:llm-extraction` is complete and reports the four numbers per split, it
-   just has not been pointed at a live model yet. Do not treat the LLM path as validated
-   until someone runs the held-out split and this document carries its numbers. Note also
-   that making the harness run at all required dropping `strict: true` -- a recursive
-   expression language cannot be enforced by strict structured output (Section 4.5).
+   (Section 4.6-4.7). ~~But #43 had no API key either, so the held-out run is
+   **`SKIPPED`**.~~ **The held-out split was run live on 2026-09-05 and the answer is
+   BLOCKING** (Section 4.6). Two of the three fixes landed: **zero gate failures across 19
+   held-out cases** (the enum-slug fix works, demonstrated on cases the prompt never saw)
+   and an **83% input-cost saving** from caching. But one dangerous over-claim --
+   `lifeline-survivor-extended`, where a real 200%-FPL threshold was lifted out of a
+   survivor-only extended-eligibility branch with all three gating conditions dropped.
+
+   **That failure is a different class from #23's and the more troubling one.**
+   `madcap-categorical` was mechanically malformed, so the gate caught it. This output is
+   schema-valid and semantically coherent; the model read a real number out of a passage
+   whose *scope* it failed to carry, and no schema gate can detect that. The nine-case
+   tuning set contained no conditional-scope trap and structurally could not have found it
+   -- the held-out methodology earned its cost on its first run.
+
+   **Do not treat the LLM path as validated, and do not wire it into #14's eligibility
+   path, until #51 is resolved.** Note also that making the harness run at all required
+   dropping `strict: true` -- a recursive expression language cannot be enforced by strict
+   structured output (Section 4.5).
 1. **Ship a deterministic extractor for income-table refreshes -- #24 already has, and it is
    now the production path, not this spike's.** `scripts/extract-income-tables.mjs` was
    built and measured here to answer the tiering question with real code, and its 4/4
