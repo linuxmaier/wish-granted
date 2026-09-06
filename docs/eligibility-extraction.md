@@ -504,9 +504,11 @@ extractor is **not** cleared for the #14 ingestion path until it is resolved.
 > option-2 fix (phase 2 of #51) has now been built and run once against this same
 > held-out split -- see "Measured: the option-2 fix" immediately below. **It did not
 > work:** still 3 dangerous over-claims (a different three), correct extractions
-> collapsed 5/6 -> 1/6, and 3 new gate failures. The three *original* targets
-> (`lifeline-survivor-extended`, `emergency-assistance-emergency-gate`, `seniorcare-...`)
-> were fixed; the fix broke or over-caught enough else that the split is still BLOCKING.
+> collapsed 5/6 -> 1/6, and 3 new gate failures. All three *original* targets stopped
+> being dangerous over-claims -- `lifeline-survivor-extended` and
+> `emergency-assistance-emergency-gate` now abstain, `seniorcare-...` is caught by the
+> new gate -- but the fix broke or over-caught enough else that the split is still
+> BLOCKING.
 
 Issue #51 required the held-out set to grow with more conditional-scope cases **before**
 any fix is designed, so the fix (option 2: a scope-carrying obligation in the output
