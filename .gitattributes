@@ -18,3 +18,10 @@ tests/data/snapshot.test.ts text eol=lf
 # LF so a Windows checkout (autocrlf) does not show spurious CRLF drift (issue #49).
 scripts/check-sources/source-hashes.json text eol=lf
 scripts/ingest-descriptive/proposals.json text eol=lf
+
+# Shell scripts must be LF or bash fails on the stray carriage returns
+# ("$'\r': command not found"). The WorktreeCreate hook (#56) runs through Git
+# Bash on Windows, so a CRLF checkout would break agent worktree isolation --
+# and it would break at dispatch time, far from anything pointing at line
+# endings as the cause.
+*.sh text eol=lf
