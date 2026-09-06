@@ -47,14 +47,17 @@ corroboration, not a bug report, and say so explicitly.
   9-case eval set grounded entirely in text this spike actually fetched; it reports
   `SKIPPED` for every case without a key rather than fabricating a result. **Since measured
   live against the nine-case tuning set -- see Section 4.4 -- and since hardened by issue
-  #43 with a 33-case set, a frozen held-out split, the enum-slug fix, and schema prompt
-  caching (Section 4.6-4.7). ~~The held-out run is itself still `SKIPPED`: no key was
+  #43 with a ~~33-case set~~ 41-case set, a frozen held-out split, the enum-slug fix, and
+  schema prompt caching (Section 4.6-4.7). ~~The held-out run is itself still `SKIPPED`: no key was
   available for #43 either.~~ **The held-out split has now been run live (2026-09-05):
-  the enum-slug fix and caching both work -- zero gate failures across 19 held-out cases,
-  83% input-cost saving -- but the run returned one dangerous over-claim and is therefore
-  BLOCKING. The model lifted a real 200%-FPL threshold out of a survivor-only branch and
-  dropped every condition gating it; the output is schema-valid, so no gate catches it.
-  Tracked as #51. The extractor is not cleared for #14's eligibility path.** This is stated
+  the enum-slug fix and caching both work -- zero gate failures across ~~19~~ 27 held-out cases,
+  ~~83%~~ 85% input-cost saving -- but the run returned ~~one dangerous over-claim~~ dangerous
+  over-claims and is therefore BLOCKING. The model lifts real income thresholds out of
+  conditional branches (survivor-only, emergency-only, cost-tier-not-a-ceiling) and drops
+  the conditions gating them; the output is schema-valid, so no gate catches it. Issue #51
+  grew the held-out set with eight conditional-scope cases to make this measurable; the
+  pre-fix baseline is 3 dangerous over-claims in 27 (Section 4.6). The extractor is not
+  cleared for #14's eligibility path.** This is stated
   as a gap, not glossed over -- see [Section 4](#4-tier-3-the-llm-question-scoped-and-prototyped-not-yet-measured).
 - **The headline cost-model number is reviewer-minutes, not tokens.** At a few hundred
   programs, the token bill stays trivially small; a one-person review queue does not. See
@@ -254,10 +257,21 @@ undecidable.
 ### 4.3 The eval set
 
 > **Superseded by issue #43 (see [Section 4.6](#46-hardening-issue-43)).** The set is now
-> 33 cases split into a frozen held-out partition (19) and a tuning partition (14, the
-> nine below plus five). Every excerpt is still real fetched text, and the nine original
-> cases are unchanged and all live in the tuning split. The description below is kept for
-> history; `eval-cases.ts` is the current source of truth.
+> ~~33 cases split into a frozen held-out partition (19)~~ **41 cases split into a frozen
+> held-out partition (27, after the #51 conditional-scope expansion below)** and a tuning
+> partition (14, the nine below plus five). Every excerpt is still real fetched text, and
+> the nine original cases are unchanged and all live in the tuning split. The description
+> below is kept for history; `eval-cases.ts` is the current source of truth.
+>
+> **Held-out expansion (issue #51, 2026-09-05).** The first live held-out run returned a
+> dangerous over-claim in a class the tuning set had no example of -- a real threshold
+> lifted out of a conditional branch with its scope silently dropped
+> (`lifeline-survivor-extended`). Eight cases were added to the held-out split for this
+> class: six *conditional-scope traps* (`abstain` -- a threshold gated by a heading, a
+> column label, a list stem, an "extended eligibility" branch, or an undecidable
+> predicate) and two *controls* (`extract` -- qualifiers that look scope-changing but are
+> not, so over-caution is measurable). Built and frozen *before* the option-2 fix is
+> designed, per #51's acceptance criteria. See [Section 4.6](#46-hardening-issue-43).
 
 `scripts/llm-extraction/eval-cases.ts` -- ~~9 cases~~, every excerpt real text this spike
 fetched (never invented for the eval, the same rule the brief applies to the shipped
@@ -382,22 +396,33 @@ Issue #43 closes the three gaps Section 4.4 explicitly left open: a held-out spl
 enum-slug fix, and prompt caching. The ordering mattered and was followed: **the held-out
 split was built and frozen before the prompt was touched.**
 
-**The eval set is now 33 cases, `scripts/llm-extraction/eval-cases.ts`:**
+**The eval set is now ~~33 cases~~ 41 cases (27 held-out after the #51 expansion),
+`scripts/llm-extraction/eval-cases.ts`:**
 
 | Split | Cases | Abstain | Extract | Tier 3 | Purpose |
 |---|---|---|---|---|---|
 | `tuning` | 14 | 8 | 6 | 8 | The nine #23 cases plus five; the enum-slug fix was designed against this. Fair game for iteration. |
-| `heldout` | 19 | 15 | 4 | 18 | Fetched and frozen 2026-09-05, before the fix was written. Never inspected while tuning. Weighted hard toward Tier 3. |
+| `heldout` | ~~19~~ **27** | ~~15~~ **21** | ~~4~~ **6** | ~~18~~ **25** | Fetched and frozen 2026-09-05, before any fix was written. Never inspected while tuning. Weighted hard toward Tier 3. The +8 are the #51 conditional-scope cases (six `abstain` traps, two `extract` controls). |
 
 Every excerpt is real text fetched from the cited URL on the date in each case's
 `fetchedOn` field, with a desktop-Chrome user agent (Section 1's finding -- WI state and
 some nonprofit sites 403 a naive fetcher). Typographic punctuation is normalised to ASCII
-to match the existing dataset; no wording is invented or paraphrased. The held-out set
+to match the existing dataset; CFR sub-paragraph markers are de-spaced to how eCFR renders
+them ("(c)(1)(i)"), and bulleted requirement lists are joined into running text with the
+list stem kept; no wording is invented or paraphrased. The held-out set
 leans on the genuinely hard corners: the SNAP deduction stack and ABAWD exemption tree
 (7 CFR 273), WI DHS landing-page prose that names "eligibility" everywhere and a threshold
 nowhere, the FoodShare public-charge paragraph, a Section 8 dollar table with no scale, a
 CDA page that says residency is *not* required, and the WHEAP "Commitment to Community"
-utility carve-out that no fact in `facts.ts` can decide.
+utility carve-out that no fact in `facts.ts` can decide. The #51 additions (frozen
+2026-09-05, same rule, all `heldout`) target one specific failure -- a real threshold
+carried out of a conditional branch with its scope dropped: Head Start's over-income
+allowance (45 CFR 1302.12), Emergency Assistance's emergency gate, QMB's Medicare-entitlement
+gate, the Homestead Credit's "one of the following conditions" list stem, BadgerCare Plus's
+per-population FPL columns, and SeniorCare's cost-tier percentages that are not an
+eligibility ceiling at all -- plus two controls (`wic-may-also-apply`,
+`madcap-billholder-and-ami`) whose scope-flavoured qualifiers must *not* trigger an
+abstention.
 
 **The enum-slug fix (`scripts/llm-extraction/enum-vocab.ts`).** The system prompt now
 carries a generated block listing every enum / enumSet fact and its exact slugs, each with
@@ -430,16 +455,20 @@ a percentage.
 
 #### Measured: the held-out run (2026-09-05)
 
+> **Numbers superseded by the #51 re-measurement below** (larger held-out set, run
+> 2026-09-05). The narrative -- one dangerous over-claim, a new failure class, the gate
+> can't catch it -- stands unchanged and is what motivated #51.
+
 Run against `claude-sonnet-5`, 19 held-out cases (15 abstain, 4 extract), enum-vocab on,
 caching on. **The result is BLOCKING.**
 
-| Metric | Held-out |
+| Metric | Held-out (19 cases) |
 |---|---|
-| Correct abstentions | 14 / 15 |
-| **Dangerous over-claims** | **1** -- BLOCKING |
-| Correct extractions | 3 / 4 |
-| Gate failures | **0** |
-| Over-cautious (abstained where extraction expected) | 1 |
+| Correct abstentions | ~~14 / 15~~ |
+| **Dangerous over-claims** | ~~**1** -- BLOCKING~~ |
+| Correct extractions | ~~3 / 4~~ |
+| Gate failures | ~~**0**~~ |
+| Over-cautious (abstained where extraction expected) | ~~1~~ |
 
 **Two of the three things #43 set out to fix are confirmed fixed.** Gate failures went from
 1-in-4 on the tuning set to **zero across 19 held-out cases**, including the two
@@ -468,6 +497,66 @@ split found a failure the original spike's set structurally could not. That is t
 methodology earning its cost on the first run, and it is the strongest argument in this
 document for having refused to tune against the small set. Tracked as issue #51 -- the
 extractor is **not** cleared for the #14 ingestion path until it is resolved.
+
+#### Re-measured with the #51 conditional-scope traps (2026-09-05) -- the pre-fix baseline
+
+Issue #51 required the held-out set to grow with more conditional-scope cases **before**
+any fix is designed, so the fix (option 2: a scope-carrying obligation in the output
+contract) is measurable rather than anecdotal. Eight cases were added (six `abstain`
+traps, two `extract` controls -- §4.3, §4.6 table above) and the held-out split was re-run
+once against `claude-sonnet-5`, enum-vocab on, caching on. **No prompt change. This is the
+pre-fix baseline: how often the current prompt drops conditional scope.**
+
+| Metric | Held-out (27 cases: 21 abstain, 6 extract) |
+|---|---|
+| Correct abstentions | 18 / 21 |
+| **Dangerous over-claims** | **3** -- BLOCKING |
+| Correct extractions | 5 / 6 |
+| Gate failures | **0** |
+| Over-cautious (abstained where extraction expected) | 1 |
+
+Run cost: **$0.48** total ($0.39 input + $0.09 output), **85%** saved on input by caching
+(1,247,090 cache-read tokens against 11,547 fresh; the 99 KB schema re-read 27 times).
+
+**The three dangerous over-claims:**
+
+- `lifeline-survivor-extended` -- unchanged from the first run. The survivor-only 200%-FPL
+  branch again lost its gates.
+- `emergency-assistance-emergency-gate` (**new**) -- Wisconsin Emergency Assistance is
+  "115% of the Federal Poverty Level" *and* "facing a setback due to an emergency"
+  (homelessness, fire, disaster, domestic violence, energy crisis) *and* caring for a
+  child under 18 *and* an asset test. The model emitted an `allOf` built on the income
+  figure; the emergency predicate -- which no fact can decide -- was dropped. This is the
+  Lifeline shape in a different program: a threshold lifted out of an
+  emergency-conditioned branch.
+- `seniorcare-coverage-levels-not-eligibility` (**new**) -- SeniorCare has **no income
+  eligibility ceiling**. The 160% / 200% / 240% FPL figures are prescription cost-sharing
+  tiers, and "Income more than 240% of the federal poverty level" is still an enrolled
+  level (with a spenddown). The model read a tier boundary as an eligibility threshold and
+  emitted an `allOf` -- inventing a cutoff the program does not have, and dropping the "65
+  or older" gate. "A number in the source is not automatically an eligibility threshold"
+  (the system prompt's own words) did not hold.
+
+**What held.** Four of the six new traps abstained correctly:
+`headstart-cfr-over-income-allowance` (did not take the 130% over-income allowance),
+`qmb-fpl-gated-on-medicare` (carried the Medicare-entitlement gate),
+`homestead-credit-one-of-conditions` (did not flatten the "$24,680" past its list-stem
+conditions), and -- notably -- `badgercare-plus-population-columns`, where the scope lived
+only in table column labels ("Pregnant people and children monthly income limit (306%
+FPL)") and the model still abstained rather than emitting 306%. Both controls extracted
+correctly: `wic-may-also-apply` and `madcap-billholder-and-ami` were not over-abstained on.
+
+**Read honestly: the baseline is worse than the first run, and that is the point.**
+Dangerous over-claims went from 1-in-19 to 3-in-27 -- because the set now contains cases
+built to probe this failure, and two of them landed. The correct-abstention *rate* looks
+similar (18/21 vs 14/15) but that number is not the headline; the count of dangerous
+over-claims is, and it tripled. One case moved the other way between runs
+(`schoolmeals-direct-certification`, a pre-existing case, abstained this time where it
+extracted before) -- ordinary model non-determinism, not a regression, and a reminder that
+single runs are noisy at this sample size. **The prompt was not iterated to improve any of
+these numbers** -- doing so before the fix is designed would destroy the baseline (§4.4's
+own argument). That work, and whether option 2 closes the gap without making the controls
+abstain, is phase 2 of #51.
 
 ### 4.7 Prompt caching (issue #43)
 
@@ -743,16 +832,22 @@ in a spike whose deliverable is a document and a prototype, not dataset edits:
    abstentions with 0 dangerous over-claims, stable across three runs** (Section 4.4,
    issue #23). The one failure was the schema gate catching a slug-vs-display-name mismatch
    before it reached a human -- the safety net working, not a model inventing a threshold.
-   Issue #43 then did what Section 4.4 said the real pipeline had to: built a 33-case set
-   with a **frozen held-out split** (19 cases, Tier-3-weighted), applied the enum-slug fix
-   (valid slugs now listed in the prompt), and added prompt caching on the ~79 KB schema
-   (Section 4.6-4.7). ~~But #43 had no API key either, so the held-out run is
+   Issue #43 then did what Section 4.4 said the real pipeline had to: built a ~~33-case~~
+   33-case set (**41 after the #51 expansion below**)
+   with a **frozen held-out split** (~~19 cases~~ **27**, Tier-3-weighted), applied the
+   enum-slug fix (valid slugs now listed in the prompt), and added prompt caching on the
+   ~79 KB schema (Section 4.6-4.7). ~~But #43 had no API key either, so the held-out run is
    **`SKIPPED`**.~~ **The held-out split was run live on 2026-09-05 and the answer is
-   BLOCKING** (Section 4.6). Two of the three fixes landed: **zero gate failures across 19
-   held-out cases** (the enum-slug fix works, demonstrated on cases the prompt never saw)
-   and an **83% input-cost saving** from caching. But one dangerous over-claim --
-   `lifeline-survivor-extended`, where a real 200%-FPL threshold was lifted out of a
-   survivor-only extended-eligibility branch with all three gating conditions dropped.
+   BLOCKING** (Section 4.6). Two of the three fixes landed: **zero gate failures across
+   ~~19~~ 27 held-out cases** (the enum-slug fix works, demonstrated on cases the prompt
+   never saw) and an **~~83%~~ 85% input-cost saving** from caching. But dangerous
+   over-claims -- first `lifeline-survivor-extended`, where a real 200%-FPL threshold was
+   lifted out of a survivor-only extended-eligibility branch with all three gating
+   conditions dropped; then, once #51 grew the held-out set with eight conditional-scope
+   cases (six `abstain` traps, two `extract` controls) built *before* any fix, **3
+   dangerous over-claims in 27** -- `lifeline-survivor-extended` plus Emergency Assistance
+   (income figure, emergency gate dropped) and SeniorCare (cost-sharing tier read as an
+   eligibility ceiling that does not exist). That is the pre-fix baseline (Section 4.6).
 
    **That failure is a different class from #23's and the more troubling one.**
    `madcap-categorical` was mechanically malformed, so the gate caught it. This output is

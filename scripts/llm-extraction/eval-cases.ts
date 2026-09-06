@@ -36,6 +36,40 @@ import {
  * The held-out split is weighted toward Tier 3 (prose requiring real reading
  * comprehension -- Section 2), which is where extraction is genuinely hard.
  *
+ * ## Conditional-scope expansion (issue #51)
+ *
+ * The first live held-out run (2026-09-05) returned one dangerous over-claim:
+ * `lifeline-survivor-extended`. The model lifted a real "200% of the Federal
+ * Poverty Guidelines" number out of a survivor-only extended-eligibility branch
+ * and dropped every condition gating it. The output was schema-valid and
+ * semantically coherent, so no gate caught it -- a new failure class (a
+ * *dropped conditional scope*), and one the nine-case tuning set had no example
+ * of. Issue #51 chose option 2 (a scope-carrying obligation in the output
+ * contract) as the fix and required more cases in this class *before* the fix
+ * is built, so the fix is measurable rather than anecdotal.
+ *
+ * Eight cases were fetched and frozen 2026-09-05 for that purpose (all
+ * `heldout`), grouped at the end of this file:
+ *   - six *conditional-scope traps* (`expected: 'abstain'`) -- a real,
+ *     extractable-looking threshold whose governing condition sits in a
+ *     heading, a column label, a list stem, an "extended eligibility" branch,
+ *     or a preceding sentence, and would be silently dropped by a naive
+ *     extraction. `badgercare-plus-population-columns` and
+ *     `seniorcare-coverage-levels-not-eligibility` are the two where the gate
+ *     is implicit rather than a prominent opening sentence -- the case #51's
+ *     review flagged option 2 as weakest against ("never noticed", not
+ *     "noticed and discarded").
+ *   - two *controls* (`expected: 'extract'`) -- passages whose qualifiers look
+ *     scope-changing ("X may also apply", "income means gross income before
+ *     deductions") but are not, where extracting the threshold is still
+ *     correct. Without these there is no way to tell whether option 2 makes the
+ *     model uselessly over-cautious, which is a real cost, not a free win.
+ *
+ * CFR sub-paragraph markers are de-spaced to match how eCFR renders them
+ * ("(c)(1)(i)", not "( c ) ( 1 ) ( i )"); bulleted requirement lists are joined
+ * into running text with the list stem kept. No wording is invented or
+ * reordered -- same rule as every other case.
+ *
  * ## Scoring
  *
  * `expected: 'abstain'` is the case class that matters most (Section 4.4's
@@ -346,6 +380,44 @@ export const EVAL_CASES: readonly EvalCase[] = [
       'Exercises the manualReview-leaf-inside-allOf pattern (madison-housing-choice-voucher.ts) AND a near-miss trap: 200% FPL is the entry test; 85% SMI is only the higher threshold to *remain* eligible after enrolling. A model that emits incomeAtOrBelow(wi-smi, 85) picks the wrong number, and one that omits the work-activity leaf over-claims. Matches wisconsin-shares-child-care.ts.',
   },
 
+  // --- Conditional-scope controls (issue #51) -------------------------
+  // `expected: 'extract'`. Qualifiers that LOOK scope-changing but are not.
+  // If a scope-carrying obligation (option 2) makes the model abstain here, it
+  // is over-cautious -- a real cost. Frozen 2026-09-05, same as the traps.
+  {
+    id: 'wic-may-also-apply',
+    split: 'heldout',
+    tier: 3,
+    citationName: 'Wisconsin WIC -- Women, Infants, and Children',
+    citationUrl: 'https://www.dhs.wisconsin.gov/wic/apply.htm',
+    fetchedOn: '2026-09-05',
+    excerpt:
+      'WIC serves those who are pregnant, breastfeeding, or postpartum, as well as infants and children up to age five. Foster parents and relatives may also apply on behalf of an infant or child in their care.',
+    expected: 'extract',
+    targetCriterion: anyOf(isTrue('isPregnantOrPostpartum'), isTrue('hasChildUnder5')),
+    note:
+      'Control for the #51 conditional-scope work. "Foster parents and relatives may also apply on behalf of an infant or child in their care" is the exact "X may also ..." construction option 2 targets -- but it changes WHO submits the application, not who is eligible; the categorical test is unchanged. Correct answer is the same as wic-category-test: "pregnant, breastfeeding, or postpartum" -> isPregnantOrPostpartum, "children up to age five" -> hasChildUnder5 (breastfeeding-a-WIC-baby has no fact). A model that abstains here because of the "may also" clause is over-cautious. Matches wic-wisconsin.ts.',
+  },
+  {
+    id: 'madcap-billholder-and-ami',
+    split: 'heldout',
+    tier: 2,
+    citationName: 'City of Madison -- MadCAP',
+    citationUrl: 'https://www.cityofmadison.com/pay/madcap',
+    fetchedOn: '2026-09-05',
+    excerpt:
+      'You are eligible if you have the Municipal Services bill in your name and if your annual total household income is the same or less than the income listed in this chart. Gross income is the income earned by all household members combined before taxes and other deductions. Eligible annual income is based on the number of people in the household. ... Households whose total gross income is the same or less than 50% of area median income (AMI) are eligible. AMI is determined by US Housing and Urban Development (HUD).',
+    expected: 'extract',
+    targetCriterion: allOf(
+      incomeAtOrBelow('dane-ami', 50),
+      manualReview(
+        'MadCAP also requires the Municipal Services bill to be in the applicant\'s name. Confirm account-holder status with the City of Madison.',
+      ),
+    ),
+    note:
+      'Control for the #51 conditional-scope work. Two of the three qualifiers here are NOT scope-changing and must not trigger an abstention: "gross income ... before taxes and other deductions" is an income *definition*, and "based on the number of people in the household" is just how incomeAtOrBelow already works. The 50%-AMI threshold is clean (matches madcap-ami / the dane-ami convention). The one real extra condition -- "bill in your name" -- is an administrative gate with no fact, so it belongs in a manualReview leaf inside the allOf (wishares-income-and-activity pattern), NOT as a reason to collapse the whole rule to manualReview.',
+  },
+
   // --- Should abstain -------------------------------------------------
   {
     id: 'wic-income-limits-unstated',
@@ -541,6 +613,94 @@ export const EVAL_CASES: readonly EvalCase[] = [
     expected: 'abstain',
     note:
       'A closed waitlist that no rules engine can resolve -- the correct output is manualReview (which the harness scores as a correct abstention), matching the manualReview leaf in madison-housing-choice-voucher.ts. Not a dangerous case, but a check that "the honest answer is manualReview" survives a substantive-sounding excerpt.',
+  },
+
+  // ===================================================================
+  // CONDITIONAL-SCOPE TRAPS (issue #51)
+  // Fetched and frozen 2026-09-05. Each excerpt carries a real,
+  // extractable-looking threshold whose scope-defining condition sits
+  // somewhere a naive extraction drops -- a heading, a column label, a
+  // list stem, an "extended eligibility" branch, an undecidable
+  // predicate. Same class as lifeline-survivor-extended. All abstain.
+  // ===================================================================
+  {
+    id: 'headstart-cfr-over-income-allowance',
+    split: 'heldout',
+    tier: 3,
+    citationName: '45 CFR 1302.12 -- Head Start eligibility',
+    citationUrl:
+      'https://www.ecfr.gov/current/title-45/subtitle-B/chapter-XIII/subchapter-B/part-1302/subpart-A/section-1302.12',
+    fetchedOn: '2026-09-05',
+    excerpt:
+      "(c) Eligibility requirements. (1) A pregnant woman or a child is eligible if: (i) The family's income is equal to or below the poverty line; or, (ii) The family is eligible for or, in the absence of child care, would be potentially eligible for public assistance; including TANF child-only payments; or, (iii) The child is homeless, as defined in part 1305; or, (iv) The child is in foster care. (2) If the family does not meet a criterion under paragraph (c)(1) of this section, a program may enroll a child who would benefit from services, provided that these participants only make up to 10 percent of a program's enrollment in accordance with paragraph (d) of this section. (d) Additional allowances for programs. (1) A program may enroll an additional 35 percent of participants whose families do not meet a criterion described in paragraph (c) of this section and whose incomes are below 130 percent of the poverty line ... (2) If a program chooses to enroll participants who do not meet a criterion in paragraph (c) of this section, and whose family incomes are between 100 and 130 percent of the poverty line, it must be able to report to the Head Start regional program office ...",
+    expected: 'abstain',
+    note:
+      'The real rule is "at or below the poverty line" OR one of three categorical routes (public-assistance-potentially-eligible, homeless, foster care) with no fact each -- an anyOf where only one branch is encodable. The 130% figure is the dangerous distractor: it is a capped ("up to 35 percent"), discretionary ("a program may") over-income allowance explicitly for families who do NOT meet the criteria. A model that emits incomeAtOrBelow(fpl, 130) tells a family at 120% of poverty they qualify when the presumptive limit is 100%. Same shape as lifeline-survivor-extended: a more-generous number lifted out of an exception branch.',
+  },
+  {
+    id: 'emergency-assistance-emergency-gate',
+    split: 'heldout',
+    tier: 3,
+    citationName: 'Wisconsin DCF -- Emergency Assistance (EA)',
+    citationUrl: 'https://dcf.wisconsin.gov/ea',
+    fetchedOn: '2026-09-05',
+    excerpt:
+      'Emergency Assistance (EA) provides cash assistance and resource connections for families facing a setback due to an emergency, such as homelessness, impending homelessness, domestic violence, natural disaster, fire, or an energy crisis. ... To receive EA, you must be a parent or a relative caring for a child younger than 18. There are income and asset limits too: Your income must be at or below 115% of the Federal Poverty Level and you must have limited assets. Assets include your savings accounts and any high-valued belongings. Your car is only counted as an asset if it is worth more than $10,000.',
+    expected: 'abstain',
+    note:
+      'A clean "at or below 115% of the Federal Poverty Level" clause -- but the whole program is gated on "facing a setback due to an emergency" (fire, natural disaster, domestic violence, energy crisis: no fact covers "is experiencing an emergency"), on caring for a child younger than 18, and on an asset test. incomeAtOrBelow(fpl, 115) alone tells any low-income family they qualify for EA cash when only families with a qualifying emergency do. Same undecidable-predicate structure as lifeline-survivor-extended.',
+  },
+  {
+    id: 'qmb-fpl-gated-on-medicare',
+    split: 'heldout',
+    tier: 3,
+    citationName: 'Wisconsin DHS -- Qualified Medicare Beneficiary (QMB) Program',
+    citationUrl: 'https://www.dhs.wisconsin.gov/medicaid/qmb.htm',
+    fetchedOn: '2026-09-05',
+    excerpt:
+      "You may be eligible for the QMB Program if you: Are entitled to Medicare Part A or Part B-ID benefits. Have countable assets at or below the program limit. ... Have countable monthly income at or below 100% of the federal poverty level after certain credits are applied. ... Asset and income limits are based on federal guidelines, which may change yearly.",
+    expected: 'abstain',
+    note:
+      'The "100% of the federal poverty level" figure is real, but it is "countable monthly income ... after certain credits are applied" (a deduction stack, not annualHouseholdIncome), and the program is gated on being "entitled to Medicare Part A or Part B-ID benefits" and on an asset test -- neither a fact. incomeAtOrBelow(fpl, 100) drops the Medicare-entitlement gate entirely and tells a non-Medicare low-income person they qualify for a Medicare cost-sharing program. The gate is a prominent bullet, not buried -- this is the "noticed, should have carried it" mechanism option 2 targets directly.',
+  },
+  {
+    id: 'homestead-credit-one-of-conditions',
+    split: 'heldout',
+    tier: 3,
+    citationName: 'Wisconsin DOR -- Claiming Homestead Credit',
+    citationUrl: 'https://www.revenue.wi.gov/Pages/FAQS/ise-home.aspx',
+    fetchedOn: '2026-09-05',
+    excerpt:
+      "To qualify for homestead credit for 2025 you must meet the following requirements: You are a legal resident of Wisconsin for all of 2025, from January 1 through December 31. You are 18 years of age or older on December 31, 2025. You have less than $24,680 in household income for 2025. ... You meet one of the following conditions: You (or your spouse, if married, and reside in the same household) have positive earned income during the year. ... You (or your spouse, if married, and reside in the same household) are disabled. ... You (or your spouse, if married) are 62 years of age or older at the end of 2025. You own or rent your Wisconsin homestead that is subject to Wisconsin property taxes during 2025. ... You have not received Wisconsin Works (W2) payments of any amount or county relief payments of $400 or more for each month of 2025.",
+    expected: 'abstain',
+    note:
+      'The $24,680 figure is a bare dollar amount with no scale or percent (like cda-section8-income-table, it cannot become an incomeAtOrBelow), and "household income" is a defined term, not annualHouseholdIncome. Worse, the threshold is gated on a list stem -- "You meet one of the following conditions: ... earned income ... disabled ... 62 or older" -- plus age 18 and homestead ownership, none of them facts. compare(annualHouseholdIncome, lte, 24680) drops the entire "one of the following conditions" requirement. The scope sits in the list stem, exactly the shape #51 flagged.',
+  },
+  {
+    id: 'badgercare-plus-population-columns',
+    split: 'heldout',
+    tier: 3,
+    citationName: 'Wisconsin DHS -- BadgerCare Plus income limits',
+    citationUrl: 'https://www.dhs.wisconsin.gov/badgercareplus/fpl.htm',
+    fetchedOn: '2026-09-05',
+    excerpt:
+      'BadgerCare Plus provides health insurance benefits to people ages 0-64. The only way to know if you can enroll in BadgerCare Plus is to apply. ... The limits are based on federal poverty level (FPL). ... BadgerCare Plus income limits and thresholds, effective February 1, 2026-January 31, 2027 Family size / Adult monthly income limit (100% FPL) / Children premium threshold (201% FPL) / Pregnant people and children monthly income limit (306% FPL) 1 $1,330.00 $2,673.30 $4,069.80 ... 4 $2,750.00 $5,527.50 $8,415.00 ... For each extra person, add $473.33 $951.39 $1,448.39',
+    expected: 'abstain',
+    note:
+      'Three FPL percentages, each scoped by a column label to a different population: 100% for adults, 201% for the children premium, 306% for pregnant people and children. A model that emits incomeAtOrBelow(fpl, 306) -- or 201 -- drops the "pregnant people and children" scope and tells a childless adult at 250% FPL they qualify when the adult limit is 100%. The governing condition is a table heading, not a sentence: the implicit-scope case option 2 is weakest against. Related to badgercare-apply-to-know (heldout), which uses the number-free landing page; this is the table itself.',
+  },
+  {
+    id: 'seniorcare-coverage-levels-not-eligibility',
+    split: 'heldout',
+    tier: 3,
+    citationName: 'Wisconsin DHS -- SeniorCare annual income limits',
+    citationUrl: 'https://www.dhs.wisconsin.gov/seniorcare/fpl.htm',
+    fetchedOn: '2026-09-05',
+    excerpt:
+      'SeniorCare is a program for Wisconsin residents who are 65 or older and need help paying for medicine. ... Your annual income determines how much of your prescription drug costs SeniorCare will cover. The amounts are based on federal guidelines, which change each year. ... Level 1 income limits Income at or below 160% of the federal poverty level ... Level 2A income limits Income above 160% and at or below 200% of the federal poverty level ... Level 2B income limits Income above 200% and at or below 240% of the federal poverty level ... Level 3 income limits Income more than 240% of the federal poverty level ... Level 3 out-of-pocket expenses Retail price for covered drugs during spenddown',
+    expected: 'abstain',
+    note:
+      'There is no income eligibility ceiling here at all: the 160% / 200% / 240% FPL figures are cost-sharing tier boundaries ("determines how much of your prescription drug costs SeniorCare will cover"), and even "Income more than 240% of the federal poverty level" is Level 3, still enrolled, just with a spenddown. A model that reads any of these as an eligibility threshold -- incomeAtOrBelow(fpl, 240) or 200 -- invents a cutoff the program does not have, and also drops the "65 or older" gate (age is a reserved fact). "A number in the source is not automatically an eligibility threshold" -- the implicit-scope case.',
   },
 ];
 
