@@ -860,6 +860,15 @@ in a spike whose deliverable is a document and a prototype, not dataset edits:
    path, until #51 is resolved.** Note also that making the harness run at all required
    dropping `strict: true` -- a recursive expression language cannot be enforced by strict
    structured output (Section 4.5).
+
+   **Follow-on: option 2 was measured and rejected (#61), and #62 re-approaches the whole
+   problem.** #61 implemented the scope-carrying obligation and ran the held-out split once:
+   still blocking, and it traded most of the extraction yield away. Issue #62's spike
+   (`docs/eligibility-extraction-framing.md`) does not patch the extractor further -- it
+   argues the autonomous band is *structural* (single unconditional ceiling, no table/
+   branch/negation scope), sits at roughly the Tier 2 / Tier 3 line, and is reached by a
+   classify-before-extract gate that auto-routes everything else to `manualReview`, not by a
+   better extractor. Prototypes are built; the live measurement is still pending an API key.
 1. **Ship a deterministic extractor for income-table refreshes -- #24 already has, and it is
    now the production path, not this spike's.** `scripts/extract-income-tables.mjs` was
    built and measured here to answer the tiering question with real code, and its 4/4
