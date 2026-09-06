@@ -10,9 +10,12 @@
  * qualifies".
  */
 import type { RecordFinding, FieldProposal, ReviewFlag } from './classify.ts';
+import type { Acknowledgement } from './proposals-file.ts';
 
 export interface ReportInput {
   readonly findings: readonly RecordFinding[];
+  /** Record id -> the still-valid "reviewed, no change needed" note on its queue entry. */
+  readonly acknowledged: ReadonlyMap<string, Acknowledgement>;
   readonly generatedAt: string;
   readonly checkedCount: number;
   readonly wrote: boolean;
@@ -37,13 +40,24 @@ function reviewLines(id: string, r: ReviewFlag): string[] {
 }
 
 export function renderReport(input: ReportInput): string {
-  const { findings, generatedAt, checkedCount, wrote, dryRun, branchBlocked } = input;
+  const { findings, acknowledged, generatedAt, checkedCount, wrote, dryRun, branchBlocked } = input;
   const L: string[] = [];
 
   const allProposals = findings.flatMap((f) => f.proposals.map((p) => ({ id: f.id, p })));
-  const descriptiveReviews = findings.flatMap((f) =>
-    f.reviews.filter((r) => r.kind === 'phone-missing-from-page' || r.kind === 'phone-candidates' || r.kind === 'status-signal' || r.kind === 'source-text-review').map((r) => ({ id: f.id, r })),
-  );
+  const descriptiveReviews = findings
+    .filter((f) => !acknowledged.has(f.id))
+    .flatMap((f) =>
+      f.reviews
+        .filter(
+          (r) =>
+            r.kind === 'phone-missing-from-page' ||
+            r.kind === 'phone-candidates' ||
+            r.kind === 'status-signal' ||
+            r.kind === 'source-text-review',
+        )
+        .map((r) => ({ id: f.id, r })),
+    );
+  const acknowledgedFindings = findings.filter((f) => acknowledged.has(f.id));
   const health = findings.filter((f) => f.urlHealth !== 'ok');
 
   L.push('# Descriptive-field ingestion');
@@ -91,6 +105,26 @@ export function renderReport(input: ReportInput): string {
     L.push('_None._');
   } else {
     for (const { id, r } of descriptiveReviews) L.push(...reviewLines(id, r));
+  }
+  L.push('');
+
+  L.push(`## Reviewed -- no change needed (${acknowledgedFindings.length})`);
+  L.push('');
+  if (acknowledgedFindings.length === 0) {
+    L.push('_None._');
+  } else {
+    L.push(
+      'A human has checked these findings against the source and confirmed the record is correct. ' +
+        'They stay in the queue as a record of that decision. Each acknowledgement is keyed to the ' +
+        'page hash `scripts/check-sources` computes, so if the page text moves it is dropped ' +
+        'automatically and the finding returns to the section above.',
+    );
+    L.push('');
+    for (const f of acknowledgedFindings) {
+      const ack = acknowledged.get(f.id)!;
+      const kinds = f.reviews.map((r) => r.kind).join(', ') || '(no flag)';
+      L.push(`- **${f.id}** (${kinds}) -- reviewed ${ack.reviewedOn}: ${ack.reason}`);
+    }
   }
   L.push('');
 

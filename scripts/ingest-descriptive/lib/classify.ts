@@ -22,6 +22,7 @@
  * would attach if one ever passes its held-out eval (it has not -- issue #51).
  */
 import type { FetchOutcome } from './fetch.ts';
+import { sha256 } from '../../check-sources/lib/hashes-file.ts';
 import { extractPhones, excerptAround, detectStatusSignals, normalizePhone, type StatusSignal } from './extract.ts';
 
 export type UrlHealth = 'ok' | 'redirected' | 'moved' | 'gone' | 'unreachable' | 'blocked';
@@ -71,6 +72,14 @@ export interface RecordFinding {
   readonly detail: string;
   readonly proposals: readonly FieldProposal[];
   readonly reviews: readonly ReviewFlag[];
+  /**
+   * `sha256:<hex>` of the normalized page text -- the SAME hash
+   * `scripts/check-sources` stores in `source-hashes.json` (same `normalize`,
+   * same `sha256`). `null` when the page could not be fetched/read this run.
+   * A "reviewed, no change needed" acknowledgement on a proposals.json entry is
+   * keyed to this, so it is invalidated the moment the page text moves (#49).
+   */
+  readonly sourceHash: string | null;
 }
 
 export interface RecordInput {
@@ -103,7 +112,7 @@ const STATUS_LABEL: Record<StatusSignal, string> = {
 };
 
 export function classify(input: RecordInput, outcome: FetchOutcome, opts: ClassifyOptions): RecordFinding {
-  const base = { id: input.id, sourceUrl: input.sourceUrl, finalUrl: outcome.finalUrl };
+  const base = { id: input.id, sourceUrl: input.sourceUrl, finalUrl: outcome.finalUrl, sourceHash: null as string | null };
   const minText = opts.minTextForPhoneCheck ?? 400;
 
   if (outcome.kind === 'gone') {
@@ -145,6 +154,7 @@ export function classify(input: RecordInput, outcome: FetchOutcome, opts: Classi
 
   // outcome.kind === 'ok'
   const text = opts.normalize(outcome.text);
+  base.sourceHash = sha256(text);
   const proposals: FieldProposal[] = [];
   const reviews: ReviewFlag[] = [];
 

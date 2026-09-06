@@ -30,7 +30,12 @@
         }
       ],
       "firstSeen": "2026-09-05",
-      "fetchedAt": "2026-09-05T22:24:29.884Z"
+      "fetchedAt": "2026-09-05T22:24:29.884Z",
+      "acknowledgement": {
+        "reviewedOn": "2026-09-05",
+        "reason": "False positive. status: 'closed' is correct. The heuristic matched the CDA page's generic 'we maintain a separate wait list for each housing program' boilerplate, which describes the CDA's public housing list. This record covers Section 8 vouchers only, and its seasonalNote already documents that the Section 8 voucher waiting list has been closed to new applications since April 2023 (the page states 'The Section 8 lottery closed on April 2, 2023'). See issue #49.",
+        "sourceHash": "sha256:1823cc61da839538a5e062528663a5c5d475cd9ce92fef8dc79ff3205d8c3dd5"
+      }
     },
     "school-meals-wi": {
       "sourceUrl": "https://dpi.wi.gov/school-nutrition/program-requirements/free-reduced-meal-eligibility",

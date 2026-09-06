@@ -292,14 +292,22 @@ measured that byte-level change on these sources is dominated by incidental chur
 timestamps, CSRF tokens, rotating announcement banners, session ids in links, analytics
 blobs — on pages whose actual figures move once a year. Three automatic change signals were
 tried there and all three rejected. So `lib/normalize.ts` strips the page hard: drop
-`<script>/<style>/<form>/<head>`, narrow to `<main>` when the page marks it (government CMS
-templates put everything volatile *outside* `<main>`), drop remaining nav/header/footer,
-strip all tags and attributes, decode entities, fold typographic Unicode to ASCII, and
-scrub date/timestamp/copyright/"N views"/opaque-token text patterns. It errs aggressive: a
-missed edit is caught on the next run or by the time-based check; a false "changed" trains
-the reviewer to ignore the job. Run-to-run stability is proven, not asserted, in
-`lib/__tests__/normalize.test.ts` (and was verified against all 17 live pages: two
-consecutive real fetches, zero baseline churn).
+`<script>/<style>/<form>/<head>`, narrow to the page's main-content landmark — `<main>`,
+then `[role="main"]`, then a `#content` / `#main` container, then the weak `<body>`
+fallback (government CMS templates put everything volatile *outside* the landmark) — drop
+remaining nav/header/footer, strip all tags and attributes, decode entities, fold
+typographic Unicode to ASCII, and scrub date/timestamp/copyright/"N views"/opaque-token
+text patterns. It errs aggressive: a missed edit is caught on the next run or by the
+time-based check; a false "changed" trains the reviewer to ignore the job. Run-to-run
+stability is proven, not asserted, in `lib/__tests__/normalize.test.ts` (and was verified
+against all 17 live pages: two consecutive real fetches, zero baseline churn).
+
+When a record falls all the way through to the `<body>` fallback, the report names it under
+**Weak content-region fallback** — nav/header/footer are in its hash, so a site-wide
+template change can flag it (and every sibling on that domain) at once without the
+eligibility rule moving. If one of those shows up as `changed`, check the diff for chrome
+before treating it as a real edit; a hand-picked selector for that page is the fix if it
+churns (issue #49).
 
 ### The four outcomes, and why they are kept distinct
 
@@ -308,10 +316,12 @@ consecutive real fetches, zero baseline churn).
 | **unchanged** | normalized text hashes to the stored value | nothing — silent, no PR |
 | **new** | no baseline yet (first run, or the URL changed) | nothing — baseline recorded |
 | **changed** | reachable, 200, normalized text moved | re-verify the record against the source (below) |
-| **gone** | 404 / 410 — the page was removed, not edited | find the current official page; fix `source.url` in the record **and** in `source-hashes.json`; note "moved" vs "never correct" per the section above; then re-verify |
-| **unreachable** | timeout, 403, 5xx, network error | usually transient — the last good hash is kept; if it persists across runs, treat as "gone" |
+| **gone** | 404 / 410 — the page was removed, not edited | find the current official page; fix `source.url` in the record **and** in `source-hashes.json`; note "moved" vs "never correct" per the section above; then re-verify. **Escalates on the first run** — a retry counter must never hide a vanished program |
+| **unreachable** | timeout, 403, 5xx, network error | almost always a blip at 17 monthly sources. The last good hash is kept and a `consecutiveFailures` counter is recorded (force-pushed to the `automation/source-change-detection` branch as bookkeeping, never to `main`, no PR). Only the **2nd consecutive** failed run escalates to a re-verification PR; a successful fetch resets the counter. Once escalated, treat a genuinely-removed page as "gone" |
 
 A 404 is deliberately not an "edit" — see "Moved vs. never correct" above, and issue #14.
+`unreachable` stays distinct from `gone` for the same reason: the retry counter delays a
+flaky-fetch PR, but a real 404 is actionable immediately (issue #49).
 
 The report also prints `stalePrograms(days)` (from `src/data/programs/index.ts`) on the same
 run — the time-based half of the same question, now wired up.
@@ -319,9 +329,16 @@ run — the time-based half of the same question, now wired up.
 ### The re-verification loop
 
 The scheduled workflow (`.github/workflows/check-sources.yml`, monthly) runs the script on a
-detached HEAD, and if `source-hashes.json` changed it force-pushes
-`automation/source-change-detection` and opens (or updates) one PR with the report as its
-body. That PR is the tracked item. To close it:
+detached HEAD, first seeding `source-hashes.json` (and its `consecutiveFailures` counters)
+from the `automation/source-change-detection` branch when that branch exists. If
+`source-hashes.json` changed *and* there is an actionable finding (`changed` / `gone` / an
+escalated `unreachable`), it force-pushes `automation/source-change-detection` and opens (or
+updates) one PR with the report as its body. If the only change is a first-time
+`unreachable`'s `consecutiveFailures` counter, it force-pushes that one field to the same
+branch (bookkeeping — no page moved, nothing to review) and opens nothing. It never commits
+to `main`: `main` is Cloudflare Pages' production branch and every push to it deploys the
+live site (`docs/deploy.md`), so a counter bump driven by a flaky government server must not
+land there. That PR is the tracked item. To close it:
 
 1. For each **changed** record, do the full "Verifying a program record" procedure above
    against the (new) source text. The hash moving is not proof the *eligibility rule*
@@ -333,10 +350,12 @@ body. That PR is the tracked item. To close it:
    re-verify.
 4. Merge. The baseline advances with the reviewed state.
 
-Exit codes: **0** clean (nothing changed, nothing unreachable); **1** a write was refused
-because the script was run on `main`/`master` (it never advances the committed baseline
-without a PR, same rule as `refresh-income-tables`); **2** at least one record is
-changed / gone / unreachable.
+Exit codes: **0** clean, or the only change is a first-time `unreachable`'s failure counter
+(bookkeeping — force-pushed to `automation/source-change-detection`, never `main`, no PR);
+**1** a write was refused because the script was run on `main`/`master` (it never advances
+the committed baseline without a PR, same rule as
+`refresh-income-tables`); **2** at least one record is changed, gone, or `unreachable` for
+two consecutive runs.
 
 ## Descriptive-field ingestion (scripts/ingest-descriptive)
 
@@ -379,6 +398,28 @@ model is "git is the database, PR review is the write gate" (see `design.md`). R
 proposal means landing the accepted change in the record file and running
 `npm run build:snapshot`, exactly as for any hand edit; the entry then drops out of the
 queue on the next run.
+
+**When a review flag is a false positive** — the record is already correct — add an
+`acknowledgement` block to that entry in `proposals.json` by hand:
+
+```json
+"acknowledgement": {
+  "reviewedOn": "2026-09-05",
+  "reason": "Why the record is right and the flag is noise. Written for the next reviewer.",
+  "sourceHash": "sha256:…"
+}
+```
+
+The `sourceHash` is the entry's normalized-page hash — copy it from that record's line in
+`scripts/check-sources/source-hashes.json` (same `normalize`, same digest). The report then
+lists the finding under **Reviewed — no change needed** instead of **Needs human review**,
+and it stops counting toward the exit code. The acknowledgement is carried forward on every
+run *only while that hash still matches the live page* — the moment the page text moves it
+is dropped automatically and the finding is a fresh review again, so an acknowledgement can
+never permanently silence a real future discrepancy (issue #49). `madison-housing-choice-voucher`'s
+`status-signal` is the worked example: its `seasonalNote` already documents that the
+Section 8 voucher waiting list has been closed since April 2023, and the page's generic
+"we maintain a wait list per program" boilerplate is what the heuristic matched.
 
 Sources that currently yield nothing: `energyandhousing.wi.gov` (SharePoint; the WHEAP and
 Weatherization pages normalize to zero readable text) stays hand-authored, and

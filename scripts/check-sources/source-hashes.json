@@ -12,8 +12,8 @@
     },
     "dane-eviction-prevention": {
       "url": "https://www.tenantresourcecenter.org/",
-      "normalizedSha256": "sha256:e85604923586c34f255f5dcec58d5ceaa2307d1be66147709b1d6f056c9e5cd5",
-      "normalizedChars": 2373,
+      "normalizedSha256": "sha256:4b0f3c8ecc117e5864bbefb36f3ff422a7d22bd7b4b3bd5fa4831a1121fe34f8",
+      "normalizedChars": 1923,
       "status": "ok",
       "firstSeen": "2026-09-05",
       "lastChanged": "2026-09-05"
@@ -84,8 +84,8 @@
     },
     "the-river-food-pantry": {
       "url": "https://www.riverfoodpantry.org/",
-      "normalizedSha256": "sha256:71090f2772f9691fd2740d72d026a6b4ae0c93e2a09db945a59617a61ebef208",
-      "normalizedChars": 1742,
+      "normalizedSha256": "sha256:831af9367226a9533804822d013dc99490dc37dcdf6a755ed4bf3d6fbb596300",
+      "normalizedChars": 1672,
       "status": "ok",
       "firstSeen": "2026-09-05",
       "lastChanged": "2026-09-05"
