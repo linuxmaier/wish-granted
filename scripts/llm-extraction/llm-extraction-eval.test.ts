@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildCriterionJsonSchema } from './criterion-schema';
-import { gateCriterion } from './schema-gate';
+import { gateCriterion, gateScopeContract } from './schema-gate';
 import { describeEnumFacts, enumFacts } from './enum-vocab';
 import {
   EVAL_CASES,
@@ -10,7 +10,7 @@ import {
 } from './eval-cases';
 import { PROGRAMS } from '../../src/data/programs';
 import { FACTS } from '../../src/domain/facts';
-import { manualReview, oneOf, type Criterion } from '../../src/domain/criteria';
+import { allOf, anyOf, incomeAtOrBelow, isTrue, manualReview, oneOf, type Criterion } from '../../src/domain/criteria';
 
 /**
  * Tests the LLM-extraction harness itself (schema, gate, enum vocab, eval-case
@@ -127,6 +127,89 @@ describe('schema gate agrees with tests/data/vocabulary.test.ts on the real data
   it('accepts a manualReview node, including nested inside allOf', () => {
     const result = gateCriterion(manualReview('subject to funding availability'));
     expect(result.ok).toBe(true);
+  });
+});
+
+describe('gateScopeContract (the #51 scope-carrying obligation)', () => {
+  it('passes when every precondition is encoded', () => {
+    const result = gateScopeContract(incomeAtOrBelow('fpl', 135), [
+      { text: 'household income at or below 135% FPL', status: 'encoded' },
+    ]);
+    expect(result.ok).toBe(true);
+  });
+
+  it('passes when there are no preconditions at all', () => {
+    expect(gateScopeContract(incomeAtOrBelow('fpl', 50), []).ok).toBe(true);
+  });
+
+  it('fails the lifeline-survivor-extended shape: a threshold emitted with the gating scope dropped', () => {
+    const result = gateScopeContract(incomeAtOrBelow('fpl', 200), [
+      { text: 'household income at or below 200% FPL', status: 'encoded' },
+      { text: 'is a survivor of domestic violence or trafficking', status: 'undecidable' },
+      { text: 'experiencing financial hardship', status: 'dropped' },
+    ]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.problems.join(' ')).toMatch(/survivor/);
+      expect(result.problems.join(' ')).toMatch(/financial hardship/);
+    }
+  });
+
+  it('passes the same shape once a manualReview leaf carries the dropped scope', () => {
+    const result = gateScopeContract(
+      allOf(
+        incomeAtOrBelow('fpl', 200),
+        manualReview('Extended eligibility applies only to survivors experiencing financial hardship.'),
+      ),
+      [
+        { text: 'household income at or below 200% FPL', status: 'encoded' },
+        { text: 'is a survivor experiencing financial hardship', status: 'undecidable' },
+      ],
+    );
+    expect(result.ok).toBe(true);
+  });
+
+  it('passes when the model abstains outright', () => {
+    const result = gateScopeContract(manualReview('conditional on an undecidable emergency predicate'), [
+      { text: 'facing a setback due to an emergency', status: 'undecidable' },
+      { text: 'caring for a child under 18', status: 'dropped' },
+    ]);
+    expect(result.ok).toBe(true);
+  });
+
+  it('does not accept an anyOf leaf as routing to a human -- an optional branch gates nothing', () => {
+    const result = gateScopeContract(
+      anyOf(incomeAtOrBelow('fpl', 115), manualReview('a human could check something')),
+      [{ text: 'facing a qualifying emergency', status: 'dropped' }],
+    );
+    expect(result.ok).toBe(false);
+  });
+
+  it('holds every hand-authored extract target that carries a manualReview leaf: it would survive an undecidable precondition', () => {
+    for (const c of EVAL_CASES.filter((c) => c.expected === 'extract' && c.targetCriterion)) {
+      const t = c.targetCriterion!;
+      const hasLeaf =
+        t.kind === 'manualReview' || (t.kind === 'allOf' && t.of.some((x) => x.kind === 'manualReview'));
+      const result = gateScopeContract(t, [{ text: 'hypothetical undecidable gate', status: 'undecidable' }]);
+      expect(result.ok, c.id).toBe(hasLeaf);
+    }
+  });
+});
+
+describe('the extraction output schema carries the #51 precondition inventory', () => {
+  it('lists preconditions first and requires it', () => {
+    const schema = buildCriterionJsonSchema();
+    expect(Object.keys(schema.properties)[0]).toBe('preconditions');
+    expect(schema.required).toContain('preconditions');
+  });
+
+  it('constrains each precondition to a text and a three-way status', () => {
+    const schema = buildCriterionJsonSchema();
+    const item = (schema.properties.preconditions as unknown as {
+      items: { properties: { status: { enum: readonly string[] } }; required: readonly string[] };
+    }).items;
+    expect([...item.required].sort()).toEqual(['status', 'text']);
+    expect([...item.properties.status.enum]).toEqual(['encoded', 'undecidable', 'dropped']);
   });
 });
 

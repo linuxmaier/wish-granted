@@ -173,14 +173,55 @@ function criterionAtDepth(depth: number): { anyOf: object[] } {
 
 export const DEFAULT_MAX_DEPTH = 3;
 
+/**
+ * The scope-carrying obligation (issue #51, option 2).
+ *
+ * `lifeline-survivor-extended` (a held-out dangerous over-claim) lifted a real
+ * "200% of the Federal Poverty Guidelines" number out of a survivor-only branch
+ * and dropped every condition gating it. The output was schema-valid and
+ * semantically coherent, so no gate caught it. This field makes the invisible
+ * checkable: the model must enumerate every precondition it observed and mark
+ * each encoded / undecidable / dropped BEFORE it writes `criterion`. Then
+ * `schema-gate.ts`'s `gateScopeContract` fails any output with a non-`encoded`
+ * precondition that is not routed to a human (a top-level manualReview, or a
+ * manualReview leaf inside an allOf).
+ *
+ * Enumerating first is deliberate: asking the model to list preconditions
+ * before it builds the rule tends to improve noticing, which partly mitigates
+ * the self-report weakness (the gate checks the model's own list, so it catches
+ * "noticed and discarded", not "never noticed").
+ */
+const PRECONDITION_SCHEMA = {
+  type: 'array',
+  description:
+    'FILL THIS IN BEFORE `criterion`. See the PRECONDITION INVENTORY section of the system prompt for the full definition. In brief: every specific testable gate that must ALSO be true, beyond the rule you are about to emit, for that rule to decide someone\'s eligibility -- being a survivor of a crime, being 65 or older, being pregnant, being entitled to Medicare, facing an emergency, being enrolled in a named program, passing an asset test, living in a named place. Look outside the sentence with the number: the gate is often in a heading, a table-column label, a list stem, a preceding sentence, or an "extended eligibility" branch. Do NOT list the rule itself, a definition of a term it uses, household-size scaling, a coverage period, who may file for someone else, or descriptive prose naming who tends to use the program.',
+  items: {
+    type: 'object',
+    properties: {
+      text: {
+        type: 'string',
+        description: 'The precondition, quoted or closely paraphrased from the excerpt.',
+      },
+      status: {
+        enum: ['encoded', 'undecidable', 'dropped'],
+        description:
+          '"encoded": represented as a concrete compare / set / incomeAtOrBelow / not node in `criterion`. "undecidable": real, but no fact in the vocabulary can express it. "dropped": you chose not to represent it. Every precondition that is not "encoded" must be carried by a manualReview node (the whole `criterion`, or a leaf inside an allOf) -- otherwise abstain.',
+      },
+    },
+    required: ['text', 'status'],
+    additionalProperties: false,
+  },
+} as const;
+
 export function buildCriterionJsonSchema(maxDepth: number = DEFAULT_MAX_DEPTH) {
   return {
     type: 'object',
     properties: {
+      preconditions: PRECONDITION_SCHEMA,
       criterion: {
         ...criterionAtDepth(maxDepth),
         description:
-          'The extracted eligibility rule. Use manualReview (possibly nested inside allOf alongside real compare/incomeAtOrBelow/set criteria) for any condition you cannot express precisely and confidently -- do not guess a threshold or enumerate an exception list you are not certain is complete.',
+          'The extracted eligibility rule. Use manualReview (possibly nested inside allOf alongside real compare/incomeAtOrBelow/set criteria) for any condition you cannot express precisely and confidently -- do not guess a threshold or enumerate an exception list you are not certain is complete. If a precondition you listed above is not "encoded", this rule must contain a manualReview (whole, or an allOf leaf) or be a top-level manualReview.',
       },
       sourceExcerpt: {
         type: 'string',
@@ -193,7 +234,7 @@ export function buildCriterionJsonSchema(maxDepth: number = DEFAULT_MAX_DEPTH) {
           'low whenever you are not highly confident, even if you produced a specific rule rather than manualReview.',
       },
     },
-    required: ['criterion', 'sourceExcerpt', 'confidence'],
+    required: ['preconditions', 'criterion', 'sourceExcerpt', 'confidence'],
     additionalProperties: false,
   };
 }

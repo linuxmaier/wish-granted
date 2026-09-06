@@ -23,6 +23,15 @@
  *      measured cache read/write token split and the counterfactual
  *      no-caching cost. `--caching=off` disables it for an A/B.
  *
+ * Issue #51 adds a fourth: a scope-carrying obligation in the output contract.
+ * The model must enumerate every precondition it saw (encoded / undecidable /
+ * dropped) BEFORE it writes `criterion`; `schema-gate.ts`'s `gateScopeContract`
+ * then fails any output with a non-`encoded` precondition that nothing routes to
+ * a human. The held-out run lifted real thresholds out of conditional branches
+ * (survivor-only, emergency-only, a cost-tier that is not a ceiling) with the
+ * gating conditions silently dropped -- schema-valid, so nothing caught it.
+ * Making the inventory explicit gives the gate something to test.
+ *
  * Still deliberately raw `fetch`, not `@anthropic-ai/sdk`: zero new
  * dependencies, matching the rest of scripts/. A real ingestion pipeline (#14)
  * should use the SDK.
@@ -35,13 +44,14 @@
  *   npm run eval:llm-extraction                 # held-out split, caching + enum vocab on
  *   npm run eval:llm-extraction -- --split=all
  *   npm run eval:llm-extraction -- --split=tuning --enum-vocab=off --caching=off
+ *   npm run eval:llm-extraction -- --split=tuning --dump   # print each model output (tuning only)
  *
  * Reads .env via --env-file-if-exists (see package.json). Without an
  * ANTHROPIC_API_KEY every case is reported SKIPPED rather than faked.
  */
 
 import { buildCriterionJsonSchema } from './criterion-schema.ts';
-import { gateCriterion } from './schema-gate.ts';
+import { gateCriterion, gateScopeContract, type GateResult, type PreconditionReport } from './schema-gate.ts';
 import { describeEnumFacts } from './enum-vocab.ts';
 import { casesInSplit, type EvalCase, type EvalSplit } from './eval-cases.ts';
 import type { Criterion } from '../../src/domain/criteria.ts';
@@ -68,29 +78,52 @@ Rules:
 - manualReview can be the whole rule, or one leaf inside a larger allOf alongside real criteria you are confident about. Do not collapse a whole program to manualReview because one condition inside it is undecidable; do not force a specific rule when the honest answer is manualReview.
 - Set confidence: "low" whenever you are not highly confident, even if you did produce a specific rule rather than manualReview.
 - Under-claiming (manualReview when a precise rule might have worked) is far preferable to over-claiming (a specific rule that turns out wrong). A wrong threshold reaches a person in financial crisis as a stated fact; a manualReview reaches a human reviewer first.
-- A number in the source is not automatically an eligibility threshold. Check what it actually governs -- a deduction, a reporting requirement, a processing-speed trigger, household composition -- before encoding it.`;
+- A number in the source is not automatically an eligibility threshold. Check what it actually governs -- a deduction, a reporting requirement, a processing-speed trigger, household composition, a cost-sharing tier, a benefit level -- before encoding it. If the excerpt's numbers only set how much help someone gets (levels, tiers, spenddown) and the program still serves people past the highest number, there is no eligibility cutoff to emit: abstain.
+
+PRECONDITION INVENTORY -- fill in \`preconditions\` BEFORE you build \`criterion\`.
+- A precondition is a distinct requirement THAT THE EXCERPT ITSELF STATES, which must also be true -- on top of the rule you are about to emit -- for that rule to decide someone's eligibility. It typically restricts the rule to a sub-population the excerpt names. Examples: being a survivor of a crime; being 65 or older; being pregnant; being entitled to Medicare Part A or B; facing a fire, flood, eviction, or other emergency; currently enrolled in a named program; passing an asset or resource test; living in a named place.
+- Look outside the sentence with the number. The gate often sits in a section or table heading, a table-column label ("Pregnant people and children monthly income limit (306% FPL)"), a list stem ("you meet one of the following conditions"), a preceding sentence, or an "extended eligibility" / "additional allowance" branch. A threshold that only applies to people who first clear such a gate is the exact trap this inventory exists to catch -- list the gate.
+- Keep the list short. Do NOT list:
+    - the rule you are emitting itself (the income threshold you encode is not its own precondition);
+    - a requirement you suspect exists elsewhere but the excerpt does not state ("a net income test or asset test may also apply") -- if the excerpt does not say it, it is not on the list;
+    - a definition of a term the rule uses ("gross income means income before taxes");
+    - how a threshold scales with household size or state;
+    - a coverage period, program year, or effective date ("during the 2025-2026 program year", "effective October 1") -- omit it entirely, it is never a precondition;
+    - who may file an application for someone else;
+    - descriptive prose naming who tends to use the program ("working families", "Dane County renters", "low-income households") when no pass/fail test is attached;
+    - an alternative "or" route you could not encode (it only narrows your rule -- mention it in a manualReview note if you keep the rule).
+- Mark each: "encoded" (it is a concrete compare / set / incomeAtOrBelow / not node in \`criterion\`), "undecidable" (real, but no fact expresses it), or "dropped" (you chose not to represent it).
+- If the excerpt states one threshold that applies to all applicants and nothing else, your inventory is that single line marked "encoded" and you emit the threshold. Do not manufacture preconditions to look thorough.
+- When a precondition is NOT "encoded":
+    - Keep the threshold and add a manualReview leaf inside an allOf ONLY when: the threshold is one the excerpt applies to every applicant, AND exactly one gate is unencoded, AND that gate is an extra requirement (work/school/training activity, account in your name, an interview) rather than the reason the program exists. Example shape: allOf(incomeAtOrBelow(fpl, 200), manualReview("must also be working, in school, or in job training")).
+    - Abstain (top-level manualReview, no partial rule) when ANY of these holds: the threshold is one the excerpt gives only for a sub-population it names (survivors, people facing an emergency, people entitled to Medicare, a named age band) -- i.e. a different or additional threshold from any general one; OR two or more distinct gates are unencoded; OR the excerpt's numbers set benefit/cost-sharing levels rather than a yes/no eligibility cutoff.
+- Do not invent compare/set nodes from descriptive phrases just to mark something "encoded". "Encoded" means the excerpt states a real, testable condition and you represented it faithfully.`;
 
 interface RunOptions {
   readonly split: EvalSplit | 'all';
   readonly enumVocab: boolean;
   readonly caching: boolean;
+  /** Print each model output (preconditions + criterion). For tuning only. */
+  readonly dump: boolean;
 }
 
 function parseArgs(argv: readonly string[]): RunOptions {
   let split: RunOptions['split'] = 'heldout';
   let enumVocab = true;
   let caching = true;
+  let dump = false;
   for (const arg of argv) {
     const [key, value] = arg.replace(/^--/, '').split('=');
     if (key === 'split' && (value === 'heldout' || value === 'tuning' || value === 'all')) split = value;
     else if (key === 'enum-vocab') enumVocab = value !== 'off';
     else if (key === 'caching') caching = value !== 'off';
+    else if (key === 'dump') dump = value !== 'off';
     else if (arg.startsWith('--')) {
       console.error(`Unknown flag: ${arg}`);
       process.exit(2);
     }
   }
-  return { split, enumVocab, caching };
+  return { split, enumVocab, caching, dump };
 }
 
 /** The system prompt as content blocks: stable prefix first, cache breakpoint at its end. */
@@ -169,16 +202,29 @@ function isToolUseBlock(block: unknown): block is ToolUseBlock {
   return typeof block === 'object' && block !== null && (block as { type?: unknown }).type === 'tool_use';
 }
 
-type ExtractionOutput = { criterion: Criterion; sourceExcerpt: string; confidence: 'high' | 'low' };
+type ExtractionOutput = {
+  preconditions: PreconditionReport[];
+  criterion: Criterion;
+  sourceExcerpt: string;
+  confidence: 'high' | 'low';
+};
 
 function isExtractionOutput(value: unknown): value is ExtractionOutput {
   return (
     typeof value === 'object' &&
     value !== null &&
+    'preconditions' in value &&
+    Array.isArray((value as { preconditions: unknown }).preconditions) &&
     'criterion' in value &&
     'sourceExcerpt' in value &&
     'confidence' in value
   );
+}
+
+/** Both gates must pass; problems are merged so the run log shows every reason. */
+function combineGates(...results: readonly GateResult[]): GateResult {
+  const problems = results.flatMap((r) => (r.ok ? [] : r.problems));
+  return problems.length > 0 ? { ok: false, problems } : { ok: true };
 }
 
 /** Did the model abstain? Only a top-level manualReview counts (a nested leaf does not). */
@@ -246,7 +292,15 @@ async function runSplit(
       tokens.output += usage.output_tokens ?? 0;
 
       if (!isExtractionOutput(input)) throw new Error('output missing required fields');
-      const gate = gateCriterion(input.criterion);
+      if (opts.dump) {
+        console.log(`\n  --- ${evalCase.id} (expected ${evalCase.expected}) ---`);
+        console.log(`  preconditions: ${JSON.stringify(input.preconditions)}`);
+        console.log(`  criterion: ${JSON.stringify(input.criterion)}`);
+      }
+      const gate = combineGates(
+        gateCriterion(input.criterion),
+        gateScopeContract(input.criterion, input.preconditions),
+      );
       const abstained = isAbstention(input.criterion);
       score.scored += 1;
 
