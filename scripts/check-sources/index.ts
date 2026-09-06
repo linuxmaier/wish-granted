@@ -30,7 +30,8 @@
  *   npm run check:sources -- --self-test         # load everything, touch nothing, exit 0
  *
  * Exit codes: 0 clean, OR the only change is a first-time `unreachable`'s failure
- * counter (bookkeeping -- the workflow commits that to main without a PR);
+ * counter (bookkeeping -- the workflow force-pushes that to the
+ * automation/source-change-detection branch, never to main, and opens no PR);
  * 1 a write was refused for branch safety; 2 at least one record is changed,
  * gone, `unreachable` for ESCALATE_AFTER_FAILURES runs running, or a new
  * baseline -- a human should look. A single transient `unreachable` is exit 0

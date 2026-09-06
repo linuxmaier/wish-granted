@@ -35,8 +35,10 @@ export function hasActionableFindings(results: readonly CheckResult[]): boolean 
  * True when the only thing a run would write to source-hashes.json is a
  * first-time `unreachable`'s failure counter: every result is either `unchanged`
  * or a not-yet-escalated `unreachable`, and at least one of the latter. The
- * workflow commits this straight to `main` as bookkeeping instead of opening a
- * PR. A `new` baseline or any actionable finding takes the PR path as before.
+ * workflow force-pushes this to the `automation/source-change-detection` branch
+ * as bookkeeping instead of opening a PR -- never to `main`, where a push is a
+ * production deploy (see the workflow header). A `new` baseline or any
+ * actionable finding takes the PR path as before.
  */
 export function isBookkeepingOnly(results: readonly CheckResult[]): boolean {
   const hasTransient = results.some((r) => r.status === 'unreachable' && !isEscalated(r));
@@ -168,7 +170,8 @@ export function renderReport(input: ReportInput): string {
   if (wrote && isBookkeepingOnly(results)) {
     lines.push(
       '_source-hashes.json changed, but the only change is a transient-failure counter -- no page ' +
-        'moved and nothing 404\'d. The workflow commits this to `main` as bookkeeping and opens no PR._',
+        'moved and nothing 404\'d. The workflow force-pushes this to the ' +
+        '`automation/source-change-detection` branch as bookkeeping (never to `main`) and opens no PR._',
     );
   } else if (wrote) {
     lines.push('_source-hashes.json was updated. Review its diff alongside this report._');

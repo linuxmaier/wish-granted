@@ -12,11 +12,42 @@ name: Check sources
 # re-verification loop, then either sets a fresh lastVerified or lands the
 # correction, on top of the baseline bump.
 #
-# An all-unchanged run does nothing and says nothing -- no PR, no noise. A run
-# whose only change is a first-time unreachable's failure counter commits that
-# one field straight to main as bookkeeping and opens no PR (issue #49) -- the
-# escalation to an actual PR happens if the next run also fails. Monthly is
-# enough: steady-state change on these sources is roughly annual (see
+# An all-unchanged run does nothing and says nothing -- no PR, no noise.
+#
+# ---------------------------------------------------------------------------
+# WHERE THE FAILURE COUNTER LIVES, AND WHY IT IS NOT main (issue #49).
+#
+# A first `unreachable` for a source (a timeout / 403 / 5xx) is almost always a
+# blip. It bumps a `consecutiveFailures` counter in source-hashes.json and opens
+# no PR; only a SECOND consecutive failed run escalates to a re-verification PR.
+# For that to work the counter has to survive from one monthly run to the next,
+# so something has to persist it between runs.
+#
+# It is persisted on the automation/source-change-detection branch -- the SAME
+# branch the re-verification PR is cut from -- and is NEVER committed to main.
+#
+# The decisive reason is deployment, not tidiness: main is Cloudflare Pages'
+# production branch (docs/deploy.md, "Production branch: main"), and the
+# dashboard Git integration builds and deploys the live site on EVERY push to
+# main. Committing counter bookkeeping to main would therefore fire a production
+# deploy of the public site every time a Wisconsin state web server happened to
+# return a transient 403 -- real user-facing deploys driven by the flakiness of
+# government servers. Persisting to a branch instead gives the counter identical
+# durability (the next run seeds its baseline from that branch, below) with zero
+# deploys and zero writes to the published dataset -- which is also what issue
+# #14 requires: "Land changes as pull requests. Never write directly to the
+# published dataset." Do not "simplify" this back to a push to main.
+#
+# When the branch does not exist -- the first run ever, or the run right after a
+# re-verification PR merged and deleted it -- the run falls back to main's
+# committed source-hashes.json. That copy carries no counter, so every counter
+# effectively restarts at zero. That is safe: it costs at most one extra monthly
+# run before an ongoing outage escalates, and it can NEVER suppress a real
+# finding -- a 404 is `gone` and escalates on the first run regardless of any
+# counter, and a page whose text changed is caught by its hash.
+# ---------------------------------------------------------------------------
+#
+# Monthly is enough: steady-state change on these sources is roughly annual (see
 # docs/eligibility-extraction.md Section 5), and stalePrograms() covers the
 # time-based half between runs.
 on:
@@ -32,11 +63,16 @@ jobs:
   check-sources:
     name: Detect changed source pages
     runs-on: ubuntu-latest
+    env:
+      # The branch the counter is persisted on and the re-verification PR is cut
+      # from. Never main -- see the header comment.
+      BRANCH: automation/source-change-detection
     steps:
       - uses: actions/checkout@v4
         with:
-          # Full history so the "Advance the baseline" step can fast-forward /
-          # rebase a bookkeeping commit onto main without shallow-clone surprises.
+          # Full history so `git push --force` of $BRANCH sends a complete
+          # branch, and so the next step can pull that branch's
+          # source-hashes.json without shallow-clone surprises.
           fetch-depth: 0
 
       - uses: actions/setup-node@v4
@@ -46,6 +82,23 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      # Seed the workspace source-hashes.json from $BRANCH when it exists, so
+      # this run continues each source's consecutiveFailures counter (issue #49)
+      # where the previous run left it. When the branch is absent, keep main's
+      # committed copy -- it has no counter, so counters restart at zero, which
+      # is safe (see the header comment: a 404 still escalates immediately, an
+      # ongoing outage escalates one run later at worst). This `git checkout`
+      # also stages the file, so the "Advance the baseline" step's `git diff`
+      # below measures only what `check:sources` changed on top of the seed.
+      - name: Restore the failure counter from the automation branch
+        run: |
+          if git fetch --no-tags origin "$BRANCH" 2>/dev/null; then
+            git checkout FETCH_HEAD -- scripts/check-sources/source-hashes.json
+            echo "Seeded source-hashes.json from $BRANCH (continuing its consecutiveFailures counters)."
+          else
+            echo "$BRANCH does not exist; using main's committed source-hashes.json (counters start at zero)."
+          fi
 
       # actions/checkout leaves a detached HEAD, so the script's "never write on
       # main" guard does not trip here -- it writes source-hashes.json into the
@@ -58,11 +111,11 @@ jobs:
           code=$?
           set -e
           echo "code=$code" >> "$GITHUB_OUTPUT"
-          # 0 = all clean OR only a first-time unreachable's failure counter moved
-          # (bookkeeping -- committed to main below, no PR); 2 = something is
-          # changed / gone / unreachable-for-N-runs (the PR step handles it).
-          # Anything else (crash, or the on-main write guard, which shouldn't
-          # trip on a detached HEAD) is a real failure.
+          # 0 = all clean OR the only change is a first-time unreachable's failure
+          # counter (bookkeeping -- force-pushed to $BRANCH below, no PR); 2 =
+          # something is changed / gone / unreachable-for-N-runs (the PR step
+          # handles it). Anything else (crash, or the on-main write guard, which
+          # shouldn't trip on a detached HEAD) is a real failure.
           if [ "$code" != "0" ] && [ "$code" != "2" ]; then
             echo "::error::check:sources exited $code"
             exit "$code"
@@ -72,7 +125,6 @@ jobs:
         if: ${{ !cancelled() }}
         env:
           GH_TOKEN: ${{ github.token }}
-          BRANCH: automation/source-change-detection
           CHECK_CODE: ${{ steps.check.outputs.code }}
         run: |
           if git diff --quiet -- scripts/check-sources/source-hashes.json; then
@@ -83,35 +135,35 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          if [ "$CHECK_CODE" != "2" ]; then
-            # The only change is transient-failure bookkeeping: a `consecutiveFailures`
-            # counter for a source that failed to fetch once (a timeout / 403 / 5xx
-            # blip). No page text moved, nothing 404'd -- there is nothing for a human
-            # to re-verify, so opening a PR would just be the monthly noise issue #49
-            # set out to remove. But escalation to a real re-verification PR happens on
-            # the SECOND consecutive failed run, and that needs the counter persisted
-            # where the next scheduled run (which checks out main) can see it. So this
-            # commits the counter straight to main. It only ever touches
-            # `consecutiveFailures`; the last-good hash is untouched, and a successful
-            # fetch next run resets it. This is operational state, not program data --
-            # the "PR review is the write gate" rule still holds for every `changed` /
-            # `gone` / escalated finding, which all take the branch path below.
-            git add scripts/check-sources/source-hashes.json
-            git commit -m "check-sources: transient-fetch bookkeeping $(date -u +%Y-%m-%d)"
-            for attempt in 1 2 3; do
-              if git push origin HEAD:main; then
-                exit 0
-              fi
-              echo "push to main rejected (attempt $attempt); rebasing"
-              git fetch origin main
-              git rebase origin/main || { git rebase --abort; echo "::error::could not rebase bookkeeping commit onto main"; exit 1; }
-            done
-            echo "::error::could not push transient-fetch bookkeeping to main after 3 attempts"
-            exit 1
-          fi
-
+          # Both paths below push to $BRANCH and NOTHING is pushed to main -- a
+          # push to main is a Cloudflare Pages production deploy (see the header
+          # comment). `git checkout -B` re-cuts $BRANCH from the current
+          # (detached-HEAD) default-branch checkout; the counter and baseline
+          # state that has to survive is already in the working-tree
+          # source-hashes.json, which the "Restore the failure counter" step
+          # seeded from $BRANCH, so re-cutting from main loses none of it -- it is
+          # re-committed as one squashed commit on top of current main, exactly
+          # as the actionable path has always done.
           git checkout -B "$BRANCH"
           git add scripts/check-sources/source-hashes.json
+
+          if [ "$CHECK_CODE" != "2" ]; then
+            # Bookkeeping only: a first-time `unreachable`'s consecutiveFailures
+            # counter moved (a timeout / 403 / 5xx blip) and nothing else -- no
+            # page text moved, nothing 404'd, nothing for a human to re-verify.
+            # Force-push it to $BRANCH so the SECOND consecutive failure next run
+            # can escalate, and open NO PR (issue #49). This is the commit that
+            # used to go straight to main -- and would have deployed the site.
+            git commit -m "check-sources: transient-fetch bookkeeping $(date -u +%Y-%m-%d)"
+            git push --force origin "$BRANCH"
+            echo "Transient-fetch bookkeeping force-pushed to $BRANCH. No PR, no deploy (issue #49)."
+            exit 0
+          fi
+
+          # Actionable: a page changed / 404'd / an `unreachable` escalated after
+          # ESCALATE_AFTER_FAILURES consecutive failed runs. Open (or update) the
+          # re-verification PR from $BRANCH -- which now also carries whatever
+          # consecutiveFailures history has accumulated.
           git commit -m "Source change detection: baseline update $(date -u +%Y-%m-%d)"
           git push --force origin "$BRANCH"
 

@@ -317,7 +317,7 @@ churns (issue #49).
 | **new** | no baseline yet (first run, or the URL changed) | nothing — baseline recorded |
 | **changed** | reachable, 200, normalized text moved | re-verify the record against the source (below) |
 | **gone** | 404 / 410 — the page was removed, not edited | find the current official page; fix `source.url` in the record **and** in `source-hashes.json`; note "moved" vs "never correct" per the section above; then re-verify. **Escalates on the first run** — a retry counter must never hide a vanished program |
-| **unreachable** | timeout, 403, 5xx, network error | almost always a blip at 17 monthly sources. The last good hash is kept and a `consecutiveFailures` counter is recorded (committed to `main` as bookkeeping, no PR). Only the **2nd consecutive** failed run escalates to a re-verification PR; a successful fetch resets the counter. Once escalated, treat a genuinely-removed page as "gone" |
+| **unreachable** | timeout, 403, 5xx, network error | almost always a blip at 17 monthly sources. The last good hash is kept and a `consecutiveFailures` counter is recorded (force-pushed to the `automation/source-change-detection` branch as bookkeeping, never to `main`, no PR). Only the **2nd consecutive** failed run escalates to a re-verification PR; a successful fetch resets the counter. Once escalated, treat a genuinely-removed page as "gone" |
 
 A 404 is deliberately not an "edit" — see "Moved vs. never correct" above, and issue #14.
 `unreachable` stays distinct from `gone` for the same reason: the retry counter delays a
@@ -329,12 +329,16 @@ run — the time-based half of the same question, now wired up.
 ### The re-verification loop
 
 The scheduled workflow (`.github/workflows/check-sources.yml`, monthly) runs the script on a
-detached HEAD. If `source-hashes.json` changed *and* there is an actionable finding
-(`changed` / `gone` / an escalated `unreachable`), it force-pushes
-`automation/source-change-detection` and opens (or updates) one PR with the report as its
-body. If the only change is a first-time `unreachable`'s `consecutiveFailures` counter, it
-commits that one field straight to `main` (bookkeeping — no page moved, nothing to review)
-and opens nothing. That PR is the tracked item. To close it:
+detached HEAD, first seeding `source-hashes.json` (and its `consecutiveFailures` counters)
+from the `automation/source-change-detection` branch when that branch exists. If
+`source-hashes.json` changed *and* there is an actionable finding (`changed` / `gone` / an
+escalated `unreachable`), it force-pushes `automation/source-change-detection` and opens (or
+updates) one PR with the report as its body. If the only change is a first-time
+`unreachable`'s `consecutiveFailures` counter, it force-pushes that one field to the same
+branch (bookkeeping — no page moved, nothing to review) and opens nothing. It never commits
+to `main`: `main` is Cloudflare Pages' production branch and every push to it deploys the
+live site (`docs/deploy.md`), so a counter bump driven by a flaky government server must not
+land there. That PR is the tracked item. To close it:
 
 1. For each **changed** record, do the full "Verifying a program record" procedure above
    against the (new) source text. The hash moving is not proof the *eligibility rule*
@@ -347,8 +351,9 @@ and opens nothing. That PR is the tracked item. To close it:
 4. Merge. The baseline advances with the reviewed state.
 
 Exit codes: **0** clean, or the only change is a first-time `unreachable`'s failure counter
-(bookkeeping — committed to `main`, no PR); **1** a write was refused because the script was
-run on `main`/`master` (it never advances the committed baseline without a PR, same rule as
+(bookkeeping — force-pushed to `automation/source-change-detection`, never `main`, no PR);
+**1** a write was refused because the script was run on `main`/`master` (it never advances
+the committed baseline without a PR, same rule as
 `refresh-income-tables`); **2** at least one record is changed, gone, or `unreachable` for
 two consecutive runs.
 
