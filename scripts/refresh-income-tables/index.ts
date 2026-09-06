@@ -25,6 +25,11 @@
  *   --dry-run        Validate and report, but never write income-tables.ts.
  *   --report-file    Also write the Markdown report to this path (for a future CI step to
  *                     use as a PR body -- see issue #15).
+ *   --self-test      Load every module, parse args, parse the current income-tables.ts,
+ *                     and exit 0 -- no fetch, no write. The CI smoke gate (issue #55):
+ *                     unlike check-sources this script does not import from src/, but it
+ *                     still runs only from a scheduled workflow or by hand, so a change to
+ *                     its own lib/ or sources/ can break startup and stay green for weeks.
  *
  * Exit codes: 0 clean run (nothing needed attention beyond what is in the report); 1 a
  * source could not be reached or parsed, or two sources disagreed, or a write was refused
@@ -51,15 +56,19 @@ interface Args {
   year: number | undefined;
   dryRun: boolean;
   reportFile: string | undefined;
+  selfTest: boolean;
 }
 
 function parseArgs(argv: readonly string[]): Args {
   let year: number | undefined;
   let dryRun = false;
   let reportFile: string | undefined;
+  let selfTest = false;
   for (const arg of argv) {
     if (arg === '--dry-run') {
       dryRun = true;
+    } else if (arg === '--self-test') {
+      selfTest = true;
     } else if (arg.startsWith('--year=')) {
       year = Number(arg.slice('--year='.length));
     } else if (arg.startsWith('--report-file=')) {
@@ -68,7 +77,40 @@ function parseArgs(argv: readonly string[]): Args {
       throw new Error(`Unrecognized argument: ${arg}`);
     }
   }
-  return { year, dryRun, reportFile };
+  return { year, dryRun, reportFile, selfTest };
+}
+
+/**
+ * Prove the entrypoint can start with no network (issue #55). Every module is
+ * statically imported above, so reaching this function already means the graph
+ * evaluated; on top of that, parse the committed income-tables.ts with the same
+ * readers `main()` uses (pure text parsing, no I/O) so a break in lib/ surfaces
+ * here rather than in a scheduled run nobody is watching.
+ */
+function selfTest(): number {
+  const fileText = readFileSync(TABLE_FILE, 'utf-8');
+  const fpl = readCurrentBySizeTable(fileText, 'FPL');
+  const smi = readCurrentBySizeTable(fileText, 'WI_SMI_60');
+  const ami = readCurrentDaneAmi(fileText, 'DANE_AMI');
+  if (fpl.bySize.length === 0 || smi.bySize.length === 0 || !Number.isFinite(ami.fourPersonMedian)) {
+    throw new Error('self-test: income-tables.ts did not parse into usable tables');
+  }
+  for (const [name, fn] of Object.entries({
+    fetchFpl,
+    fetchWiSmi,
+    fetchDaneAmi,
+    applyPatch,
+    buildProposedComment,
+    checkGuardrail,
+  })) {
+    if (typeof fn !== 'function') throw new Error(`self-test: export ${name} is not callable`);
+  }
+  console.log(
+    `refresh-income-tables self-test OK: module graph loaded, income-tables.ts parses ` +
+      `(FPL ${fpl.bySize.length} sizes, WI_SMI_60 ${smi.bySize.length} sizes, DANE_AMI 4-person ` +
+      `${ami.fourPersonMedian}). No network touched.`,
+  );
+  return 0;
 }
 
 type Outcome =
@@ -306,6 +348,7 @@ function renderReport(
 
 async function main(): Promise<number> {
   const args = parseArgs(process.argv.slice(2));
+  if (args.selfTest) return selfTest();
   const generatedAt = new Date().toISOString();
 
   let fileText = readFileSync(TABLE_FILE, 'utf-8');

@@ -21,9 +21,18 @@
  *   npm run ingest:descriptive -- --dry-run         # fetch and report, write nothing
  *   npm run ingest:descriptive -- --id=foodshare-snap-wi   # one record (repeatable)
  *   npm run ingest:descriptive -- --report-file=out.md
+ *   npm run ingest:descriptive -- --self-test       # load everything, touch nothing, exit 0
  *
  * Exit codes: 0 clean; 1 a write was refused for branch safety; 2 there is
  * something for a human to look at (a proposal, a health issue, or a review flag).
+ *
+ * --self-test is the CI smoke gate (issue #55), shared in spirit with
+ * check-sources's. This entrypoint has the same exposure: it reaches `PROGRAMS`
+ * through register.mjs (which reuses check-sources's resolve+JSON-load hook
+ * verbatim), so a `src/` change can break it while every vitest suite stays
+ * green -- which is exactly what happened once and went unnoticed for weeks.
+ * The mode evaluates the whole module graph and parses argv, then stops before
+ * the first fetch. It is not a second test suite.
  */
 import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
@@ -156,8 +165,51 @@ export async function runIngest(args: Args, fetcher: Fetcher = liveFetcher): Pro
   return { report, exitCode, nextFile, wrote };
 }
 
+/**
+ * Prove the entrypoint can start on the pinned Node with no network (issue #55):
+ * force evaluation of the whole module graph -- `@/data/programs` via the hook,
+ * the shared `normalize`, and this pipeline's own lib -- exercise argv parsing,
+ * and return without I/O.
+ */
+function selfTest(): number {
+  parseArgs(['--dry-run', '--min-text=400']);
+
+  if (!Array.isArray(PROGRAMS) || PROGRAMS.length === 0) {
+    throw new Error('self-test: PROGRAMS did not load as a non-empty array');
+  }
+
+  // `normalize` is imported from scripts/check-sources across a directory
+  // boundary -- run it on a literal so a broken cross-import fails here, not
+  // against a fetched page. Pure string transform, no I/O.
+  const normalized = normalize('<main><p>hello</p></main>');
+  if (typeof normalized !== 'string') throw new Error('self-test: normalize did not return a string');
+
+  for (const [name, fn] of Object.entries({
+    liveFetcher,
+    fetchDistinct,
+    classify,
+    isActionable,
+    emptyProposalsFile,
+    mergeEntry,
+    readProposalsFile,
+    serializeProposalsFile,
+    writeProposalsFile,
+    renderReport,
+  })) {
+    if (typeof fn !== 'function') throw new Error(`self-test: lib export ${name} is not callable`);
+  }
+
+  console.log(
+    `ingest-descriptive self-test OK: module graph loaded (${PROGRAMS.length} programs via the ` +
+      `@/ resolve + JSON load hook, plus the shared normalizer), argv parses. No network touched.`,
+  );
+  return 0;
+}
+
 async function main(): Promise<number> {
-  const args = parseArgs(process.argv.slice(2));
+  const argv = process.argv.slice(2);
+  if (argv.includes('--self-test')) return selfTest();
+  const args = parseArgs(argv);
   const { report, exitCode } = await runIngest(args);
   console.log(report);
   if (args.reportFile) writeFileSync(args.reportFile, report, 'utf8');

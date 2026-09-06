@@ -48,6 +48,62 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      # `npm run typecheck` above is `tsc -b` over the app's project references
+      # only -- it never reaches scripts/. Each script directory has its own
+      # scoped tsconfig (its own moduleResolution, its own src/ access, its own
+      # `typecheck:*` script) and none of them ran in CI until issue #48. The
+      # scripts execute via Node's TypeScript type-stripping, which removes
+      # annotations without checking them, so a script can be badly type-broken
+      # and still run green. These steps close that gap.
+      #
+      # One step per directory rather than an aggregate `typecheck:scripts`, for
+      # the same reason the two test runners below are split: a red X should name
+      # the directory that broke, not just report "scripts don't typecheck".
+      # They are pure static analysis over a handful of files each -- cheap, and
+      # placed here so a type error fails the PR in seconds.
+      - name: Typecheck (scripts/build-snapshot)
+        run: npm run typecheck:build-snapshot
+      - name: Typecheck (scripts/refresh-income-tables)
+        run: npm run typecheck:refresh-income-tables
+      - name: Typecheck (scripts/llm-extraction)
+        run: npm run typecheck:llm-extraction
+      - name: Typecheck (scripts/check-sources)
+        run: npm run typecheck:check-sources
+      - name: Typecheck (scripts/ingest-descriptive)
+        run: npm run typecheck:ingest-descriptive
+
+      # Typechecking the scripts (above) is necessary but not sufficient, and
+      # issue #55 is the post-mortem of the gap it leaves. #8 made
+      # src/data/programs/index.ts do a bare `import rawSnapshot from
+      # './snapshot.json'`. That is valid TypeScript, and Vite loads it fine --
+      # so every typecheck, every vitest suite, and `npm run build` stayed
+      # green. But scripts/check-sources and scripts/ingest-descriptive reach
+      # PROGRAMS through Node's raw ESM loader (scripts/check-sources/resolve-hook.mjs),
+      # and Node requires a `with { type: 'json' }` import attribute that Vite
+      # does not. Both scripts broke at startup the moment #8 merged and stayed
+      # broken -- green everywhere -- for roughly 26 days, because the only thing
+      # that runs them (check-sources.yml) is monthly and deliberately not a PR
+      # gate.
+      #
+      # Fix: actually START every scripts/ entrypoint on every PR. Each has a
+      # no-network mode that evaluates its whole module graph, parses argv, and
+      # exits 0 -- `--self-test` for the three fetching scripts, and `--check`
+      # for build-snapshot, which already loaded its source modules through Vite
+      # and validated the committed snapshot without a network. No live source
+      # is fetched here, on purpose: a PR gate that hit 17 government sites on
+      # every push is the exact noise check-links.yml exists to keep out of CI.
+      # These are smoke tests -- "does it start?" -- not a second test suite.
+      # (build:snapshot:check runs again inside the Build step below; the few
+      # seconds here buy a fast, clearly-named failure near the front.)
+      - name: 'Smoke test: scripts/check-sources starts (issue #55)'
+        run: npm run check:sources:self-test
+      - name: 'Smoke test: scripts/ingest-descriptive starts (issue #55)'
+        run: npm run ingest:descriptive:self-test
+      - name: 'Smoke test: scripts/refresh-income-tables starts (issue #55)'
+        run: npm run refresh:income-tables:self-test
+      - name: 'Smoke test: scripts/build-snapshot starts (issue #55)'
+        run: npm run build:snapshot:check
+
       - name: Unit tests (vitest)
         run: npm test
 

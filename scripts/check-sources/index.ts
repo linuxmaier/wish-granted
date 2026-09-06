@@ -27,10 +27,20 @@
  *   npm run check:sources -- --report-file=out.md
  *   npm run check:sources -- --id=foodshare-snap-wi   # just one record (repeatable)
  *   npm run check:sources -- --stale-days=180
+ *   npm run check:sources -- --self-test         # load everything, touch nothing, exit 0
  *
  * Exit codes: 0 clean (nothing changed, nothing unreachable); 1 a write was
  * refused for branch safety; 2 at least one record is changed / gone /
  * unreachable and a human should look.
+ *
+ * --self-test is the CI smoke gate (issue #55). It is NOT a second test suite:
+ * it does exactly what a scheduled run does for its first few milliseconds --
+ * evaluate the whole module graph and parse argv -- and then stops before any
+ * fetch. Its entire reason to exist is that this graph reaches `PROGRAMS`
+ * through register.mjs's raw-Node resolve+JSON-load hook, which a `src/` change
+ * broke silently for ~26 days once (the import that `src/data/programs/index.ts`
+ * added in #8 needs an import attribute Node enforces and Vite does not). A
+ * green vitest run never loads this file, so nothing else in CI would notice.
  */
 import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
@@ -167,8 +177,55 @@ function mergePartial(file: HashesFile, selected: readonly { id: string }[]): Ha
   return { ...file, sources };
 }
 
+/**
+ * Prove the entrypoint can start on the pinned Node with no network (issue #55).
+ * Forces module evaluation of the whole graph -- including `@/data/programs`,
+ * which only resolves because register.mjs's hook is in place -- exercises the
+ * argument parser, and returns without doing I/O.
+ */
+function selfTest(): number {
+  // The arg parser is reachable and accepts a representative invocation.
+  parseArgs(['--dry-run', '--stale-days=180']);
+
+  // `PROGRAMS` and `stalePrograms` came from `@/data/programs`. If the resolve
+  // hook or the JSON `load` hook regressed, this module never reached this line
+  // -- it threw at import. Assert the shapes anyway so a partial load is loud.
+  if (!Array.isArray(PROGRAMS) || PROGRAMS.length === 0) {
+    throw new Error('self-test: PROGRAMS did not load as a non-empty array');
+  }
+  if (typeof stalePrograms !== 'function') {
+    throw new Error('self-test: stalePrograms did not load as a function');
+  }
+  // stalePrograms() reads PROGRAMS and returns -- no I/O. Run it so the src/
+  // helper this script depends on is exercised, not just imported.
+  stalePrograms(180);
+
+  // The lib modules are imported at the top; name-check the surface this script
+  // calls so a broken export fails here rather than mid-run against the network.
+  for (const [name, fn] of Object.entries({
+    checkSource,
+    liveFetcher,
+    emptyHashesFile,
+    readHashesFile,
+    serializeHashesFile,
+    writeHashesFile,
+    renderReport,
+    hasActionableFindings,
+  })) {
+    if (typeof fn !== 'function') throw new Error(`self-test: lib export ${name} is not callable`);
+  }
+
+  console.log(
+    `check-sources self-test OK: module graph loaded (${PROGRAMS.length} programs via the ` +
+      `@/ resolve + JSON load hook), argv parses, lib surface intact. No network touched.`,
+  );
+  return 0;
+}
+
 async function main(): Promise<number> {
-  const args = parseArgs(process.argv.slice(2));
+  const argv = process.argv.slice(2);
+  if (argv.includes('--self-test')) return selfTest();
+  const args = parseArgs(argv);
   const { report, exitCode } = await runCheck(args);
   console.log(report);
   if (args.reportFile) writeFileSync(args.reportFile, report, 'utf8');
