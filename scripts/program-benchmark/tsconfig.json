@@ -1,0 +1,28 @@
+{
+  // Same rationale as scripts/check-sources/tsconfig.json and
+  // scripts/ingest-descriptive/tsconfig.json: index.ts imports `@/data/programs`,
+  // which transitively pulls in src/ files that use extensionless relative
+  // imports, so `moduleResolution` is "bundler" (like the root tsconfig), not
+  // NodeNext. Node runs it fine via the resolve hook
+  // (../check-sources/resolve-hook.mjs). Consumed only by
+  // `typecheck:program-benchmark`.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "types": ["node"],
+    "paths": { "@/*": ["../../src/*"] }
+  },
+  "include": ["**/*.ts"]
+}

@@ -256,6 +256,23 @@ undecidable.
 
 ### 4.3 The eval set
 
+> **Demoted to a narrow-skill regression check by issue #66 / epic #65.** This set measures
+> one artificial task -- "given a fixed, pre-cut excerpt, emit a `Criterion` in one shot" --
+> and #65 explains why the ceiling it produced (~17% Tier-3 yield) was an artefact of the
+> excerpt, not a limit on capability: every one of the six dangerous over-claims was a
+> context-starvation failure (the governing clause was outside the excerpt), not a
+> comprehension failure. The **primary** measure is now the program-level benchmark
+> (`scripts/program-benchmark/`, issue #66): *given a source URL, produce a `Program`
+> record or abstain*, scored against the 16 hand-verified records. See
+> `docs/program-benchmark.md`.
+>
+> `scripts/llm-extraction/eval-cases.ts` **stays in the tree** and is still run
+> (`npm run eval:llm-extraction`). What it is good for now: a fast, cheap regression check
+> on the one narrow skill of turning a clean paragraph into a `Criterion` -- the enum-slug
+> mapping, the near-miss threshold traps, the "this number is not an eligibility bar"
+> discriminations. It is a unit test for a sub-skill, not a measure of the pipeline. Do not
+> re-derive #65's reasoning here; it is settled there.
+
 > **Superseded by issue #43 (see [Section 4.6](#46-hardening-issue-43)).** The set is now
 > ~~33 cases split into a frozen held-out partition (19)~~ **41 cases split into a frozen
 > held-out partition (27, after the #51 conditional-scope expansion below)** and a tuning
