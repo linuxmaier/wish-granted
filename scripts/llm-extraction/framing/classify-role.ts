@@ -50,11 +50,23 @@ export interface Classification {
   /**
    * Anything in the excerpt that scopes a number to a sub-population and would
    * be silently dropped by a naive extraction: a governing heading, a table
-   * column label, a list stem, an "extended/expanded eligibility" branch, a
+   * column label, an "extended/expanded eligibility" branch, a
    * "notwithstanding" clause, a negation ("residency is not required").
+   *
+   * NOT a scope signal: the categorical list that IS the rule when
+   * `ruleShape === 'categorical-enrollment-list'`; "based on household/family
+   * size", "based on your state", "before taxes and deductions" and similar
+   * phrases that only describe how an income test is applied, never who it
+   * applies to.
    */
   readonly scopeSignals: readonly string[];
   readonly confidence: 'high' | 'low';
+  /**
+   * 0-100. A finer-grained companion to `confidence` so a routing threshold can
+   * be swept (issue #62 threshold sweep). `confidence: 'high'` should track
+   * roughly `confidenceScore >= 70`, but the two are reported independently.
+   */
+  readonly confidenceScore: number;
 }
 
 export const CLASSIFIER_SYSTEM_PROMPT = `You classify a verbatim excerpt from an assistance-program source. You are NOT extracting a rule -- a later step does that, and only for excerpts you classify as safe to extract from.
@@ -78,9 +90,15 @@ Then decide the ruleShape:
 - negation-or-no-rule-stated: the excerpt says a condition is NOT required, or states no decidable rule at all.
 - scope-set-by-table-structure: which number applies depends on a table row/column header, not on a sentence.
 
-List every scopeSignal you see: a heading, a column label, a list stem, a branch condition, a "notwithstanding", a negation -- anything that narrows a number to a subgroup and that a careless reader would drop.
+List every scopeSignal you see: a governing heading, a table column label, a branch condition ("extended eligibility", "if you are a survivor", "in an emergency"), a "notwithstanding", a negation -- anything that narrows a number or the whole rule to a subgroup and that a careless reader would drop.
 
-Set confidence: "low" whenever you are not sure of the ruleShape or of any figure's role. Under-confidence is safe here; over-confidence is not.`;
+Do NOT list as a scopeSignal:
+- the categorical list itself when ruleShape is categorical-enrollment-list ("you qualify if you get X, Y, or Z" IS the rule, not a narrowing of it);
+- phrases that only describe how an income test is computed or applied to everyone: "based on household size", "based on family size and state", "gross income before taxes and deductions", "combined income of all household members". These do not narrow WHO the rule covers.
+
+Set confidence: "low" whenever you are not sure of the ruleShape or of any figure's role. Under-confidence is safe here; over-confidence is not.
+
+Also set confidenceScore, an integer 0-100, for how sure you are overall that you have correctly identified the ruleShape and every figure's role. Reserve scores above 80 for excerpts where a single plain reading is the only reading. "confidence" high should correspond to roughly confidenceScore >= 70.`;
 
 export function buildClassifierToolSchema() {
   return {
@@ -109,8 +127,14 @@ export function buildClassifierToolSchema() {
         description: 'Verbatim or near-verbatim phrases that scope a number to a subgroup and would be dropped by a naive extraction. Empty array if there are genuinely none.',
       },
       confidence: { type: 'string', enum: ['high', 'low'] },
+      confidenceScore: {
+        type: 'integer',
+        minimum: 0,
+        maximum: 100,
+        description: 'How sure you are (0-100) that the ruleShape and every figure role is right. >80 only when one plain reading is the only reading.',
+      },
     },
-    required: ['numericFigures', 'ruleShape', 'scopeSignals', 'confidence'],
+    required: ['numericFigures', 'ruleShape', 'scopeSignals', 'confidence', 'confidenceScore'],
     additionalProperties: false,
   };
 }
@@ -118,12 +142,40 @@ export function buildClassifierToolSchema() {
 export interface AutonomyDecision {
   readonly autonomous: boolean;
   readonly reason: string;
+  /** Which gate fired (for reporting the two triggers separately). '' if autonomous. */
+  readonly trigger: '' | 'confidence-categorical' | 'confidence-score' | 'scope-signal' | 'rule-shape' | 'figure-role' | 'no-figure';
 }
 
-const AUTO_EXTRACTABLE_SHAPES: ReadonlySet<RuleShape> = new Set([
+const DEFAULT_AUTO_EXTRACTABLE_SHAPES: readonly RuleShape[] = [
   'single-unconditional-threshold',
   'categorical-enrollment-list',
-]);
+];
+
+/**
+ * Every knob in the routing rule, so the #62 threshold sweep can vary them from
+ * a CLI flag instead of editing this file. `DEFAULT_AUTONOMY_CONFIG` is the
+ * PR #63 behaviour exactly.
+ */
+export interface AutonomyConfig {
+  /** Require the categorical `confidence === 'high'` gate (PR #63 default: true). */
+  readonly requireHighConfidence: boolean;
+  /** Require `confidenceScore >= this`. 0 disables the numeric gate. */
+  readonly minConfidenceScore: number;
+  /** Route to manualReview if any scopeSignal is present (PR #63 default: true). */
+  readonly blockOnScopeSignal: boolean;
+  /** Rule shapes allowed onto the auto-extract path. */
+  readonly autoExtractableShapes: ReadonlySet<RuleShape>;
+  /** Require every numeric figure to govern an eligibility ceiling (PR #63 default: true). */
+  readonly requireAllFiguresCeiling: boolean;
+}
+
+export const DEFAULT_AUTONOMY_CONFIG: AutonomyConfig = {
+  requireHighConfidence: true,
+  minConfidenceScore: 0,
+  blockOnScopeSignal: true,
+  autoExtractableShapes: new Set(DEFAULT_AUTO_EXTRACTABLE_SHAPES),
+  requireAllFiguresCeiling: true,
+};
 
 /**
  * The routing rule. `autonomous: true` means "hand this excerpt to the
@@ -131,28 +183,53 @@ const AUTO_EXTRACTABLE_SHAPES: ReadonlySet<RuleShape> = new Set([
  * extractor". Deliberately strict: a false negative (a real ceiling routed to a
  * human) costs reviewer minutes; a false positive (a trap routed to the
  * extractor) is how a wrong threshold reaches someone in crisis.
+ *
+ * The order matters for the two-trigger reporting #62 asks for: confidence
+ * gates are checked before scope-signal gates, so a case that would fail both
+ * is attributed to confidence.
  */
-export function decideAutonomy(c: Classification): AutonomyDecision {
-  if (c.confidence !== 'high') {
-    return { autonomous: false, reason: 'classifier confidence is low' };
+export function decideAutonomy(
+  c: Classification,
+  cfg: AutonomyConfig = DEFAULT_AUTONOMY_CONFIG,
+): AutonomyDecision {
+  if (cfg.requireHighConfidence && c.confidence !== 'high') {
+    return { autonomous: false, reason: 'classifier confidence is low', trigger: 'confidence-categorical' };
   }
-  if (c.scopeSignals.length > 0) {
-    return { autonomous: false, reason: `scope signal present: ${c.scopeSignals.join('; ')}` };
-  }
-  if (!AUTO_EXTRACTABLE_SHAPES.has(c.ruleShape)) {
-    return { autonomous: false, reason: `rule shape is ${c.ruleShape}` };
-  }
-  const badFigure = c.numericFigures.find((f) => f.governs !== 'eligibility-income-ceiling');
-  if (badFigure) {
+  if (cfg.minConfidenceScore > 0 && c.confidenceScore < cfg.minConfidenceScore) {
     return {
       autonomous: false,
-      reason: `figure "${badFigure.quote}" governs ${badFigure.governs}, not an eligibility ceiling`,
+      reason: `confidenceScore ${c.confidenceScore} < ${cfg.minConfidenceScore}`,
+      trigger: 'confidence-score',
     };
   }
-  if (c.ruleShape === 'single-unconditional-threshold' && c.numericFigures.length === 0) {
-    return { autonomous: false, reason: 'rule shape is a threshold but no income ceiling figure was identified' };
+  if (cfg.blockOnScopeSignal && c.scopeSignals.length > 0) {
+    return { autonomous: false, reason: `scope signal present: ${c.scopeSignals.join('; ')}`, trigger: 'scope-signal' };
   }
-  return { autonomous: true, reason: 'single unconditional ceiling / categorical list, no scope signal, high confidence' };
+  if (!cfg.autoExtractableShapes.has(c.ruleShape)) {
+    return { autonomous: false, reason: `rule shape is ${c.ruleShape}`, trigger: 'rule-shape' };
+  }
+  if (cfg.requireAllFiguresCeiling) {
+    const badFigure = c.numericFigures.find((f) => f.governs !== 'eligibility-income-ceiling');
+    if (badFigure) {
+      return {
+        autonomous: false,
+        reason: `figure "${badFigure.quote}" governs ${badFigure.governs}, not an eligibility ceiling`,
+        trigger: 'figure-role',
+      };
+    }
+  }
+  if (c.ruleShape === 'single-unconditional-threshold' && c.numericFigures.length === 0) {
+    return {
+      autonomous: false,
+      reason: 'rule shape is a threshold but no income ceiling figure was identified',
+      trigger: 'no-figure',
+    };
+  }
+  return {
+    autonomous: true,
+    reason: 'single unconditional ceiling / categorical list, no scope signal, confident',
+    trigger: '',
+  };
 }
 
 export function isClassification(v: unknown): v is Classification {
@@ -163,6 +240,7 @@ export function isClassification(v: unknown): v is Classification {
     typeof o.ruleShape === 'string' &&
     (RULE_SHAPES as readonly string[]).includes(o.ruleShape) &&
     Array.isArray(o.scopeSignals) &&
-    (o.confidence === 'high' || o.confidence === 'low')
+    (o.confidence === 'high' || o.confidence === 'low') &&
+    typeof o.confidenceScore === 'number'
   );
 }

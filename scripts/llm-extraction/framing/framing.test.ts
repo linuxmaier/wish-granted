@@ -8,6 +8,7 @@ import { renderProse, renderStructured, decodeEntities } from './structure-excer
 import {
   buildClassifierToolSchema,
   decideAutonomy,
+  DEFAULT_AUTONOMY_CONFIG,
   type Classification,
 } from './classify-role';
 import { buildVerifierToolSchema, verdictRejects, type Counterexample } from './verify-counterexample';
@@ -72,6 +73,7 @@ describe('classify-role: decideAutonomy routing (hypothesis 1 / 5)', () => {
     ruleShape: 'single-unconditional-threshold',
     scopeSignals: [],
     confidence: 'high',
+    confidenceScore: 90,
   };
 
   it('routes a confident single unconditional ceiling to the extractor', () => {
@@ -103,6 +105,27 @@ describe('classify-role: decideAutonomy routing (hypothesis 1 / 5)', () => {
 
   it('auto-routes to manualReview whenever classifier confidence is low', () => {
     expect(decideAutonomy({ ...base, confidence: 'low' }).autonomous).toBe(false);
+  });
+
+  it('the #62 sweep knobs: numeric confidence gate, and turning the categorical gate off', () => {
+    const lowScore = { ...base, confidence: 'low' as const, confidenceScore: 55 };
+    // Default config: the categorical gate still blocks a low-confidence classification.
+    expect(decideAutonomy(lowScore).autonomous).toBe(false);
+    // Categorical gate off, numeric gate at 50: 55 >= 50 -> routes.
+    const cfg50 = { ...DEFAULT_AUTONOMY_CONFIG, requireHighConfidence: false, minConfidenceScore: 50 };
+    expect(decideAutonomy(lowScore, cfg50).autonomous).toBe(true);
+    // Numeric gate at 70: 55 < 70 -> blocked, and the trigger is attributed to confidence.
+    const cfg70 = { ...DEFAULT_AUTONOMY_CONFIG, requireHighConfidence: false, minConfidenceScore: 70 };
+    const d = decideAutonomy(lowScore, cfg70);
+    expect(d.autonomous).toBe(false);
+    expect(d.trigger).toBe('confidence-score');
+  });
+
+  it('the scope-signal gate can be isolated: with it off, a scoped ceiling still routes; confidence is checked first', () => {
+    const scoped = { ...base, scopeSignals: ['column header: "306% FPL"'] };
+    expect(decideAutonomy(scoped).trigger).toBe('scope-signal');
+    const scopeOff = { ...DEFAULT_AUTONOMY_CONFIG, blockOnScopeSignal: false };
+    expect(decideAutonomy(scoped, scopeOff).autonomous).toBe(true);
   });
 
   it('builds a tool schema with the documented enums and no additional properties', () => {

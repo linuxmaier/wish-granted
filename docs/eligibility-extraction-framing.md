@@ -19,6 +19,241 @@ commands and expected cost for whoever runs the measurement. Section 8 is that
 handoff. **Nothing below reports a model-behaviour number this spike did not
 measure.** Where a claim rests on prior measurement, it cites the issue.
 
+> **Update, 2026-09-06 (experiment 1 -- the threshold sweep).** The prototypes
+> have now been run live on `claude-sonnet-5`. `.env` was copied into the
+> worktree (it is gitignored, which is why the original spike ran `SKIPPED`).
+> **Everything below the line stands as written**; the new measured section
+> immediately following supersedes the "no live measurement" caveat above for
+> the classify-first pipeline, on the `tuning` and `framing` splits only. The
+> frozen `heldout` 27 were **not** run in this experiment -- that single
+> confirmation is run separately against the candidate config in
+> "Handoff: the held-out confirmation" below.
+
+---
+
+## Measured: the confidence-threshold sweep (experiment 1)
+
+Run 2026-09-06 on `claude-sonnet-5`, `tuning` split (14 cases: 8 abstain, 6
+extract) and the `framing` probe (now 7 cases). `heldout` untouched. Total
+API spend for the whole experiment (many sweeps + repeats): ~$1.4.
+
+### Does a viable band exist?
+
+**Yes.** On the tuning split there is a wide band -- every `minConfidenceScore`
+from 0 to 80 -- where **dangerous over-claims stay at 0 and correct extractions
+are 3/6**, stable across three independent runs. The confidence threshold is
+*not* the thing holding extraction down between 0 and 80; loosening it all the
+way to 0 introduces no dangerous over-claim and also gains no extraction,
+because two other mechanisms (the scope-signal gate and the extractor's own
+abstention) hold the line underneath it.
+
+The candidate configuration to confirm on held-out:
+
+```
+npm run eval:llm-framing -- --split=heldout --confidence-gate=off --min-confidence=60
+```
+
+This replaces the miscalibrated categorical `confidence: 'low'` gate (which on
+the #61-era held-out run blocked all three controls) with a calibrated numeric
+floor at 60, and keeps every structural gate (scope-signal, rule-shape,
+figure-role) exactly as PR #63 shipped them.
+
+### The sweep table (tuning split, prose excerpts, representative run)
+
+Four numbers, never blended. `tgt-match` = of the correct extractions, how many
+match the hand-authored `Criterion` in shape (informational -- the harness's
+"correct extraction" only means "not manualReview + passed the gate", so a
+wrong-but-well-formed rule counts; `tgt-match` is the real signal). `trig` =
+which gate suppressed a routing decision, as confidence / scope-signal /
+shape-or-figure.
+
+| routing config | correct abstentions | dangerous | correct extractions | gate fail | tgt-match | over-cautious | trig (conf/scope/shape) |
+|---|---|---|---|---|---|---|---|
+| PR #63 default (categorical `high` gate) | 8/8 | **0** | 3/6 | 0 | 2-3/6 | 3 | 6/4/0 |
+| score >= 0 (confidence gate fully open) | 8/8 | **0** | 3/6 | 0 | 2-3/6 | 3 | 0/9/1 |
+| score >= 50 | 8/8 | **0** | 3/6 | 0 | 2-3/6 | 3 | 2/7/1 |
+| score >= 60 | 8/8 | **0** | 3/6 | 0 | 2-3/6 | 3 | 6/4/0 |
+| score >= 70 | 8/8 | **0** | 3/6 | 0 | 2-3/6 | 3 | 6/4/0 |
+| score >= 80 | 8/8 | **0** | 3/6 | 0 | 2-3/6 | 3 | 7/3/0 |
+| score >= 90 | 8/8 | **0** | 2/6 | 0 | 1-2/6 | 4 | 10/2/0 |
+| score >= 60, **scope gate OFF** | 8/8 | **0** | 3/6 | 0 | 2-3/6 | 3 | 6/0/4 |
+| score >= 60, **figure-role gate OFF** | 8/8 | **0** | 3/6 | 0 | 2-3/6 | 3 | 6/4/0 |
+| all gates OFF except scope | 8/8 | **0** | 4/6 | 0 | 2-3/6 | 2 | 0/9/0 |
+
+(Small run-to-run movement in `tgt-match` and the trig split is real
+non-determinism at this sample size -- `madcap-categorical` and
+`foodshare-gross-income-test` flip between runs. `correct abstentions` and
+`dangerous` did not move in any run.)
+
+### The two triggers, treated separately
+
+PR #63's probe output separated *"scope signal present"* (fired on correct
+abstentions) from *"classifier confidence is low"* (fired on every control).
+This experiment measures them apart:
+
+- **Scope-signal detection does real work and is safe to keep.** Turning the
+  scope gate OFF (row 8, and every `framing` ablation) never produced a
+  dangerous over-claim on either split. Every case it catches, the extractor
+  *also* catches -- it emits `manualReview` on its own when the excerpt actually
+  reaches it. So the scope gate is a cheap early exit, not the sole safety
+  mechanism. It is doing exactly the job PR #63 hoped: `trc-no-published-ami`
+  (the invented-AMI bug), `cda-section8-income-table`, the SNAP deduction
+  stacks all route on a scope signal, correctly.
+
+- **The confidence gate was the miscalibrated one, and it is safe to
+  recalibrate.** The categorical `confidence: 'low'` flag was pinned at maximum
+  caution. Replacing it with a numeric `confidenceScore` and sweeping the
+  threshold shows the band 0-80 is flat: no dangerous over-claim appears, and
+  the extraction count does not rise either, because the cases a looser
+  threshold would release are ones the extractor then abstains on
+  (`wheap-smi`, `foodshare-gross-income-test` -- both near-miss traps, and
+  `wheap-smi` is subtly *wrong* even when the direct pipeline extracts it).
+  `confidenceScore >= 90` is the only setting that costs a real extraction.
+
+Two prompt fixes to the classifier were also part of this experiment (both
+tunable, both toward the documented intent of the existing held-out control
+cases): it no longer reports the categorical-enrollment list stem as a scope
+signal when the rule shape *is* a categorical list, and no longer reports
+"based on household/family size / state / before deductions" as a scope signal
+(those describe how an income test is applied, not who it covers). These are
+what moved `lifeline-fpl` and `lifeline-categorical` from over-cautious to
+correct, matching target.
+
+### What the classifier buys, quantified
+
+Same 14 tuning cases, `claude-sonnet-5`, one run each:
+
+| pipeline | correct abstentions | dangerous | correct extractions | tgt-match |
+|---|---|---|---|---|
+| **direct** (no classifier, current one-step) | 7/8 | **1** (`trc-no-published-ami`: invented `incomeAtOrBelow('dane-ami', 80)`) | 5/6 | 4/6 |
+| **classify-first**, candidate config | 8/8 | **0** | 3/6 | 3/6 |
+
+The classifier removes the dangerous over-claim and costs two extractions
+(5 -> 3). Both lost extractions are near-miss traps (`wheap-smi`,
+`foodshare-gross-income-test`) where "correct extraction" is one subtle
+misreading away from wrong -- `wheap-smi` *is* wrong in the direct run
+(`tgt-match` 4/6, not 5/6). This is the #5 §4.4 trade (abstention over accuracy)
+landing where it should.
+
+### Hypothesis 3 (structure-preserving excerpts), end to end
+
+`--excerpt=structured` was never reached in PR #63 because nothing got to
+extraction. Now measured on the two table cases in the `framing` probe
+(`wi-medicaid-fpl-chart-mapp-column`, and `badgercare-plus-fpl-table-columns`,
+a fresh re-fetch of the exact source table behind the frozen held-out
+`badgercare-plus-population-columns`, added so H3 can be tested without touching
+held-out):
+
+- **Structure preservation measurably fixes the classifier's figure-role
+  read.** On the MAPP chart, prose flattening makes the classifier tag the
+  `250% FPL` figure as `separate-subpopulation-limit` and quote it as
+  `"250% FPL ... QDWI and Lower MAPP"` (two programs fused). The structured
+  Markdown rendering makes it tag the same figure `eligibility-income-ceiling`
+  and quote `"250% FPL ... MAPP"` -- the correct column. This is the
+  deterministic Section 4 result, now confirmed to carry through to the model.
+
+- **It does not open the autonomous band for tables, and should not.** The
+  rule shape stays `scope-set-by-table-structure` and `confidenceScore` stays
+  ~45, so the case still routes to `manualReview` -- correctly. Routing a
+  9-column table autonomously on the classifier's column pick is the
+  BadgerCare failure class.
+
+- **The stronger H3 finding: structured excerpts make the *extractor*
+  self-defend.** With every routing gate disabled and
+  `scope-set-by-table-structure` explicitly allowed onto the auto-extract path
+  -- i.e. all protection removed -- the extractor *still* emitted `manualReview`
+  on both table cases ("Cannot be reduced to a single incomeAtOrBelow rule",
+  "Needs human review to confirm the correct income percentage"). It did **not**
+  grab 306% or 100%. The prose flattening in the current pipeline was
+  *causing* the BadgerCare over-claim by hiding the multi-population ambiguity
+  from the extractor; the structured rendering shows it the ambiguity and it
+  abstains. `framing` split, structured: **4/4 correct abstentions, 0
+  dangerous, at every routing config including all-gates-off.**
+
+### Hypothesis 2 (verification by counterexample)
+
+`--verify` now runs (it never did in PR #63). Across every sweep row on both
+splits where an extraction occurred, the verifier recorded **0 rejections and
+0 false rejections**. On this evidence it neither helps nor hurts on the band
+the classifier already admits -- consistent with the prototype's own docstring
+(it is strictly weaker than H1 for the never-noticed class, and the cases that
+reach it are already the clean ones). It costs one extra call per extraction
+for no measured change. Recommend leaving it off until there is a case class it
+demonstrably catches.
+
+### The ceiling, characterised
+
+On the `framing` controls (`mapp-eligibility-list-control`,
+`wwwp-income-ceiling-control`) the classify-first pipeline is **structurally
+unable** to produce the right answer, and this is the real ceiling, not the
+confidence threshold. Their hand-authored targets are
+`allOf(cleanCeiling, manualReview(the rest))` -- a clean income ceiling plus a
+`manualReview` leaf for side conditions (asset test, work requirement, age
+band). `decideAutonomy()` is all-or-nothing *at the excerpt level*: any scope
+signal or branchy rule shape sends the **whole** excerpt to `manualReview`,
+even when the income ceiling itself is unconditional and clean. Classify-first
+works for excerpts whose entire rule is one fact (`lifeline-fpl`,
+`lifeline-categorical`, `wic-adjunctive-eligibility`); it cannot do the
+partial-extraction pattern that several real program records need. That is a
+design limit of routing-at-the-excerpt, not a tuning problem.
+
+### The subset the classifier handles reliably enough to automate
+
+- **Single unconditional income ceiling, stated in prose, no side conditions**
+  (`incomeAtOrBelow(scale, percent)` as the whole rule): reliably routed and
+  reliably extracted correctly.
+- **Categorical-enrollment list** where every named program has a
+  `currentBenefits` slug and there is no diagnosis / screening / medical-
+  necessity gate: reliably routed; extraction correct when the slug mapping is
+  clean (`lifeline-categorical`), flaky when it is hard (`madcap-categorical`,
+  the "Section 8 -> housing-choice-voucher" + "FoodShare/SNAP collapse" case).
+- **Everything else** -- tables, cost-sharing schedules, deduction stacks,
+  conditional/extended branches, negations, and any clean ceiling that sits
+  next to a side condition -- routes to `manualReview`, and should.
+
+This is the same Tier 2 / low-Tier-3 boundary the spike's "The answer" section
+draws. The sweep confirms it empirically on the tuning split and adds one
+correction: the boundary is drawn by whether the rule is *a single fact*, not
+just by whether it has a scope signal.
+
+---
+
+## Handoff: the held-out confirmation
+
+**Run exactly one command against the frozen 27:**
+
+```
+npm run eval:llm-framing -- --split=heldout --confidence-gate=off --min-confidence=60
+```
+
+**Prediction, made before the run (per the spike rule that a pre-registered
+prediction is worth more than a postmortem):**
+
+- **Dangerous over-claims: 0.** The three structural gates are unchanged from
+  PR #63's `0/21`, and the classifier prompt only *loosened* two specific
+  false-positive scope signals, neither of which appears in a held-out abstain
+  trap. Residual risk, if any single case breaks this: `headstart-cfr-over-
+  income-allowance` or `emergency-assistance-emergency-gate` -- both put a real
+  FPL number in a branch, and if the classifier calls the shape
+  `single-unconditional-threshold` with `confidenceScore >= 60` *and* misses
+  the branch as a scope signal, one could slip. I judge this unlikely (both
+  read as clearly branchy) but it is where I would look first.
+- **Correct extractions: 2-3 / 6** (up from PR #63's 0/6). `wic-adjunctive-
+  eligibility` and `wic-category-test` are single-fact categorical rules and
+  should extract and match target. `wic-may-also-apply` may now extract (the
+  "foster parents may also apply" clause is exactly the false scope signal the
+  prompt fix removes). `wishares-income-and-activity` and `madcap-billholder-
+  and-ami` will route to `manualReview` (over-cautious) -- both need the
+  `allOf(ceiling, manualReview-leaf)` shape the pipeline can't produce.
+  `schoolmeals-direct-certification` is a coin-flip on the slug mapping.
+- **Correct abstentions: 20-21 / 21.** Gate failures: 0.
+- **Over-cautious: ~3-4** of the 6 extract cases.
+
+If the run comes back with a dangerous over-claim, the candidate is dead and
+the honest answer to #62 is that the LLM must be confined to the single-fact
+subset above (or dropped from the eligibility path) -- which is itself a
+usable answer.
+
 ---
 
 ## The answer

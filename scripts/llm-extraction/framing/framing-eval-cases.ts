@@ -170,6 +170,19 @@ export const FRAMING_EVAL_CASES: readonly FramingEvalCase[] = [
     note:
       'Fresh structural analogue of badgercare-plus-population-columns. In the source HTML the "Program limits" row aligns each program under a percent-of-FPL column header: MAPP under "250% FPL", "MAPP Premium Threshold" under "100% FPL". The `excerpt` above is the prose-flattened rendering the current pipeline produces -- the column alignment is gone and "MAPP" appears twice with no anchor. Run this case with --excerpt=prose (expect the model to grab 100%, a dollar figure, or abstain) vs --excerpt=structured (expect it to recover MAPP -> 250% FPL). The narrower rule incomeAtOrBelow(fpl,250) is the target; MAPP also requires disability + employment, so a real record needs a manualReview leaf, but this case is scored on whether the *percent* is recovered from structure.',
   },
+  {
+    id: 'badgercare-plus-fpl-table-columns',
+    probes: 'column-header-scope',
+    citationName: 'Wisconsin DHS -- BadgerCare Plus income limits (income table)',
+    citationUrl: 'https://www.dhs.wisconsin.gov/badgercareplus/fpl.htm',
+    fetchedOn: '2026-09-06',
+    htmlFixture: 'wi-badgercare-plus-fpl-chart.html',
+    excerpt:
+      'BadgerCare Plus income limits and thresholds, effective February 1, 2026-January 31, 2027 Family size Adult monthly income limit (100% FPL) Children premium threshold (201% FPL) Pregnant people and children monthly income limit (306% FPL) 1 $1,330.00 $2,673.30 $4,069.80 4 $2,750.00 $5,527.50 $8,415.00 For each extra person, add $473.33 $951.39 $1,448.39',
+    expected: 'abstain',
+    note:
+      "Re-fetch of the exact source table behind the frozen heldout case badgercare-plus-population-columns, added 2026-09-06 so H3 can be tested end to end on more than one table (the heldout case must not be run during tuning). Three FPL percentages, each scoped by a column header to a different population: 100% adults, 201% children premium, 306% pregnant people and children. There is no single eligibility ceiling to extract -- the correct answer is manualReview under both excerpt modes. The `excerpt` field is the prose flattening the current pipeline feeds the model; --excerpt=structured renders the same fixture as a Markdown table. The question this case answers: does structure preservation help the classifier route to scope-set-by-table-structure / raise a scope signal, rather than letting the extractor grab 306% (or 201%) and drop the population scope -- the badgercare failure class.",
+  },
 ];
 
 /** Cases whose `expected` is `abstain` -- the class that matters most (Section 4.4). */
