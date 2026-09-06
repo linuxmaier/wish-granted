@@ -12,6 +12,18 @@ import {
  * Evaluation set for the LLM extraction prototype (docs/eligibility-extraction.md
  * Section 4, issue #43).
  *
+ * ## Status: narrow-skill regression check, not the primary measure (epic #65 / #66)
+ *
+ * The primary extraction measure is now the program-level benchmark
+ * (`scripts/program-benchmark/`): given a source URL, produce a `Program` record
+ * or abstain, scored against the 16 hand-verified records. This excerpt set --
+ * "given a pre-cut paragraph, emit a `Criterion` in one shot" -- is a different,
+ * more artificial task, and #65 explains why the ceiling it produced was an
+ * artefact of the excerpt. It stays in the tree, and is still run, as a fast unit
+ * test for the one sub-skill of turning a clean paragraph into a `Criterion`
+ * (enum-slug mapping, near-miss threshold traps, "this number is not a
+ * threshold" discriminations). Do not re-argue the demotion here; see #65.
+ *
  * ## Every excerpt is real fetched text
  *
  * Each `excerpt` below is verbatim text fetched from the `citationUrl` on the

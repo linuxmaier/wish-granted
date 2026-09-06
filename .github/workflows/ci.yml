@@ -67,6 +67,8 @@ jobs:
         run: npm run typecheck:refresh-income-tables
       - name: Typecheck (scripts/llm-extraction)
         run: npm run typecheck:llm-extraction
+      - name: Typecheck (scripts/program-benchmark)
+        run: npm run typecheck:program-benchmark
       - name: Typecheck (scripts/check-sources)
         run: npm run typecheck:check-sources
       - name: Typecheck (scripts/ingest-descriptive)
@@ -99,6 +101,12 @@ jobs:
         run: npm run check:sources:self-test
       - name: 'Smoke test: scripts/ingest-descriptive starts (issue #55)'
         run: npm run ingest:descriptive:self-test
+      # program-benchmark's self-test does more than "does it start": it runs
+      # the scorer over the real dataset with the verified-echo and abstain-all
+      # diagnostic extractors (no model, no network) and asserts the scoring
+      # invariants. See scripts/program-benchmark/index.ts.
+      - name: 'Smoke test: scripts/program-benchmark scores offline (issue #66)'
+        run: npm run eval:program-extraction:self-test
       - name: 'Smoke test: scripts/refresh-income-tables starts (issue #55)'
         run: npm run refresh:income-tables:self-test
       - name: 'Smoke test: scripts/build-snapshot starts (issue #55)'
@@ -122,6 +130,13 @@ jobs:
       # test runner, also network-free (the fetcher is injected).
       - name: Unit tests (Node test runner -- scripts/ingest-descriptive)
         run: npm run test:ingest-descriptive
+
+      # scripts/program-benchmark (#66): the Criterion equivalence check, the
+      # dangerous-wrongness detectors, abstention and descriptive scoring, and
+      # the runner/report -- all against hand-written fixture pairs, no model.
+      # Also Node's test runner, also network-free.
+      - name: Unit tests (Node test runner -- scripts/program-benchmark)
+        run: npm run test:program-benchmark
 
       - name: Build
         run: npm run build
