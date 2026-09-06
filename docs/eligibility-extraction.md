@@ -500,6 +500,14 @@ extractor is **not** cleared for the #14 ingestion path until it is resolved.
 
 #### Re-measured with the #51 conditional-scope traps (2026-09-05) -- the pre-fix baseline
 
+> **The result numbers below are the pre-fix baseline and stand as a record.** The
+> option-2 fix (phase 2 of #51) has now been built and run once against this same
+> held-out split -- see "Measured: the option-2 fix" immediately below. **It did not
+> work:** still 3 dangerous over-claims (a different three), correct extractions
+> collapsed 5/6 -> 1/6, and 3 new gate failures. The three *original* targets
+> (`lifeline-survivor-extended`, `emergency-assistance-emergency-gate`, `seniorcare-...`)
+> were fixed; the fix broke or over-caught enough else that the split is still BLOCKING.
+
 Issue #51 required the held-out set to grow with more conditional-scope cases **before**
 any fix is designed, so the fix (option 2: a scope-carrying obligation in the output
 contract) is measurable rather than anecdotal. Eight cases were added (six `abstain`
@@ -507,13 +515,14 @@ traps, two `extract` controls -- §4.3, §4.6 table above) and the held-out spli
 once against `claude-sonnet-5`, enum-vocab on, caching on. **No prompt change. This is the
 pre-fix baseline: how often the current prompt drops conditional scope.**
 
-| Metric | Held-out (27 cases: 21 abstain, 6 extract) |
-|---|---|
-| Correct abstentions | 18 / 21 |
-| **Dangerous over-claims** | **3** -- BLOCKING |
-| Correct extractions | 5 / 6 |
-| Gate failures | **0** |
-| Over-cautious (abstained where extraction expected) | 1 |
+| Metric | Held-out, pre-fix (27 cases: 21 abstain, 6 extract) | Held-out, post-fix (option 2) |
+|---|---|---|
+| Correct abstentions | 18 / 21 | 15 / 21 |
+| **Dangerous over-claims** | **3** -- BLOCKING | **3** -- still BLOCKING (a different three) |
+| Correct extractions | 5 / 6 | **1 / 6** |
+| Gate failures | **0** | **3** |
+| Over-cautious (abstained where extraction expected) | 1 | 4 |
+| API errors (malformed output) | 0 | 1 |
 
 Run cost: **$0.48** total ($0.39 input + $0.09 output), **85%** saved on input by caching
 (1,247,090 cache-read tokens against 11,547 fresh; the 99 KB schema re-read 27 times).
@@ -555,8 +564,78 @@ over-claims is, and it tripled. One case moved the other way between runs
 extracted before) -- ordinary model non-determinism, not a regression, and a reminder that
 single runs are noisy at this sample size. **The prompt was not iterated to improve any of
 these numbers** -- doing so before the fix is designed would destroy the baseline (§4.4's
-own argument). That work, and whether option 2 closes the gap without making the controls
-abstain, is phase 2 of #51.
+own argument). ~~That work, and whether option 2 closes the gap without making the controls
+abstain, is phase 2 of #51.~~ **Phase 2 is done and measured below.**
+
+#### Measured: the option-2 fix (2026-09-06) -- it did not work
+
+Option 2 (a scope-carrying obligation) was built: the model now emits a
+`preconditions` inventory *before* `criterion`, each entry marked
+encoded / undecidable / dropped, and `schema-gate.ts`'s new `gateScopeContract`
+fails any output where a non-`encoded` precondition is not routed to a human
+(top-level `manualReview`, or a `manualReview` leaf in an `allOf`). The prompt gained
+a PRECONDITION INVENTORY section defining what counts as a precondition; that
+threshold was tuned on the **tuning split only** (see below). The held-out split was
+run **once**, 2026-09-06, `claude-sonnet-5`, enum-vocab on, caching on -- numbers in
+the table above. Run cost **$0.41** ($0.29 input + $0.12 output), **89%** saved on
+input by caching (1,346,112 cache-read tokens against 11,547 fresh). Bare schema grew
+99.1 KB -> 100.9 KB (+1.9%); the added field is one array property, not multiplied by
+the depth-3 inlining.
+
+**The three original targets were fixed.** `lifeline-survivor-extended`,
+`emergency-assistance-emergency-gate`, and `headstart-cfr-over-income-allowance` all
+abstained correctly. `seniorcare-coverage-levels-not-eligibility` and
+`qmb-fpl-gated-on-medicare` emitted a rule but the model *did* list the dropped scope,
+so `gateScopeContract` caught them -- a gate failure, not a dangerous over-claim: the
+case is blocked before a human sees it. The enumerate-first ordering plus the gate did
+exactly what option 2 promised **on the cases where the gating clause is a prominent
+sentence or bullet.**
+
+**But the split is still BLOCKING, and the collateral is severe.**
+
+- **Three new dangerous over-claims**, none of them in the pre-fix three:
+  `snap-cfr-elderly-separate-household` (the "165 percent of the poverty line" that
+  governs *separate-household status*, not eligibility -- emitted as an `allOf`),
+  `cda-residency-not-required` (excerpt says residency is *not* required; model built
+  an `allOf` anyway), and `badgercare-plus-population-columns` (the 201% / 306% FPL
+  columns scoped by population -- model emitted the income rule and **did not list the
+  column-label scope as a precondition at all**). Common thread: **the governing scope
+  is implicit or structural** -- a table-column header, a "notwithstanding" clause, a
+  "not required" statement -- rather than a gating sentence. The model did not perceive
+  it as a precondition, so it never reached the inventory, so the gate had nothing to
+  check. This is precisely the self-report hole #51's own review flagged
+  ("never noticed", not "noticed and discarded") -- and it is now the whole ballgame.
+- **Correct extractions collapsed 5/6 -> 1/6.** `wic-category-test`,
+  `schoolmeals-direct-certification`, and **both controls** (`wic-may-also-apply`,
+  `madcap-billholder-and-ami`) over-abstained; `wishares-income-and-activity` and
+  `qmb-...` hit gate failures. The contract makes the model treat ordinary secondary
+  conditions (WIC's breastfeeding branch, "some Medicaid programs may apply", MadCAP's
+  bill-in-name) as blocking. On the tuning split this looked acceptable (0 dangerous,
+  0 gate failures, 4/6 extract across three runs); the held-out controls show it is
+  not. Over-caution that abstains on everything is a failure, not a safe default.
+- **One malformed output** (`snap-cfr-abawd-exemption-tree`) and two more where
+  `criterion` came back without a `kind`. The added schema surface plus the heavier
+  prompt degraded well-formedness in a way the pre-fix contract did not.
+
+**Where the line was drawn, and why it did not hold.** A "precondition" was defined as
+*a distinct requirement the excerpt itself states* that restricts the emitted rule to a
+named sub-population -- explicitly excluding term definitions, household-size scaling,
+coverage periods, application-filers, and descriptive prose. The intent was to keep the
+gate from tripping on every qualifier (the "too liberal" failure). Tuned on the 14
+tuning cases it produced 0 false gate trips and 0 dangerous over-claims. But the tuning
+split contains **no conditional-scope trap** (that was phase 1's whole reason for
+building the held-out ones), so the definition's *false-negative* rate -- how often a
+real gating scope fails to get listed -- could not be measured before the one held-out
+run, and that rate is what sank it: three real scopes (a column label, a composition
+clause, a negation) went unlisted.
+
+**Net:** option 2 fixes the noticed-and-discarded case and is a real improvement there,
+but on this held-out split it trades three catchable over-claims for three
+harder-to-catch ones and most of the extraction yield. Not merged. #51 stays open. The
+honest read matches the #51 review's predicted end state: option 2 alone is not enough,
+and something like option 4 (route every concrete `incomeAtOrBelow` / numeric `compare`
+through mandatory human review) is needed for the residue where the model never
+perceives the scope.
 
 ### 4.7 Prompt caching (issue #43)
 
