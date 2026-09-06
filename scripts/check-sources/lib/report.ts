@@ -4,7 +4,8 @@
  * records are silent" (#7) -- so `hasActionableFindings()` decides whether the
  * workflow opens anything at all.
  */
-import type { CheckResult } from './check.ts';
+import { ESCALATE_AFTER_FAILURES, isEscalated, type CheckResult } from './check.ts';
+import { isWeakRegion } from './normalize.ts';
 
 export interface StaleEntry {
   readonly id: string;
@@ -20,9 +21,29 @@ export interface ReportInput {
   readonly branchBlocked: string | null;
 }
 
-/** Changed / gone / unreachable are worth a human's attention. new / unchanged are not. */
+/**
+ * What opens a PR: a changed page, a 404, or an `unreachable` that has failed
+ * `ESCALATE_AFTER_FAILURES` runs running. A first-time `unreachable` is recorded
+ * (its counter) but is NOT actionable -- almost always a blip (issue #49).
+ * new / unchanged are never actionable.
+ */
 export function hasActionableFindings(results: readonly CheckResult[]): boolean {
-  return results.some((r) => r.status === 'changed' || r.status === 'gone' || r.status === 'unreachable');
+  return results.some(isEscalated);
+}
+
+/**
+ * True when the only thing a run would write to source-hashes.json is a
+ * first-time `unreachable`'s failure counter: every result is either `unchanged`
+ * or a not-yet-escalated `unreachable`, and at least one of the latter. The
+ * workflow commits this straight to `main` as bookkeeping instead of opening a
+ * PR. A `new` baseline or any actionable finding takes the PR path as before.
+ */
+export function isBookkeepingOnly(results: readonly CheckResult[]): boolean {
+  const hasTransient = results.some((r) => r.status === 'unreachable' && !isEscalated(r));
+  const allBenign = results.every(
+    (r) => r.status === 'unchanged' || (r.status === 'unreachable' && !isEscalated(r)),
+  );
+  return hasTransient && allBenign;
 }
 
 export function renderReport(input: ReportInput): string {
@@ -30,9 +51,13 @@ export function renderReport(input: ReportInput): string {
   const by = (s: CheckResult['status']) => results.filter((r) => r.status === s);
   const changed = by('changed');
   const gone = by('gone');
-  const unreachable = by('unreachable');
+  const unreachableEscalated = by('unreachable').filter(isEscalated);
+  const unreachableTransient = by('unreachable').filter((r) => !isEscalated(r));
   const fresh = by('new');
   const unchanged = by('unchanged');
+  const weakFallback = results.filter(
+    (r) => r.contentRegion !== undefined && isWeakRegion(r.contentRegion) && (r.entry.normalizedChars ?? 0) > 0,
+  );
 
   const lines: string[] = [];
   lines.push('# Source change detection');
@@ -78,15 +103,17 @@ export function renderReport(input: ReportInput): string {
     lines.push('');
   }
 
-  if (unreachable.length > 0) {
-    lines.push(`## Unreachable (${unreachable.length}) -- could not fetch`);
+  if (unreachableEscalated.length > 0) {
+    lines.push(`## Unreachable (${unreachableEscalated.length}) -- failed ${ESCALATE_AFTER_FAILURES}+ runs running`);
     lines.push('');
     lines.push(
-      'Timeout, 403, 5xx, or a network error. Often transient. The baseline hash is kept as-is; ' +
-        'if this persists across runs, treat it as "gone" and hunt for the new URL.',
+      'Timeout, 403, 5xx, or a network error, on this source for at least ' +
+        `${ESCALATE_AFTER_FAILURES} consecutive runs -- past the point where "probably a blip" holds. ` +
+        'The baseline hash is kept as-is; open the URL by hand. If the page is genuinely gone, treat it ' +
+        'as "gone" and hunt for the new URL; if it is a persistent 403/blocklist, that is its own fix.',
     );
     lines.push('');
-    for (const r of unreachable) lines.push(`- **${r.id}** -- ${r.detail}\n  ${r.url}`);
+    for (const r of unreachableEscalated) lines.push(`- **${r.id}** -- ${r.detail}\n  ${r.url}`);
     lines.push('');
   }
 
@@ -106,18 +133,48 @@ export function renderReport(input: ReportInput): string {
   }
   lines.push('');
 
+  if (weakFallback.length > 0) {
+    lines.push(`## Weak content-region fallback (${weakFallback.length})`);
+    lines.push('');
+    lines.push(
+      'These pages have no `<main>`, `[role="main"]`, or `#content` / `#main` landmark, so ' +
+        'normalization fell back to `<body>` -- which drags nav, header, and footer into the hashed ' +
+        'text. A site-wide template change (a new menu item) can flag every one of these at once ' +
+        'without the eligibility rule moving. Not an error, but a weaker signal: if one of these ' +
+        'shows up as `changed`, check the diff for chrome before treating it as a real edit. Worth a ' +
+        'hand-picked selector if it churns (issue #49).',
+    );
+    lines.push('');
+    for (const r of weakFallback) {
+      lines.push(`- **${r.id}** -- fell back to \`<${r.contentRegion}>\`\n  ${r.url}`);
+    }
+    lines.push('');
+  }
+
   lines.push('## No action needed');
   lines.push('');
   lines.push(`- ${unchanged.length} unchanged`);
   if (fresh.length > 0) {
     lines.push(`- ${fresh.length} new baseline${fresh.length === 1 ? '' : 's'} recorded: ${fresh.map((r) => r.id).join(', ')}`);
   }
+  if (unreachableTransient.length > 0) {
+    lines.push(
+      `- ${unreachableTransient.length} unreachable for the first time (recorded, not escalated): ` +
+        `${unreachableTransient.map((r) => r.id).join(', ')}. ` +
+        `Failure #${ESCALATE_AFTER_FAILURES} in a row opens a PR; a successful fetch resets the count.`,
+    );
+  }
   lines.push('');
-  lines.push(
-    wrote
-      ? '_source-hashes.json was updated. Review its diff alongside this report._'
-      : '_source-hashes.json was not written (dry run or nothing to record)._',
-  );
+  if (wrote && isBookkeepingOnly(results)) {
+    lines.push(
+      '_source-hashes.json changed, but the only change is a transient-failure counter -- no page ' +
+        'moved and nothing 404\'d. The workflow commits this to `main` as bookkeeping and opens no PR._',
+    );
+  } else if (wrote) {
+    lines.push('_source-hashes.json was updated. Review its diff alongside this report._');
+  } else {
+    lines.push('_source-hashes.json was not written (dry run or nothing to record)._');
+  }
   lines.push('');
 
   return lines.join('\n');

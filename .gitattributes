@@ -12,3 +12,9 @@ src/data/programs/build-snapshot.ts text eol=lf
 src/data/programs/snapshot-schema.ts text eol=lf
 scripts/build-snapshot/** text eol=lf
 tests/data/snapshot.test.ts text eol=lf
+
+# The check-sources / ingest-descriptive baselines are LF-serialized committed
+# artifacts whose scheduled workflows open a PR on any `git diff` -- pin them to
+# LF so a Windows checkout (autocrlf) does not show spurious CRLF drift (issue #49).
+scripts/check-sources/source-hashes.json text eol=lf
+scripts/ingest-descriptive/proposals.json text eol=lf

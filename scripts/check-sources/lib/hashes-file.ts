@@ -30,6 +30,17 @@ export interface SourceHashEntry {
   readonly firstSeen: string;
   /** ISO date (YYYY-MM-DD) the normalized text last changed. */
   readonly lastChanged: string;
+  /**
+   * Count of back-to-back runs that failed to fetch this source (timeout / 403 /
+   * 5xx / network error). Reset to 0 -- and omitted from the serialized file --
+   * the moment a fetch succeeds or the page 404s. A single failure is almost
+   * always a blip at 17 monthly sources, so `unreachable` only becomes an
+   * actionable, PR-opening finding once this reaches
+   * `check.ts`'s ESCALATE_AFTER_FAILURES. A 404/410 is `gone`, not
+   * `unreachable`, and never touches this counter -- it escalates on the first
+   * run. See issue #49.
+   */
+  readonly consecutiveFailures?: number;
 }
 
 /*
@@ -85,6 +96,11 @@ export function serializeHashesFile(file: HashesFile): string {
       status: e.status,
       firstSeen: e.firstSeen,
       lastChanged: e.lastChanged,
+      // Only written while a source is actively failing, so an all-healthy run
+      // reproduces the file byte-for-byte (issue #49's fixed-point constraint).
+      ...(e.consecutiveFailures && e.consecutiveFailures > 0
+        ? { consecutiveFailures: e.consecutiveFailures }
+        : {}),
     };
   }
   return `${JSON.stringify({ ...HEADER, sources: sortedSources }, null, 2)}\n`;

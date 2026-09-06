@@ -149,8 +149,17 @@ export async function runIngest(args: Args, fetcher: Fetcher = liveFetcher): Pro
     }
   }
 
+  // A finding whose entry now carries a still-valid acknowledgement has been
+  // reviewed: it stays in the queue as a record, but it is not "needs a human".
+  const acknowledged = new Map(
+    Object.entries(nextRecords)
+      .filter(([, e]) => e.acknowledgement !== undefined)
+      .map(([id, e]) => [id, e.acknowledgement!] as const),
+  );
+
   const report = renderReport({
     findings,
+    acknowledged,
     generatedAt: runInstant,
     checkedCount: selected.length,
     wrote,
@@ -160,7 +169,7 @@ export async function runIngest(args: Args, fetcher: Fetcher = liveFetcher): Pro
 
   let exitCode = 0;
   if (branchBlocked) exitCode = 1;
-  else if (findings.some(isActionable)) exitCode = 2;
+  else if (findings.some((f) => isActionable(f) && !acknowledged.has(f.id))) exitCode = 2;
 
   return { report, exitCode, nextFile, wrote };
 }

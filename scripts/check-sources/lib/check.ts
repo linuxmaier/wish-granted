@@ -9,18 +9,31 @@
  *   - `unchanged`   -- normalized text hashes to the stored value. Silent.
  *   - `changed`     -- reachable, 200, but the normalized text moved. Re-verify.
  *   - `gone`        -- 404 or 410. The page was removed, not edited. Different
- *                      fix (find the new URL) and different reviewer.
+ *                      fix (find the new URL) and different reviewer. Escalates
+ *                      on the first run -- a retry counter must never hide a
+ *                      vanished program (issue #49, #7, #14).
  *   - `unreachable` -- network error, timeout, 403/5xx, redirect loop. Could be
- *                      transient; not evidence of anything yet.
+ *                      transient; not evidence of anything yet. Only becomes an
+ *                      actionable finding after ESCALATE_AFTER_FAILURES
+ *                      back-to-back failed runs (issue #49).
  *
  * The fetcher is injected so the classifier can be tested without a network.
  */
 import { fetchText } from '../../refresh-income-tables/lib/http.ts';
 import { errMsg } from '../../refresh-income-tables/lib/errors.ts';
-import { normalize } from './normalize.ts';
+import { normalizeToResult, type ContentRegion } from './normalize.ts';
 import { sha256, type SourceHashEntry } from './hashes-file.ts';
 
 export type CheckStatus = 'new' | 'unchanged' | 'changed' | 'gone' | 'unreachable';
+
+/**
+ * How many consecutive failed fetches it takes for an `unreachable` source to
+ * escalate from "silent bookkeeping" to an actionable, PR-opening finding.
+ * Runs are monthly, so 2 means: first failure is recorded and ignored, a second
+ * failure the next run opens the re-verification PR. `gone` (404/410) ignores
+ * this entirely and escalates immediately.
+ */
+export const ESCALATE_AFTER_FAILURES = 2;
 
 export interface CheckResult {
   readonly id: string;
@@ -30,6 +43,16 @@ export interface CheckResult {
   readonly detail: string;
   /** The entry to persist for this id. */
   readonly entry: SourceHashEntry;
+  /** For `unreachable`: how many back-to-back runs have now failed (>= 1). */
+  readonly consecutiveFailures?: number;
+  /** For a fetched page: which content-region fallback normalize() landed on. */
+  readonly contentRegion?: ContentRegion;
+}
+
+/** An `unreachable` result is only worth a human's time once it has persisted. */
+export function isEscalated(r: CheckResult): boolean {
+  if (r.status === 'gone' || r.status === 'changed') return true;
+  return r.status === 'unreachable' && (r.consecutiveFailures ?? 0) >= ESCALATE_AFTER_FAILURES;
 }
 
 export type FetchOutcome =
@@ -69,30 +92,50 @@ export async function checkSource(input: CheckInput, fetcher: Fetcher = liveFetc
   const { id, url, previous, today } = input;
   const outcome = await fetcher(url);
 
-  if (outcome.kind === 'gone' || outcome.kind === 'unreachable') {
-    const status: CheckStatus = outcome.kind;
-    const detail =
-      outcome.kind === 'gone'
-        ? `HTTP ${outcome.httpStatus} -- page removed, not edited`
-        : `unreachable -- ${outcome.reason}`;
+  if (outcome.kind === 'gone') {
     return {
       id,
       url,
-      status,
-      detail,
+      status: 'gone',
+      detail: `HTTP ${outcome.httpStatus} -- page removed, not edited`,
+      entry: {
+        url,
+        // Keep the last good hash so re-verification has something to diff against.
+        normalizedSha256: previous?.normalizedSha256 ?? null,
+        normalizedChars: previous?.normalizedChars ?? null,
+        status: 'gone',
+        firstSeen: previous?.firstSeen ?? today,
+        lastChanged: previous?.lastChanged ?? today,
+        // A removed page is not a flaky fetch -- drop any transient-failure count.
+      },
+    };
+  }
+
+  if (outcome.kind === 'unreachable') {
+    const consecutiveFailures = (previous?.consecutiveFailures ?? 0) + 1;
+    const escalated = consecutiveFailures >= ESCALATE_AFTER_FAILURES;
+    return {
+      id,
+      url,
+      status: 'unreachable',
+      detail: escalated
+        ? `unreachable ${consecutiveFailures} runs running -- ${outcome.reason}`
+        : `unreachable -- ${outcome.reason} (failure ${consecutiveFailures} of ${ESCALATE_AFTER_FAILURES}, not yet escalated)`,
+      consecutiveFailures,
       entry: {
         url,
         // Keep the last good hash so a transient failure doesn't lose the baseline.
         normalizedSha256: previous?.normalizedSha256 ?? null,
         normalizedChars: previous?.normalizedChars ?? null,
-        status: outcome.kind,
+        status: 'unreachable',
         firstSeen: previous?.firstSeen ?? today,
         lastChanged: previous?.lastChanged ?? today,
+        consecutiveFailures,
       },
     };
   }
 
-  const normalized = normalize(outcome.text);
+  const { text: normalized, region: contentRegion } = normalizeToResult(outcome.text);
   const hash = sha256(normalized);
   const chars = normalized.length;
 
@@ -102,6 +145,7 @@ export async function checkSource(input: CheckInput, fetcher: Fetcher = liveFetc
       url,
       status: 'new',
       detail: `baseline recorded (${chars} chars)`,
+      contentRegion,
       entry: {
         url,
         normalizedSha256: hash,
@@ -119,10 +163,19 @@ export async function checkSource(input: CheckInput, fetcher: Fetcher = liveFetc
       url,
       status: 'unchanged',
       detail: `${chars} chars`,
-      // Byte-identical to the stored entry (unless the page recovered from a
-      // prior gone/unreachable, which is worth showing) -- so an unchanged run
-      // reproduces source-hashes.json exactly and opens nothing.
-      entry: { ...previous, url, status: 'ok' },
+      contentRegion,
+      // Rebuilt field-by-field (not `...previous`) so a recovery from a prior
+      // gone/unreachable drops `status` and `consecutiveFailures` -- an
+      // unchanged, healthy run reproduces source-hashes.json exactly and opens
+      // nothing.
+      entry: {
+        url,
+        normalizedSha256: previous.normalizedSha256,
+        normalizedChars: previous.normalizedChars,
+        status: 'ok',
+        firstSeen: previous.firstSeen,
+        lastChanged: previous.lastChanged,
+      },
     };
   }
 
@@ -131,6 +184,7 @@ export async function checkSource(input: CheckInput, fetcher: Fetcher = liveFetc
     url,
     status: 'changed',
     detail: `normalized text ${previous.normalizedChars ?? '?'} -> ${chars} chars`,
+    contentRegion,
     entry: {
       url,
       normalizedSha256: hash,

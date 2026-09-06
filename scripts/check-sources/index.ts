@@ -29,9 +29,12 @@
  *   npm run check:sources -- --stale-days=180
  *   npm run check:sources -- --self-test         # load everything, touch nothing, exit 0
  *
- * Exit codes: 0 clean (nothing changed, nothing unreachable); 1 a write was
- * refused for branch safety; 2 at least one record is changed / gone /
- * unreachable and a human should look.
+ * Exit codes: 0 clean, OR the only change is a first-time `unreachable`'s failure
+ * counter (bookkeeping -- the workflow commits that to main without a PR);
+ * 1 a write was refused for branch safety; 2 at least one record is changed,
+ * gone, `unreachable` for ESCALATE_AFTER_FAILURES runs running, or a new
+ * baseline -- a human should look. A single transient `unreachable` is exit 0
+ * (issue #49).
  *
  * --self-test is the CI smoke gate (issue #55). It is NOT a second test suite:
  * it does exactly what a scheduled run does for its first few milliseconds --
@@ -57,7 +60,7 @@ import {
   type HashesFile,
   type SourceHashEntry,
 } from './lib/hashes-file.ts';
-import { hasActionableFindings, renderReport, type StaleEntry } from './lib/report.ts';
+import { hasActionableFindings, isBookkeepingOnly, renderReport, type StaleEntry } from './lib/report.ts';
 
 interface Args {
   dryRun: boolean;
@@ -163,6 +166,9 @@ export async function runCheck(args: Args, fetcher: Fetcher = liveFetcher): Prom
   let exitCode = 0;
   if (branchBlocked) exitCode = 1;
   else if (hasActionableFindings(results)) exitCode = 2;
+  // A baseline write that is NOT just a transient-failure counter (a `new`
+  // record's first hash) still goes through the PR path, exactly as before #49.
+  else if (baselineChanged && !isBookkeepingOnly(results)) exitCode = 2;
 
   return { report, exitCode };
 }
@@ -211,6 +217,7 @@ function selfTest(): number {
     writeHashesFile,
     renderReport,
     hasActionableFindings,
+    isBookkeepingOnly,
   })) {
     if (typeof fn !== 'function') throw new Error(`self-test: lib export ${name} is not callable`);
   }

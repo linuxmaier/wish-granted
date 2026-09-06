@@ -1,7 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { normalize, isolateContentRegion, looksLikeHtml } from '../normalize.ts';
+import {
+  normalize,
+  normalizeToResult,
+  isolateContentRegion,
+  isolateContentRegionWithSource,
+  looksLikeHtml,
+} from '../normalize.ts';
 import { sha256 } from '../hashes-file.ts';
 
 /**
@@ -129,11 +135,63 @@ test('isolateContentRegion is depth-aware: a nested block does not truncate the 
   assert.match(region, /end sentinel/);
 });
 
-test('isolateContentRegion falls back to <body> when there is no <main>', () => {
+test('isolateContentRegion falls back to <body> when there is no landmark', () => {
   const html = `<html><head><title>x</title></head><body><nav>menu</nav><p>only content here, long enough to pass the length gate ${'x'.repeat(200)}</p></body></html>`;
-  const region = isolateContentRegion(html);
+  const { html: region, region: which } = isolateContentRegionWithSource(html);
   assert.match(region, /only content here/);
   assert.doesNotMatch(region, /<title>/);
+  assert.equal(which, 'body');
+});
+
+test('landmark chain: <main> wins when present', () => {
+  const html = `<body><nav>nav</nav><div role="main"><p>role main ${'x'.repeat(200)}</p></div><main><p>real main content ${'y'.repeat(200)}</p></main></body>`;
+  const { region } = isolateContentRegionWithSource(html);
+  assert.equal(region, 'main');
+});
+
+test('landmark chain: [role="main"] is used when there is no <main>', () => {
+  const html = `<body><nav>site nav that should be dropped</nav><div role="main"><p>the article body, well past the length gate ${'x'.repeat(200)}</p></div><footer>footer</footer></body>`;
+  const { html: region, region: which } = isolateContentRegionWithSource(html);
+  assert.equal(which, 'role-main');
+  assert.match(region, /the article body/);
+  assert.doesNotMatch(region, /site nav/);
+});
+
+test('landmark chain: #content / #main container is used before <body>', () => {
+  for (const id of ['content', 'main', 'main-content', 'maincontent']) {
+    const html = `<body><nav>primary navigation menu, incidental</nav><div id="${id}"><p>eligibility copy that matters, long enough to pass ${'z'.repeat(200)}</p></div></body>`;
+    const { html: region, region: which } = isolateContentRegionWithSource(html);
+    assert.equal(which, 'id-landmark', `id="${id}"`);
+    assert.match(region, /eligibility copy that matters/);
+    assert.doesNotMatch(region, /primary navigation/);
+  }
+});
+
+test('landmark chain: a near-miss id ("main-header", "content-sidebar") is not treated as the landmark', () => {
+  const html = `<body><header id="main-header">masthead</header><div id="content-sidebar">links</div><p>the actual page body with enough length to matter ${'q'.repeat(200)}</p></body>`;
+  assert.equal(isolateContentRegionWithSource(html).region, 'body');
+});
+
+test('normalizeToResult reports the weak <body> fallback so the caller can name it', () => {
+  const noLandmark = `<!doctype html><html><body><nav><a href="/">Home</a> <a href="/apply">Apply</a></nav>
+    <h1>Program</h1><p>Households at or below 150% of the federal poverty level qualify. ${'x'.repeat(200)}</p>
+    <footer>Copyright</footer></body></html>`;
+  const r = normalizeToResult(noLandmark);
+  assert.equal(r.region, 'body');
+  assert.match(r.text, /150% of the federal poverty level/);
+
+  const withMain = noLandmark.replace('<body>', '<body><main>').replace('</body>', '</main></body>');
+  assert.equal(normalizeToResult(withMain).region, 'main');
+});
+
+test('a new nav item does NOT move the hash once a real landmark exists', () => {
+  const base = `<body><nav>Home Apply Contact</nav><main><h1>WIC</h1><p>Income at or below 185% FPL. ${'x'.repeat(200)}</p></main></body>`;
+  const withExtraNav = base.replace('Home Apply Contact', 'Home Apply Contact News Events');
+  assert.equal(sha256(normalize(base)), sha256(normalize(withExtraNav)));
+});
+
+test('normalize() still returns a plain string (back-compatible)', () => {
+  assert.equal(typeof normalize('<main><p>hi there everyone</p></main>'), 'string');
 });
 
 test('entities are decoded so &amp; / &nbsp; / numeric refs do not read as changes', () => {

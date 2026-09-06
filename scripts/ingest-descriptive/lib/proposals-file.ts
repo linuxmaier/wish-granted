@@ -11,10 +11,20 @@
  *   - `fetchedAt`  -- the instant of the run that last changed this entry's
  *                     substance. This is issue #14's required per-record "fetch
  *                     timestamp" provenance, kept stable so it does not churn.
+ *   - `acknowledgement` -- an optional "a human reviewed this and the record is
+ *                     correct" note (date + reason), keyed to the source hash
+ *                     `scripts/check-sources` computes. It is carried forward
+ *                     only while that hash still matches the live page; the
+ *                     moment the page text moves it is dropped and the finding
+ *                     goes back into the review queue. This is what stops a
+ *                     verified false positive from making every future reviewer
+ *                     re-derive it, without letting it silence a real future
+ *                     discrepancy (issue #49).
  *
  * The "substance" of an entry is everything except `firstSeen`/`fetchedAt`:
- * the URL health, the proposals, and the review flags. `mergeEntry` compares
- * that and carries the old timestamps forward when it is unchanged.
+ * the URL health, the proposals, the review flags, and the acknowledgement.
+ * `mergeEntry` compares that and carries the old timestamps forward when it is
+ * unchanged.
  *
  * Why a queue file and not a direct edit to src/data/programs/*.ts or
  * snapshot.json: snapshot.json is generated (never hand-edited), and the record
@@ -31,6 +41,19 @@ import type { RecordFinding, FieldProposal, ReviewFlag } from './classify.ts';
 
 export const PROPOSALS_PATH = fileURLToPath(new URL('../proposals.json', import.meta.url));
 
+export interface Acknowledgement {
+  /** ISO date (YYYY-MM-DD) a human reviewed the finding and found the record correct. */
+  readonly reviewedOn: string;
+  /** Why the finding is a false positive / needs no change. Shown to future reviewers. */
+  readonly reason: string;
+  /**
+   * `sha256:<hex>` of the normalized page text at review time -- the same hash
+   * `scripts/check-sources/source-hashes.json` carries. The acknowledgement is
+   * void as soon as the live page stops hashing to this.
+   */
+  readonly sourceHash: string;
+}
+
 export interface ProposalEntry {
   readonly sourceUrl: string;
   readonly finalUrl: string;
@@ -39,6 +62,8 @@ export interface ProposalEntry {
   readonly reviews: readonly ReviewFlag[];
   readonly firstSeen: string;
   readonly fetchedAt: string;
+  /** Present once a human has signed the finding off as "reviewed, no change needed". */
+  readonly acknowledgement?: Acknowledgement;
 }
 
 export interface ProposalsFile {
@@ -71,8 +96,38 @@ export function readProposalsFile(path: string = PROPOSALS_PATH): ProposalsFile 
 }
 
 /** Everything that decides whether an entry meaningfully changed. */
-function substance(e: Pick<ProposalEntry, 'sourceUrl' | 'finalUrl' | 'urlHealth' | 'proposals' | 'reviews'>): string {
-  return JSON.stringify({ sourceUrl: e.sourceUrl, finalUrl: e.finalUrl, urlHealth: e.urlHealth, proposals: e.proposals, reviews: e.reviews });
+function substance(
+  e: Pick<ProposalEntry, 'sourceUrl' | 'finalUrl' | 'urlHealth' | 'proposals' | 'reviews' | 'acknowledgement'>,
+): string {
+  return JSON.stringify({
+    sourceUrl: e.sourceUrl,
+    finalUrl: e.finalUrl,
+    urlHealth: e.urlHealth,
+    proposals: e.proposals,
+    reviews: e.reviews,
+    acknowledgement: e.acknowledgement ?? null,
+  });
+}
+
+/**
+ * Decide whether a prior acknowledgement still stands for this run's finding.
+ *
+ *   - No prior acknowledgement -> none.
+ *   - Page could not be read this run (`sourceHash === null`: unreachable /
+ *     blocked / gone) -> keep it. A transient fetch failure must not throw away
+ *     a human's sign-off.
+ *   - Page still hashes to what the reviewer signed off on -> keep it.
+ *   - Page text moved -> drop it. The finding is un-acknowledged again and
+ *     re-enters the review queue.
+ */
+export function resolveAcknowledgement(
+  finding: Pick<RecordFinding, 'sourceHash'>,
+  previous: ProposalEntry | undefined,
+): Acknowledgement | undefined {
+  const prev = previous?.acknowledgement;
+  if (!prev) return undefined;
+  if (finding.sourceHash === null) return prev;
+  return finding.sourceHash === prev.sourceHash ? prev : undefined;
 }
 
 /**
@@ -80,12 +135,14 @@ function substance(e: Pick<ProposalEntry, 'sourceUrl' | 'finalUrl' | 'urlHealth'
  * from `previous` when the substance is unchanged.
  */
 export function mergeEntry(finding: RecordFinding, previous: ProposalEntry | undefined, runInstant: string, today: string): ProposalEntry {
+  const acknowledgement = resolveAcknowledgement(finding, previous);
   const next = {
     sourceUrl: finding.sourceUrl,
     finalUrl: finding.finalUrl,
     urlHealth: finding.urlHealth,
     proposals: finding.proposals,
     reviews: finding.reviews,
+    ...(acknowledgement ? { acknowledgement } : {}),
   };
   const unchanged = previous && substance(previous) === substance(next);
   return {
@@ -108,6 +165,15 @@ export function serializeProposalsFile(file: ProposalsFile): string {
       reviews: e.reviews,
       firstSeen: e.firstSeen,
       fetchedAt: e.fetchedAt,
+      ...(e.acknowledgement
+        ? {
+            acknowledgement: {
+              reviewedOn: e.acknowledgement.reviewedOn,
+              reason: e.acknowledgement.reason,
+              sourceHash: e.acknowledgement.sourceHash,
+            },
+          }
+        : {}),
     };
   }
   return `${JSON.stringify({ ...HEADER, records }, null, 2)}\n`;
