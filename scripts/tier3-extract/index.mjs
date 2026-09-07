@@ -24,18 +24,19 @@
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { TIER3_SOURCES, TIER3_HELDOUT } from './sources.mjs';
+import { TIER3_SOURCES, TIER3_HELDOUT, TIER3_HELDOUT2 } from './sources.mjs';
 import { extractFromHtml, extractFromEcfr } from './extract.mjs';
 
-export { TIER3_SOURCES, TIER3_HELDOUT } from './sources.mjs';
+export { TIER3_SOURCES, TIER3_HELDOUT, TIER3_HELDOUT2 } from './sources.mjs';
 export { extractFromHtml, extractFromEcfr } from './extract.mjs';
 
-const SPLITS = { tuning: TIER3_SOURCES, heldout: TIER3_HELDOUT };
+const SPLITS = { tuning: TIER3_SOURCES, heldout: TIER3_HELDOUT, heldout2: TIER3_HELDOUT2 };
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE_DIR = {
   tuning: path.join(__dirname, '..', '..', 'tests', 'fixtures', 'tier3'),
   heldout: path.join(__dirname, '..', '..', 'tests', 'fixtures', 'tier3-heldout'),
+  heldout2: path.join(__dirname, '..', '..', 'tests', 'fixtures', 'tier3-heldout2'),
 };
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';

@@ -24,6 +24,7 @@ export interface Tier3Source {
 
 export const TIER3_SOURCES: readonly Tier3Source[];
 export const TIER3_HELDOUT: readonly Tier3Source[];
+export const TIER3_HELDOUT2: readonly Tier3Source[];
 
 export type Tier3Outcome =
   | 'correct-abstention'
@@ -52,7 +53,7 @@ export interface Tier3Row {
 export function scoreSource(src: Tier3Source, text: string): Tier3Row;
 export function evaluate(opts?: {
   live?: boolean;
-  split?: 'tuning' | 'heldout';
+  split?: 'tuning' | 'heldout' | 'heldout2';
 }): Promise<Tier3Row[]>;
 
 export function extractFromHtml(html: string, source: Tier3Source): Tier3Result;

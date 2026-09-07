@@ -589,3 +589,248 @@ export const TIER3_HELDOUT = [
     groundedIn: 'eval-cases.ts lifeline-fpl, lifeline-categorical, lifeline-survivor-extended; lifeline-phone-internet.ts.',
   },
 ];
+
+/**
+ * SECOND held-out split -- the clean measurement issue #71 asks for.
+ *
+ * The docs/eligibility-extraction-tier3.md §4.2 held-out number (10/10, 0
+ * dangerous) is TUNED: the five signal-set rules in classify.mjs / extract.mjs /
+ * html-structure.mjs were written against the exact failures TIER3_HELDOUT
+ * surfaced on its first run, so that split is burned. This array is a third
+ * frozen set, fetched 2026-09-07 with a desktop-Chrome user agent, AFTER the
+ * §4.2 rules landed and BEFORE the parser was ever run against it. No source
+ * here appears in TIER3_SOURCES or TIER3_HELDOUT.
+ *
+ * `expected` is the answer a scope-preserving parser SHOULD reach -- grounded in
+ * src/domain/facts.ts (which facts exist; hasDisability / age / citizenshipStatus
+ * are RESERVED and unaskable), the shipped src/data/programs/*.ts records, and
+ * the reviewed judgements in scripts/llm-extraction/eval-cases.ts. It was
+ * written by reading each frozen fixture, never by looking at parser output.
+ *
+ * Per issue #71: the set is weighted toward the shape that has broken every
+ * design so far -- a plausible percentage whose governing scope sits somewhere
+ * structural (an age band, a disability/enrolment gate, a cost-sharing / income-
+ * deductible tier, a "higher of" floor, a subpopulation branch). 14 sources: 12
+ * abstain, 2 extract controls (a categorical situational test; a clean poverty-
+ * line ceiling) so the run can tell "safe" from "abstains on everything". The
+ * parser is run against this ONCE and whatever comes back is reported as-is.
+ */
+/** @type {Tier3Source[]} */
+export const TIER3_HELDOUT2 = [
+  // ===================== WI DHS: Medicare Savings Programs
+  {
+    id: 'h2-qdwi',
+    kind: 'html',
+    file: 'qdwi.html',
+    url: 'https://www.dhs.wisconsin.gov/medicaid/qdwi.htm',
+    fetchedOn: '2026-09-07',
+    citationName: 'Wisconsin DHS -- Qualified Disabled and Working Individual (QDWI) Program',
+    tierAssigned: 3,
+    expected: {
+      decision: 'abstain',
+      why: 'The "countable monthly income less than 200% of the federal poverty level after certain credits are applied" is one bullet in an AND-list under "You may be eligible ... if you:" whose siblings are "Have a disability and are working", "Are entitled to Medicare Part A benefits", an asset test, and "Are not enrolled in Medicaid". "after certain credits" is a deduction stack; the disability and Medicare-entitlement gates have no fact. incomeAtOrBelow(fpl,200) drops all of it.',
+    },
+    groundedIn: 'facts.ts RESERVED_FACT_KEYS (hasDisability); eval-cases.ts qmb-fpl-gated-on-medicare (the same shape).',
+  },
+  {
+    id: 'h2-slmb-plus',
+    kind: 'html',
+    file: 'slmb-plus.html',
+    url: 'https://www.dhs.wisconsin.gov/medicaid/slmb-plus.htm',
+    fetchedOn: '2026-09-07',
+    citationName: 'Wisconsin DHS -- Specified Low-Income Medicare Beneficiary Plus (SLMB+) Program',
+    tierAssigned: 3,
+    expected: {
+      decision: 'abstain',
+      why: 'Countable monthly income "between 120% and 135% of the federal poverty level after certain credits are applied" -- a RANGE, not a ceiling; a deduction stack ("after certain credits"); gated on "entitled to Medicare Part A or Part B-ID" and an asset test. The QMB/SLMB shape exactly (burned-split ho-slmb).',
+    },
+    groundedIn: 'eval-cases.ts qmb-fpl-gated-on-medicare; TIER3_HELDOUT ho-slmb.',
+  },
+  // ===================== WI DHS: disease / health-status-gated programs
+  {
+    id: 'h2-wcdp',
+    kind: 'html',
+    file: 'wcdp.html',
+    url: 'https://www.dhs.wisconsin.gov/forwardhealth/wcdp.htm',
+    fetchedOn: '2026-09-07',
+    citationName: 'Wisconsin DHS -- Wisconsin Chronic Disease Program (WCDP)',
+    tierAssigned: 3,
+    expected: {
+      decision: 'abstain',
+      why: 'There is no income ceiling to enrol. "If you make more than 300% of the federal poverty level each year, you must pay a certain amount yourself before getting benefits" is an income-deductible / spenddown threshold, and the program is gated on a diagnosis of adult cystic fibrosis, hemophilia, or renal disease -- none a fact. Any incomeAtOrBelow here invents a cutoff that does not exist.',
+    },
+    groundedIn: 'eval-cases.ts seniorcare-coverage-levels-not-eligibility (deductible/tier, not a ceiling); the page.',
+  },
+  {
+    id: 'h2-hdap',
+    kind: 'html',
+    file: 'hdap-clients.html',
+    url: 'https://www.dhs.wisconsin.gov/hiv/hdap-clients.htm',
+    fetchedOn: '2026-09-07',
+    citationName: 'Wisconsin DHS -- HIV Drug Assistance Program (HDAP): Information for Clients',
+    tierAssigned: 3,
+    expected: {
+      decision: 'abstain',
+      why: '"Have a household income at or below 300% of the federal poverty guidelines" is one bullet in a three-item AND-list ("To be eligible, you must:") whose other members are "Be living in Wisconsin" and "Be living with HIV, confirmed by a doctor". The HIV-diagnosis gate has no fact (hasDisability is reserved and would not capture it). incomeAtOrBelow(fpl,300) alone tells every low-income person they qualify for HIV drug assistance.',
+    },
+    groundedIn: 'facts.ts RESERVED_FACT_KEYS; eval-cases.ts qmb-fpl-gated-on-medicare / emergency-assistance-emergency-gate (co-condition-gated ceiling).',
+  },
+  // ===================== WI DCF / DHS: employment & caretaker programs
+  {
+    id: 'h2-tmj',
+    kind: 'html',
+    file: 'tmj.html',
+    url: 'https://dcf.wisconsin.gov/w2/tmj',
+    fetchedOn: '2026-09-07',
+    citationName: 'Wisconsin DCF -- Transform Milwaukee Jobs (TMJ)',
+    tierAssigned: 3,
+    expected: {
+      decision: 'abstain',
+      why: '"Have income below 150% of the Federal Poverty Level" sits in an AND-list ("You may qualify for TMJ if you:") with "not employed / not eligible for Unemployment Insurance", "Live in Milwaukee County", "Are not in Wisconsin Works", "Are 18 or older" -- and is then gated again on a subpopulation branch ("to participate you also must be either: a parent required to pay child support; a parent with a plan for your child(ren) to return home from foster care; a parent convicted of a past crime; or younger than 25 and ..."). None of the branch conditions is a fact.',
+    },
+    groundedIn: 'facts.ts RESERVED_FACT_KEYS (age); eval-cases.ts emergency-assistance-emergency-gate (subpopulation branch).',
+  },
+  {
+    id: 'h2-caretaker-supplement',
+    kind: 'html',
+    file: 'caretaker-supplement.html',
+    url: 'https://www.dhs.wisconsin.gov/ssi/caretaker.htm',
+    fetchedOn: '2026-09-07',
+    citationName: 'Wisconsin DHS -- Information About Caretaker Supplement (CTS)',
+    tierAssigned: 3,
+    expected: {
+      decision: 'abstain',
+      why: 'No income figure on the page. "$275 per month for the first eligible child and $165 per month for each additional eligible child" are benefit amounts, not limits. Eligibility is "You must be getting a Wisconsin SSI payment" (a currentBenefits value, but not sufficient alone) plus "Your children must meet income and asset requirements" (unquantified) plus both-parents-on-SSI and child-support cooperation. Correct answer: nothing extractable is published here.',
+    },
+    groundedIn: 'The page; facts.ts BENEFIT_ENROLLMENTS (ssi).',
+  },
+  {
+    id: 'h2-family-care',
+    kind: 'html',
+    file: 'family-care.html',
+    url: 'https://www.dhs.wisconsin.gov/familycare/index.htm',
+    fetchedOn: '2026-09-07',
+    citationName: 'Wisconsin DHS -- Family Care',
+    tierAssigned: 3,
+    expected: {
+      decision: 'abstain',
+      why: 'No income figure. "To enroll in Family Care, you must: Be at least 18 years old; Be a frail elder or an adult with a disability; Be eligible for Medicaid; Be functionally eligible ...; Have a long-term care condition that will last more than 90 days." Age and disability are reserved; the functional screen has no fact; the "$34.7 million" on the page is a program-cost statistic.',
+    },
+    groundedIn: 'facts.ts RESERVED_FACT_KEYS (age, hasDisability); the page.',
+  },
+  // ===================== WI DOR: tax credits
+  {
+    id: 'h2-dor-eic',
+    kind: 'html',
+    file: 'dor-earned-income-credit.html',
+    url: 'https://www.revenue.wi.gov/Pages/FAQS/ise-eic.aspx',
+    fetchedOn: '2026-09-07',
+    citationName: 'Wisconsin DOR -- Individual Income Tax: Earned Income Credit',
+    tierAssigned: 3,
+    expected: {
+      decision: 'abstain',
+      why: 'No income-percentage rule. The "4% / 11% / 34% of federal credit" figures are the credit share by number of qualifying children, not income thresholds. Eligibility is "meet all of the following: meet the federal earned income credit requirements; have at least one qualifying child; be a full-year Wisconsin resident; file a joint return if married" -- the only dollar figures ($30,000 / $40,000 AGI) are inside a Schedule I worked example.',
+    },
+    groundedIn: 'eval-cases.ts homestead-credit-one-of-conditions (a tax credit gated on a conditions list, no clean scale).',
+  },
+  // ===================== eCFR: Medicaid / CHIP / Part D benefit parts
+  {
+    id: 'h2-cfr-435-119',
+    kind: 'ecfr',
+    file: 'ecfr-42-cfr-435-119.xml',
+    url: 'https://www.ecfr.gov/api/versioner/v1/full/2026-09-01/title-42.xml?section=435.119',
+    fetchedOn: '2026-09-07',
+    sections: ['435.119'],
+    paragraphFilter: 'Eligibility|133 percent',
+    citationName: '42 CFR 435.119 -- Medicaid coverage for the adult (expansion) group',
+    tierAssigned: 3,
+    expected: {
+      decision: 'abstain',
+      why: 'The "household income that is at or below 133 percent FPL" is item (b)(5) in an AND-list whose siblings are (b)(1) "age 19 or older and under age 65", (b)(2) "not pregnant", (b)(3) "not entitled to or enrolled for Medicare", (b)(4) "not otherwise eligible ... under subpart B". The section heading itself is "Coverage for individuals age 19 or older and under age 65 at or below 133 percent FPL." Age is a reserved fact; the negative co-conditions have none.',
+    },
+    groundedIn: 'facts.ts RESERVED_FACT_KEYS (age); the XML structure.',
+  },
+  {
+    id: 'h2-cfr-435-118',
+    kind: 'ecfr',
+    file: 'ecfr-42-cfr-435-118.xml',
+    url: 'https://www.ecfr.gov/api/versioner/v1/full/2026-09-01/title-42.xml?section=435.118',
+    fetchedOn: '2026-09-07',
+    sections: ['435.118'],
+    paragraphFilter: 'Income standard|percent FPL|Scope',
+    citationName: '42 CFR 435.118 -- Medicaid for infants and children under age 19',
+    tierAssigned: 3,
+    expected: {
+      decision: 'abstain',
+      why: 'The percentages are age-band-scoped and expressed as "the higher of" a floor and a state-plan-established standard: "(c)(1) The minimum income standard is the higher of- (i) 133 percent FPL; or (ii) for infants under age 1 ... up to 185 percent FPL", and "(c)(2) The maximum income standard for each of the age groups of infants under age 1, children age 1 through age 5, and children age 6 through age 18 is the higher of- ...". No single stated ceiling; the operative number is set in the State plan.',
+    },
+    groundedIn: 'The XML structure; facts.ts RESERVED_FACT_KEYS (age).',
+  },
+  {
+    id: 'h2-cfr-423-773',
+    kind: 'ecfr',
+    file: 'ecfr-42-cfr-423-773.xml',
+    url: 'https://www.ecfr.gov/api/versioner/v1/full/2026-09-01/title-42.xml?section=423.773',
+    fetchedOn: '2026-09-07',
+    sections: ['423.773'],
+    paragraphFilter: 'subsidy eligible|percent of the FPL',
+    citationName: '42 CFR 423.773 -- Medicare Part D low-income subsidy ("Extra Help") eligibility',
+    tierAssigned: 3,
+    expected: {
+      decision: 'abstain',
+      why: 'A "subsidy eligible individual" must be "a Part D eligible individual ... enrolled in, or seeking to enroll in a Part D plan" (a Medicare gate, no fact) AND have income below 150 percent FPL AND "resources at or below the resource thresholds" (an asset test). The 135% / 150% figures are separate tiers (full vs partial subsidy) that changed by plan year. Bare incomeAtOrBelow(fpl,135 or 150) drops the Medicare gate, the resources test, and the tiering.',
+    },
+    groundedIn: 'eval-cases.ts qmb-fpl-gated-on-medicare; facts.ts (no Medicare-enrolment fact).',
+  },
+  {
+    id: 'h2-cfr-24-5-603',
+    kind: 'ecfr',
+    file: 'ecfr-24-cfr-5-603.xml',
+    url: 'https://www.ecfr.gov/api/versioner/v1/full/2026-09-01/title-24.xml?section=5.603',
+    fetchedOn: '2026-09-07',
+    sections: ['5.603'],
+    paragraphFilter: 'income family|median income',
+    citationName: '24 CFR 5.603 -- HUD Section 8 / public housing income definitions',
+    tierAssigned: 3,
+    expected: {
+      decision: 'abstain',
+      why: 'A definitions section, not an eligibility rule. "Low income family" = income not exceeding 80 percent of area median income; "Very low income family" = 50 percent; "Extremely low-income family" = the higher of the HHS poverty guidelines or 30 percent of area median income -- "except that HUD may establish income ceilings higher or lower ...". These are income-category labels used across many programs, each with a discretion clause; no program ceiling is set here.',
+    },
+    groundedIn: 'The regulation text; docs/eligibility-extraction.md Section 2 (tiered income definitions).',
+  },
+  // ===================== EXTRACT controls
+  {
+    id: 'h2-wic-index',
+    kind: 'html',
+    file: 'wic-index.html',
+    url: 'https://www.dhs.wisconsin.gov/wic/index.htm',
+    fetchedOn: '2026-09-07',
+    citationName: 'Wisconsin WIC -- program landing page',
+    tierAssigned: 3,
+    expected: {
+      decision: 'extract',
+      mustMatch: (c) =>
+        JSON.stringify(c).includes('"fact":"isPregnantOrPostpartum","op":"eq","value":true') ||
+        JSON.stringify(c).includes('"fact":"hasChildUnder5","op":"eq","value":true'),
+      why: 'Clean categorical situational test in prose: "WIC serves people who are pregnant, breastfeeding, or postpartum, as well as infants and children up to age five." Maps to anyOf(isPregnantOrPostpartum, hasChildUnder5). "Foster parents and relatives may also apply on behalf of an infant or child in their care" changes who applies, not who is eligible -- a parser that abstains on the "may also" clause is over-cautious (a #51 control). No income number is on this page, so the income rule is correctly left alone.',
+    },
+    groundedIn: 'eval-cases.ts wic-may-also-apply (control); wic-wisconsin.ts.',
+  },
+  {
+    id: 'h2-headstart',
+    kind: 'html',
+    file: 'headstart-resource-guide.html',
+    url: 'https://dcf.wisconsin.gov/childcare/parents/resource-guide/head-start',
+    fetchedOn: '2026-09-07',
+    citationName: 'Wisconsin DCF -- Child Care Resource Guide: Head Start',
+    tierAssigned: 3,
+    expected: {
+      decision: 'extract',
+      mustMatch: (c) =>
+        JSON.stringify(c).includes('"scale":"fpl","percent":100') &&
+        !JSON.stringify(c).includes('"percent":130'),
+      why: '"Children and families with incomes below the poverty guidelines" is a clean poverty-line ceiling (= 100% FPL) under the heading "Who is eligible for Head Start?". The other bullets ("Children in foster care regardless of income", "Homeless children", "Children from families receiving public assistance, such as: TANF; SSI; SNAP") are additional-inclusion categorical routes, not restrictions, so incomeAtOrBelow(fpl,100) carries the governing scope. Matches the headstart-1302.12 target in TIER3_SOURCES.',
+    },
+    groundedIn: 'eval-cases.ts headstart-cfr-over-income-allowance; TIER3_SOURCES headstart-1302.12.',
+  },
+];
