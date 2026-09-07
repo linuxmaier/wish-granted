@@ -53,6 +53,9 @@ export interface AgentOptions {
   readonly model: ModelClient;
   readonly fetcher: Fetcher;
   readonly maxSteps?: number;
+  /** #76: permit a headless-browser render when a 200 page reduces to nothing
+   *  and the deterministic form-shell unwrap did not recover it. Off by default. */
+  readonly allowBrowserRender?: boolean;
 }
 
 /**
@@ -83,7 +86,7 @@ function cap(s: string): string {
 
 export async function runAgent(ctx: ExtractionContext, opts: AgentOptions): Promise<AgentRun> {
   const maxSteps = opts.maxSteps ?? DEFAULT_MAX_STEPS;
-  const nav = new Navigator(opts.fetcher);
+  const nav = new Navigator(opts.fetcher, { allowBrowserRender: opts.allowBrowserRender ?? false });
   const cost = new CostMeter();
   const crossRefSources: SpanSource[] = [];
   const pagesVisited: string[] = [];

@@ -411,6 +411,15 @@ conventionally read as "no crawling restriction stated," but SharePoint-hosted g
 sites are also exactly the kind of source likely to break in path-dependent, brittle ways —
 worth flagging as a fragile scrape target independent of permission.
 
+**Update (issue #76):** the SharePoint page content is fully server-rendered — the WHEAP
+income table, the 60%-SMI note, and the eligibility prose are all in the plain-fetch bytes,
+no JavaScript required. What made both extraction pipelines see "zero readable text" is that
+ASP.NET WebForms wraps the entire `<body>` in one `<form id="aspnetForm">`, and
+`scripts/check-sources/lib/normalize.ts` + `scripts/agentic-extract/lib/html-structure.ts`
+both strip `<form>` wholesale. `scripts/render-fallback/` neutralises that wrapper as a
+fallback (only when a page reduces to nothing), which recovers all three
+`energyandhousing.wi.gov` records with no headless browser.
+
 **Verdict:** worth ingesting for the income-table refresh specifically — this is the exact
 "highest value per unit of effort" target issue #1 already identified, and this spike
 confirms the number exists, is published on a predictable annual cadence, and is already

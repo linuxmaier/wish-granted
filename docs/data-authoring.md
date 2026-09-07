@@ -421,10 +421,17 @@ never permanently silence a real future discrepancy (issue #49). `madison-housin
 Section 8 voucher waiting list has been closed since April 2023, and the page's generic
 "we maintain a wait list per program" boilerplate is what the heuristic matched.
 
-Sources that currently yield nothing: `energyandhousing.wi.gov` (SharePoint; the WHEAP and
-Weatherization pages normalize to zero readable text) stays hand-authored, and
-`211wisconsin.communityos.org` is on the hard-deny list (`scripts/ingest-descriptive/lib/robots.ts`)
-alongside findhelp.org.
+Sources that currently yield nothing: `211wisconsin.communityos.org` is on the hard-deny
+list (`scripts/ingest-descriptive/lib/robots.ts`) alongside findhelp.org.
+
+`energyandhousing.wi.gov` (SharePoint; the WHEAP and Weatherization pages) was thought to be
+a JS-rendered SPA that "normalizes to zero readable text". It is not (issue #76). A plain
+fetch returns the full server-rendered page, income table included; both text reducers just
+threw it away because ASP.NET WebForms wraps the whole `<body>` in one `<form>` and they
+strip `<form>` wholesale. `scripts/render-fallback/` now unwraps that shell whenever a page
+reduces to nothing, so these three records are back in scope for descriptive ingestion and
+agentic extraction. See `scripts/render-fallback/lib/unwrap-shell.ts` and
+`tests/fixtures/js-pages/SOURCES.md`.
 
 ## Adding a new program
 

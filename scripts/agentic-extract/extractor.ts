@@ -25,6 +25,9 @@ export interface AgenticExtractorOptions {
   readonly model?: ModelClient;
   readonly fetcher?: Fetcher;
   readonly maxSteps?: number;
+  /** #76: allow a headless-browser render when a page reduces to nothing and the
+   *  deterministic form-shell unwrap did not fix it. Off by default. */
+  readonly allowBrowserRender?: boolean;
   /** Called with the full run (cost, trace, provenance) after each source. */
   readonly onRun?: (ctx: ExtractionContext, run: AgentRun) => void;
 }
@@ -41,6 +44,7 @@ export function agenticExtractor(opts: AgenticExtractorOptions = {}): Extractor 
       model,
       fetcher,
       ...(opts.maxSteps !== undefined ? { maxSteps: opts.maxSteps } : {}),
+      ...(opts.allowBrowserRender ? { allowBrowserRender: true } : {}),
     });
     opts.onRun?.(ctx, run);
     return run.result;

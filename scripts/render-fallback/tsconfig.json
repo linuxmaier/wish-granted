@@ -1,0 +1,27 @@
+{
+  // Like scripts/refresh-income-tables/tsconfig.json: this module does NOT import
+  // `@/*` or anything under src/, so plain NodeNext resolution is enough (no
+  // bundler-style paths, no resolve hook). It reaches three sibling script libs
+  // by relative `.ts` path -- scripts/refresh-income-tables/lib/http.ts,
+  // scripts/ingest-descriptive/lib/robots.ts, and (in tests) the check-sources
+  // normalizer + the agentic-extract structure renderer -- all of which are
+  // dependency-free pure modules. Node runs the .ts directly via type-stripping.
+  // Consumed only by `typecheck:render-fallback`.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "types": ["node"]
+  },
+  "include": ["**/*.ts"]
+}
