@@ -982,10 +982,20 @@ in a spike whose deliverable is a document and a prototype, not dataset edits:
    long before the token bill becomes interesting.
 5. **PolicyEngine stays a future cross-check, not a dependency**, pending real answers to
    both open questions in Section 7.
+6. **Tier 3 was never actually tested against a deterministic parser -- that gap is now
+   closed.** `docs/eligibility-extraction-tier3.md` (issue #62, experiment 3) points a
+   real structure-preserving parser at 34 real Tier-3 sources: it recovers a meaningful
+   scoped-extractable slice, correctly abstains (with named reason codes) on the rest, and
+   reaches the right answer on 5 of the 6 dangerous over-claims blocking the LLM path --
+   because the scope the LLM dropped (a column header, a run-in heading, an "extended
+   eligibility" branch) survives when the document is not flattened to prose. It also
+   corrects the Tier assignment for 3 sources (FoodShare's income table, the WHEAP table,
+   the Lifeline qualify page are Tier 1/2, not 3). Held-out result and caveats in that doc.
 
 All of the above respects the hard constraint this whole design exists to serve:
 extraction happens at build time, invoked by a human or CI (`npm run extract:income-tables`,
-`npm run refresh:income-tables`, `npm run eval:llm-extraction`), never from the shipped app
+`npm run refresh:income-tables`, `npm run eval:llm-extraction`, `npm run extract:tier3`),
+never from the shipped app
 -- confirmed directly by this spike's `npm run build`, which produces the same
 dependency-free browser bundle whether or not `scripts/` exists, because nothing in `src/`
 imports it.

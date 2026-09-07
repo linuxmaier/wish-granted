@@ -24,6 +24,8 @@
     "test:refresh-income-tables": "node --test scripts/refresh-income-tables/lib/__tests__/*.test.ts",
     "typecheck:refresh-income-tables": "tsc -p scripts/refresh-income-tables/tsconfig.json --noEmit",
     "extract:income-tables": "node scripts/extract-income-tables.mjs",
+    "extract:tier3": "node scripts/tier3-extract/index.mjs",
+    "extract:tier3:self-test": "node scripts/tier3-extract/index.mjs --self-test",
     "eval:llm-extraction": "node --env-file-if-exists=.env scripts/llm-extraction/run-eval.ts",
     "typecheck:llm-extraction": "tsc -p scripts/llm-extraction --noEmit",
     "eval:program-extraction": "node --env-file-if-exists=.env --import ./scripts/program-benchmark/register.mjs scripts/program-benchmark/index.ts",

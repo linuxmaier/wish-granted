@@ -1,0 +1,2536 @@
+
+
+<!DOCTYPE html>
+<html lang="en" dir="ltr" prefix="og: https://ogp.me/ns#" class="no-js">
+  <head>
+    <meta charset="utf-8" />
+<script type="text/javascript">(window.NREUM||(NREUM={})).init={privacy:{cookies_enabled:true},ajax:{deny_list:[]},session_trace:{sampling_rate:0.0,mode:"FIXED_RATE",enabled:true,error_sampling_rate:0.0}};(window.NREUM||(NREUM={})).loader_config={licenseKey:"NRJS-dd458ee62a262e06626",applicationID:"708311829",browserID:"1120064829"};;/*! For license information please see nr-loader-rum-1.321.0.min.js.LICENSE.txt */
+(()=>{var e={8122(e,t,r){"use strict";r.d(t,{a:()=>i});var n=r(944);function i(e,t){try{if(!e||"object"!=typeof e)return(0,n.R)(3);if(!t||"object"!=typeof t)return(0,n.R)(4);const r=Object.create(Object.getPrototypeOf(t),Object.getOwnPropertyDescriptors(t)),a=0===Object.keys(r).length?e:r;for(let s in a)if(void 0!==e[s])try{if(null===e[s]){r[s]=null;continue}Array.isArray(e[s])&&Array.isArray(t[s])?r[s]=Array.from(new Set([...e[s],...t[s]])):e[s]instanceof Map||e[s]instanceof Set||e[s]instanceof Date||e[s]instanceof RegExp?r[s]=e[s]:"object"==typeof e[s]&&null!==t[s]&&"object"==typeof t[s]?r[s]=i(e[s],t[s]):r[s]=e[s]}catch(e){r[s]||(0,n.R)(1,e)}return r}catch(e){(0,n.R)(2,e)}}},2555(e,t,r){"use strict";r.d(t,{f:()=>s});var n=r(384),i=r(8122);const a={beacon:n.NT.beacon,errorBeacon:n.NT.errorBeacon,licenseKey:void 0,applicationID:void 0,sa:void 0,queueTime:void 0,applicationTime:void 0,ttGuid:void 0,user:void 0,account:void 0,product:void 0,extra:void 0,jsAttributes:{},userAttributes:void 0,atts:void 0,transactionName:void 0,tNamePlain:void 0};function s(e){try{return!!e.licenseKey&&!!e.errorBeacon&&!!e.applicationID}catch(e){return!1}}r.d(t,["D",0,e=>(0,i.a)(e,a)])},7699(e,t,r){"use strict";var n=r(860);const i={[n.K7.logging]:!0,[n.K7.genericEvents]:!0,[n.K7.jserrors]:!0,[n.K7.ajax]:!0};r.d(t,["It",0,1e6,"KC",0,i,"qh",0,"SESSION_ERROR"])},9324(e,t,r){"use strict";r.d(t,["xv",0,"1.321.0"])},981(e,t,r){"use strict";r.d(t,["R",0,{AJAX:"AjaxRequest",PA:"PageAction",UA:"UserAction",BP:"BrowserPerformance",WS:"WebSocket",SPV:"SecurityPolicyViolation",JSE:"JavaScriptError",LOG:"Log",PVE:"PageView",PVT:"PageViewTiming",SR:"SessionReplay",ST:"SessionTrace",BI:"BrowserInteraction"}])},6154(e,t,r){"use strict";var n=r(1863);const i="undefined"!=typeof window&&!!window.document,a="undefined"!=typeof WorkerGlobalScope&&("undefined"!=typeof self&&self instanceof WorkerGlobalScope&&self.navigator instanceof WorkerNavigator||"undefined"!=typeof globalThis&&globalThis instanceof WorkerGlobalScope&&globalThis.navigator instanceof WorkerNavigator),s=i?window:"undefined"!=typeof WorkerGlobalScope&&("undefined"!=typeof self&&self instanceof WorkerGlobalScope&&self||"undefined"!=typeof globalThis&&globalThis instanceof WorkerGlobalScope&&globalThis),o=Boolean("hidden"===s?.document?.visibilityState),c=""+s?.location,u=/iPad|iPhone|iPod/.test(s.navigator?.userAgent),d=u&&"undefined"==typeof SharedWorker,l=((()=>{const e=s.navigator?.userAgent?.match(/Firefox[/\s](\d+\.\d+)/);Array.isArray(e)&&e.length>=2&&e[1]})(),Date.now()-(0,n.t)());r.d(t,["OF",0,u,"RI",0,i,"WN",0,l,"bv",0,a,"gm",0,s,"m",0,c,"mw",0,o,"sb",0,d,"zk",0,()=>{const e=s?.performance?.getEntriesByType?.("navigation")?.[0];if(e&&e.responseStart>0&&e.responseStart<s.performance.now())return e}])},3241(e,t,r){"use strict";r.d(t,{W:()=>i});var n=r(6154);function i(e={}){try{n.gm.dispatchEvent(new CustomEvent("newrelic",{detail:e}))}catch(e){}}},1687(e,t,r){"use strict";r.d(t,{Ak:()=>o,Ze:()=>u,x3:()=>c});var n=r(3241),i=r(3606),a=r(860),s=r(2646);function o(e,t){if(!e)return;const r={staged:!1,priority:a.P3[t]||0};e.runtime.drainRegistry.get(t)||e.runtime.drainRegistry.set(t,r)}function c(e,t){if(!e)return;const r=e.runtime.drainRegistry;r&&(r.get(t)&&r.delete(t),l(e,t,!1),r.size&&d(e))}function u(e,t="feature",r=!1){if(e){if(!e.runtime.drainRegistry.get(t)||r)return l(e,t);e.runtime.drainRegistry.get(t).staged=!0,d(e)}}function d(e){if(!e)return;const t=Array.from(e.runtime.drainRegistry);t.every(([e,t])=>t.staged)&&(t.sort((e,t)=>e[1].priority-t[1].priority),t.forEach(([t])=>{e.runtime.drainRegistry.delete(t),l(e,t)}))}function l(e,t,r=!0){if(!e)return;const a=e.ee,o=i.i.handlers;if(a&&!a.aborted&&a.backlog&&o){if((0,n.W)({type:"lifecycle",name:"drain",feature:t}),r){const e=a.backlog[t],r=o[t];if(r){for(let t=0;e&&t<e.length;++t)f(e[t],r);Object.entries(r).forEach(([e,t])=>{Object.values(t||{}).forEach(t=>{t[0]?.on&&t[0].context()instanceof s.y&&!t[0].listeners(e).includes(t[1])&&t[0].on(e,t[1])})})}}a.isolatedBacklog||delete o[t],a.backlog[t]=null,a.emit("drain-"+t,[])}}function f(e,t){var r=e[1];Object.values(t[r]||{}).forEach(t=>{var r=e[0];if(t[0]===r){var n=t[1],i=e[3],a=e[2];n.apply(i,a)}})}},7836(e,t,r){"use strict";var n=r(384),i=r(8990),a=r(2646),s=r(5607);const o="nr@context:".concat(s.W),c=function e(t,r){var n={},s={},d={},l=!1;try{l=16===r.length&&u.initializedAgents?.[r]?.runtime.isolatedBacklog}catch(e){}var f={on:p,addEventListener:p,removeEventListener:function(e,t){var r=n[e];if(!r)return;for(var i=0;i<r.length;i++)r[i]===t&&r.splice(i,1)},emit:function(e,r,n,i,a){!1!==a&&(a=!0);if(c.aborted&&!i)return;t&&a&&t.emit(e,r,n);var o=g(n);m(e).forEach(e=>{e.apply(o,r)});var u=v()[s[e]];u&&u.push([f,e,r,o]);return o},get:h,listeners:m,context:g,buffer:function(e,t){const r=v();if(t=t||"feature",f.aborted)return;Object.entries(e||{}).forEach(([e,n])=>{s[n]=t,t in r||(r[t]=[])})},abort:function(){f._aborted=!0,Object.keys(f.backlog).forEach(e=>{delete f.backlog[e]})},isBuffering:function(e){return!!v()[s[e]]},debugId:r,backlog:l?{}:t&&"object"==typeof t.backlog?t.backlog:{},isolatedBacklog:l};return Object.defineProperty(f,"aborted",{get:()=>{let e=f._aborted||!1;return e||(t&&(e=t.aborted),e)}}),f;function g(e){return e&&e instanceof a.y?e:e?(0,i.I)(e,o,()=>new a.y(o)):new a.y(o)}function p(e,t){n[e]=m(e).concat(t)}function m(e){return n[e]||[]}function h(t){return d[t]=d[t]||e(f,t)}function v(){return f.backlog}}(void 0,"globalEE"),u=(0,n.Zm)();u.ee||(u.ee=c),r.d(t,["P",0,o,"ee",0,c])},2646(e,t,r){"use strict";r.d(t,{y:()=>n});class n{constructor(e){this.contextId=e}}},9908(e,t,r){"use strict";r.d(t,{d:()=>n,p:()=>i});var n=r(7836).ee.get("handle");function i(e,t,r,i,a){a?(a.buffer([e],i),a.emit(e,t,r)):(n.buffer([e],i),n.emit(e,t,r))}},3606(e,t,r){"use strict";r.d(t,{i:()=>a});var n=r(9908);a.on=s;var i=a.handlers={};function a(e,t,r,a){s(a||n.d,i,e,t,r)}function s(e,t,r,i,a){a||(a="feature"),e||(e=n.d);var s=t[a]=t[a]||{};(s[r]=s[r]||[]).push([e,i])}},3878(e,t,r){"use strict";function n(e,t){return{capture:e,passive:!1,signal:t}}function i(e,t,r=!1,i){window.addEventListener(e,t,n(r,i))}function a(e,t,r=!1,i){document.addEventListener(e,t,n(r,i))}r.d(t,{DD:()=>a,jT:()=>n,sp:()=>i})},5607(e,t,r){"use strict";const n=(0,r(9566).bz)();r.d(t,["W",0,n])},9566(e,t,r){"use strict";r.d(t,{LA:()=>s,bz:()=>a});var n=r(6154);function i(e,t){return e?15&e[t]:16*Math.random()|0}function a(){const e=n.gm?.crypto||n.gm?.msCrypto;let t,r=0;return e&&e.getRandomValues&&(t=e.getRandomValues(new Uint8Array(30))),"xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".split("").map(e=>"x"===e?i(t,r++).toString(16):"y"===e?(3&i()|8).toString(16):e).join("")}function s(e){const t=n.gm?.crypto||n.gm?.msCrypto;let r,a=0;t&&t.getRandomValues&&(r=t.getRandomValues(new Uint8Array(e)));const s=[];for(var o=0;o<e;o++)s.push(i(r,a++).toString(16));return s.join("")}},2614(e,t,r){"use strict";r.d(t,["BB",0,18e5,"Wt",0,"NRBA_SESSION::","iL",0,{SAME_TAB:"same-tab",CROSS_TAB:"cross-tab"},"tS",0,{STARTED:"session-started",PAUSE:"session-pause",RESET:"session-reset",RESUME:"session-resume",UPDATE:"session-update"},"wk",0,144e5])},1863(e,t,r){"use strict";function n(){return Math.floor(performance.now())}r.d(t,{t:()=>n})},944(e,t,r){"use strict";r.d(t,{R:()=>i});var n=r(3241);function i(e,t){"function"==typeof console.debug&&(console.debug("New Relic Warning: https://github.com/newrelic/newrelic-browser-agent/blob/main/docs/warning-codes.md#".concat(e),t),(0,n.W)({drained:null,type:"data",name:"warn",feature:"warn",data:{code:e,secondary:t}}))}},8990(e,t,r){"use strict";r.d(t,{I:()=>i});var n=Object.prototype.hasOwnProperty;function i(e,t,r){if(n.call(e,t))return e[t];var i=r();if(Object.defineProperty&&Object.keys)try{return Object.defineProperty(e,t,{value:i,writable:!0,enumerable:!1}),i}catch(e){}return e[t]=i,i}},6389(e,t,r){"use strict";function n(e,t=500,r={}){const n=r?.leading||!1;let i;return(...r)=>{n&&void 0===i&&(e.apply(this,r),i=setTimeout(()=>{i=clearTimeout(i)},t)),n||(clearTimeout(i),i=setTimeout(()=>{e.apply(this,r)},t))}}function i(e){let t=!1;return(...r)=>{t||(t=!0,e.apply(this,r))}}r.d(t,{J:()=>i,s:()=>n})},1910(e,t,r){"use strict";r.d(t,{i:()=>a});var n=r(944);const i=new Map;function a(...e){return e.every(e=>{if(i.has(e))return i.get(e);const t="function"==typeof e?e.toString():"",r=t.includes("[native code]"),a=t.includes("nrWrapper");return r||a||(0,n.R)(64,e?.name||t),i.set(e,r),r})}},5289(e,t,r){"use strict";r.d(t,{GG:()=>s,Qr:()=>c,sB:()=>o});var n=r(3878),i=r(6389);function a(){return"undefined"==typeof document||"complete"===document.readyState}function s(e,t){if(a())return e();const r=(0,i.J)(e),s=setInterval(()=>{a()&&(clearInterval(s),r())},500);(0,n.sp)("load",r,t)}function o(e){if(a())return e();(0,n.DD)("DOMContentLoaded",e)}function c(e){if(a())return e();(0,n.sp)("popstate",e)}},384(e,t,r){"use strict";r.d(t,{Zm:()=>c,bQ:()=>d,dV:()=>u,pV:()=>l});var n=r(6154),i=r(1863),a=r(944),s=r(1910);const o={beacon:"bam.nr-data.net",errorBeacon:"bam.nr-data.net"};function c(){return n.gm.NREUM||(n.gm.NREUM={}),void 0===n.gm.newrelic&&(n.gm.newrelic=n.gm.NREUM),n.gm.NREUM}function u(){let e=c();return e.o||(e.o={ST:n.gm.setTimeout,SI:n.gm.setImmediate||n.gm.setInterval,CT:n.gm.clearTimeout,XHR:n.gm.XMLHttpRequest,REQ:n.gm.Request,EV:n.gm.Event,PR:n.gm.Promise,MO:n.gm.MutationObserver,FETCH:n.gm.fetch,WS:n.gm.WebSocket},(0,s.i)(...Object.values(e.o))),e}function d(e,t){let r=c();r.initializedAgents??={},t.initializedAt={ms:(0,i.t)(),date:new Date},r.initializedAgents[e]=t,2===Object.keys(r.initializedAgents).length&&(0,a.R)(69)}function l(){return function(){let e=c();const t=e.info||{};e.info={beacon:o.beacon,errorBeacon:o.errorBeacon,...t}}(),function(){let e=c();const t=e.init||{};e.init={...t}}(),u(),function(){let e=c();const t=e.loader_config||{};e.loader_config={...t}}(),c()}r.d(t,["NT",0,o])},2843(e,t,r){"use strict";r.d(t,{G:()=>a,u:()=>i});var n=r(3878);function i(e,t=!1,r,i){(0,n.DD)("visibilitychange",function(){if(t)return void("hidden"===document.visibilityState&&e());e(document.visibilityState)},r,i)}function a(e,t,r){(0,n.sp)("pagehide",e,t,r)}},9300(e,t,r){"use strict";r(860).K7.ajax;r.d(t,["mo",0,{NONE:"none",FAILURES:"failures",ALL:"all"}])},3969(e,t,r){"use strict";const n=r(860).K7.metrics;r.d(t,["TZ",0,n,"XG",0,"storeEventMetrics","xV",0,"storeSupportabilityMetrics"])},6630(e,t,r){"use strict";const n=r(860).K7.pageViewEvent;r.d(t,["T",0,n])},782(e,t,r){"use strict";const n=r(860).K7.pageViewTiming;r.d(t,["T",0,n])},4234(e,t,r){"use strict";r.d(t,{W:()=>i});var n=r(1687);class i{constructor(e,t){this.agentRef=e,this.ee=e?.ee,this.featureName=t,this.blocked=!1}deregisterDrain(){(0,n.x3)(this.agentRef,this.featureName)}}},7767(e,t,r){"use strict";var n=r(6154);r.d(t,["V",0,e=>n.RI&&!0===e?.privacy.cookies_enabled])},8362(e,t,r){"use strict";r.d(t,{d:()=>a});var n=r(9566),i=r(1741);class a extends i.W{agentIdentifier=(0,n.LA)(16)}},1741(e,t,r){"use strict";r.d(t,{W:()=>a});var n=r(944),i=r(4261);class a{#e(e,...t){if(this[e]!==a.prototype[e])return this[e](...t);(0,n.R)(35,e)}addPageAction(e,t){return this.#e(i.hG,e,t)}register(e){return this.#e(i.eY,e)}recordCustomEvent(e,t){return this.#e(i.fF,e,t)}setPageViewName(e,t){return this.#e(i.Fw,e,t)}setCustomAttribute(e,t,r){return this.#e(i.cD,e,t,r)}noticeError(e,t){return this.#e(i.o5,e,t)}setUserId(e,t=!1){return this.#e(i.Dl,e,t)}setApplicationVersion(e){return this.#e(i.nb,e)}setErrorHandler(e){return this.#e(i.bt,e)}addRelease(e,t){return this.#e(i.k6,e,t)}log(e,t){return this.#e("log",e,t)}start(){return this.#e("start")}finished(e){return this.#e(i.BL,e)}recordReplay(){return this.#e(i.CH)}pauseReplay(){return this.#e(i.Tb)}addToTrace(e){return this.#e(i.U2,e)}setCurrentRouteName(e){return this.#e(i.PA,e)}interaction(e){return this.#e(i.dT,e)}wrapLogger(e,t,r){return this.#e(i.Wb,e,t,r)}measure(e,t){return this.#e(i.V1,e,t)}consent(e){return this.#e(i.Pv,e)}}},4261(e,t,r){"use strict";r.d(t,["BL",0,"finished","CH",0,"recordReplay","Dl",0,"setUserId","Fw",0,"setPageViewName","PA",0,"setCurrentRouteName","Pv",0,"consent","Tb",0,"pauseReplay","U2",0,"addToTrace","V1",0,"measure","Wb",0,"wrapLogger","bt",0,"setErrorHandler","cD",0,"setCustomAttribute","dT",0,"interaction","eY",0,"register","fF",0,"recordCustomEvent","hG",0,"addPageAction","k6",0,"addRelease","nb",0,"setApplicationVersion","o5",0,"noticeError"])},1738(e,t,r){"use strict";r.d(t,{U:()=>l,Y:()=>d});var n=r(3241),i=r(9908),a=r(1863),s=r(944),o=r(3969),c=r(8362),u=r(860);function d(e,t,r,a){const d=a||r;!d||d[e]&&d[e]!==c.d.prototype[e]||(d[e]=function(){(0,i.p)(o.xV,["API/"+e+"/called"],void 0,u.K7.metrics,r.ee),(0,n.W)({drained:!!r.runtime?.activatedFeatures,type:"data",name:"api",feature:"api-"+e,data:{}});try{return t.apply(this,arguments)}catch(e){(0,s.R)(23,e)}})}function l(e,t,r,n,s){const o=e.info;null===r?delete o.jsAttributes[t]:o.jsAttributes[t]=r,(s||null===r)&&(0,i.p)("api-"+n,[(0,a.t)(),t,r],void 0,"session",e.ee)}},8374(e,t,r){r.nc=(()=>{try{return document?.currentScript?.nonce}catch(e){}return""})()},860(e,t,r){"use strict";const n="events",i="jserrors",a="browser/blobs",s="browser/logs",o={ajax:"ajax",genericEvents:"generic_events",jserrors:i,logging:"logging",metrics:"metrics",pageAction:"page_action",pageViewEvent:"page_view_event",pageViewTiming:"page_view_timing",sessionReplay:"session_replay",sessionTrace:"session_trace",softNav:"soft_navigations"},c={[o.pageViewEvent]:1,[o.pageViewTiming]:2,[o.metrics]:3,[o.jserrors]:4,[o.softNav]:5,[o.ajax]:6,[o.sessionTrace]:7,[o.sessionReplay]:8,[o.logging]:9,[o.genericEvents]:10},u={[o.pageViewEvent]:"rum",[o.pageViewTiming]:n,[o.ajax]:n,[o.softNav]:n,[o.metrics]:i,[o.jserrors]:i,[o.sessionTrace]:a,[o.sessionReplay]:a,[o.logging]:s,[o.genericEvents]:"ins"};r.d(t,["$J",0,u,"K7",0,o,"P3",0,c,"XX",0,i,"Yy",0,s,"df",0,a,"hg",0,"connect"])}};const t={};function r(n){const i=t[n];if(void 0!==i)return i.exports;const a=t[n]={exports:{}};return e[n](a,a.exports,r),a.exports}r.m=e,r.d=(e,t)=>{if(Array.isArray(t))for(var n=0;n<t.length;){var i=t[n++],a=t[n++];r.o(e,i)?0===a&&n++:0===a?Object.defineProperty(e,i,{enumerable:!0,value:t[n++]}):Object.defineProperty(e,i,{enumerable:!0,get:a})}else for(var i in t)r.o(t,i)&&!r.o(e,i)&&Object.defineProperty(e,i,{enumerable:!0,get:t[i]})},r.f={},r.e=e=>Promise.all(Object.keys(r.f).reduce((t,n)=>(r.f[n](e,t),t),[])),r.u=e=>"nr-rum-1.321.0.min.js",r.o=(e,t)=>Object.prototype.hasOwnProperty.call(e,t),(()=>{const e={},t="NRBA-1.321.0.PROD:";r.l=(n,i,a,s)=>{if(e[n])return void e[n].push(i);let o,c;if(void 0!==a){const e=document.getElementsByTagName("script");for(var u=0;u<e.length;u++){const r=e[u];if(r.getAttribute("src")==n||r.getAttribute("data-webpack")==t+a){o=r;break}}}if(!o){c=!0;var d={296:"sha512-auOJN989wXoxmQeiyRE/ZlrR6yqeuq5/WjLH1btsNQ6Iqm/RK+IqmjTuvad7oOBZyozPaWg6y2Uu2qAZy3e0cQ=="};o=document.createElement("script"),o.charset="utf-8",r.nc&&o.setAttribute("nonce",r.nc),o.setAttribute("data-webpack",t+a),o.src=n,0!==o.src.indexOf(window.location.origin+"/")&&(o.crossOrigin="anonymous"),d[s]&&(o.integrity=d[s])}e[n]=[i];const l=(t,r)=>{o.onerror=o.onload=null,clearTimeout(f);const i=e[n];if(delete e[n],o.parentNode?.removeChild(o),i?.forEach(e=>e(r)),t)return t(r)},f=setTimeout(l.bind(null,void 0,{type:"timeout",target:o}),12e4);o.onerror=l.bind(null,o.onerror),o.onload=l.bind(null,o.onload),c&&document.head.appendChild(o)}})(),r.r=e=>{Symbol.toStringTag&&Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(e,"__esModule",{value:!0})},r.p="https://js-agent.newrelic.com/",(()=>{const e={374:0,840:0};r.f.j=(t,n)=>{let i=r.o(e,t)?e[t]:void 0;if(0!==i)if(i)n.push(i[2]);else{const a=new Promise((r,n)=>i=e[t]=[r,n]);n.push(i[2]=a);const s=r.p+r.u(t),o=new Error,c=n=>{if(r.o(e,t)&&(i=e[t],0!==i&&(e[t]=void 0),i)){const e=n&&("load"===n.type?"missing":n.type),r=n&&n.target&&n.target.src;o.message="Loading chunk "+t+" failed: ("+e+": "+r+")",o.name="ChunkLoadError",o.type=e,o.request=r,i[1](o)}};r.l(s,c,"chunk-"+t,t)}};const t=(t,n)=>{let[i,a,s]=n;var o,c,u=0;if(i.some(t=>0!==e[t])){for(o in a)r.o(a,o)&&(r.m[o]=a[o]);if(s)s(r)}for(t&&t(n);u<i.length;u++)c=i[u],r.o(e,c)&&e[c]&&e[c][0](),e[c]=0},n=self["webpackChunk:NRBA-1.321.0.PROD"]=self["webpackChunk:NRBA-1.321.0.PROD"]||[];n.forEach(t.bind(null,0)),n.push=t.bind(null,n.push.bind(n))})(),(()=>{"use strict";r(8374);var e=r(8362),t=r(860);const n=Object.values(t.K7);var i=r(384),a=r(1741);var s=r(2555),o=r(981);t.K7.genericEvents,o.R.PA,o.R.UA,o.R.BP;const c={RESOURCES:"experimental.resources",REGISTER:"register"};var u=r(9300);const d=e=>{if(!e||"string"!=typeof e)return!1;try{document.createDocumentFragment().querySelector(e)}catch{return!1}return!0};var l=r(2614),f=r(944),g=r(8122);const p="[data-nr-mask]",m=e=>(0,g.a)(e,(()=>{const e={feature_flags:[],experimental:{register:!1,resources:!1,iframe_bridge:!1,iframe_domains:[]},mask_selector:"*",block_selector:"[data-nr-block]",mask_input_options:{color:!1,date:!1,"datetime-local":!1,email:!1,month:!1,number:!1,range:!1,search:!1,tel:!1,text:!1,time:!1,url:!1,week:!1,textarea:!1,select:!1,password:!0}};return{ajax:{deny_list:void 0,block_internal:!0,enabled:!0,autoStart:!0,capture_payloads:u.mo.NONE},api:{register:{get enabled(){return e.feature_flags.includes(c.REGISTER)||e.experimental.register},set enabled(t){e.experimental.register=t},duplicate_data_to_container:!1,get allow_iframe_bridge(){return e.feature_flags.includes(c.IFRAME_BRIDGE)||e.experimental.iframe_bridge},set allow_iframe_bridge(t){e.experimental.iframe_bridge=t},get iframe_domains(){return e.experimental.iframe_domains},set iframe_domains(t){Array.isArray(t)?e.experimental.iframe_domains=t:(0,f.R)(1,t)}}},browser_consent_mode:{enabled:!1},distributed_tracing:{enabled:void 0,exclude_newrelic_header:void 0,cors_use_newrelic_header:void 0,cors_use_tracecontext_headers:void 0,allowed_origins:void 0},get feature_flags(){return e.feature_flags},set feature_flags(t){e.feature_flags=t},generic_events:{enabled:!0,autoStart:!0},harvest:{interval:30},jserrors:{enabled:!0,autoStart:!0},logging:{enabled:!0,autoStart:!0},metrics:{enabled:!0,autoStart:!0},obfuscate:void 0,page_action:{enabled:!0},page_view_event:{enabled:!0,autoStart:!0},page_view_timing:{enabled:!0,autoStart:!0},performance:{capture_marks:!1,capture_measures:!1,capture_detail:!0,resources:{get enabled(){return e.feature_flags.includes(c.RESOURCES)||e.experimental.resources},set enabled(t){e.experimental.resources=t},asset_types:[],first_party_domains:[],ignore_newrelic:!0}},privacy:{cookies_enabled:!0},proxy:{assets:void 0,beacon:void 0},session:{expiresMs:l.wk,inactiveMs:l.BB},session_replay:{autoStart:!0,enabled:!1,preload:!1,sampling_rate:10,error_sampling_rate:100,collect_fonts:!1,inline_images:!1,fix_stylesheets:!0,mask_all_inputs:!0,get mask_text_selector(){return e.mask_selector},set mask_text_selector(t){d(t)?e.mask_selector="".concat(t,",").concat(p):""===t||null===t?e.mask_selector=p:(0,f.R)(5,t)},get block_class(){return"nr-block"},get ignore_class(){return"nr-ignore"},get mask_text_class(){return"nr-mask"},get block_selector(){return e.block_selector},set block_selector(t){d(t)?e.block_selector+=",".concat(t):""!==t&&(0,f.R)(6,t)},get mask_input_options(){return e.mask_input_options},set mask_input_options(t){t&&"object"==typeof t?e.mask_input_options={...t,password:!0}:(0,f.R)(7,t)}},session_trace:{enabled:!0,autoStart:!0},soft_navigations:{enabled:!0,autoStart:!0},ssl:void 0,user_actions:{enabled:!0,elementAttributes:["id","className","tagName","type"]},web_sockets:{enabled:!1}}})());var h=r(6154),v=r(9324);let b=0;const y={buildEnv:"PROD",distMethod:"CDN",version:v.xv,originTime:h.WN},_={consented:!1},w={activatedFeatures:void 0,appMetadata:{},configured:!1,get consented(){return this.session?.state?.consent||_.consented},set consented(e){_.consented=e},customTransaction:void 0,denyList:[],disabled:!1,drainRegistry:new Map,connector:void 0,harvester:void 0,v2Target:void 0,isolatedBacklog:!1,isRecording:!1,loaderType:void 0,maxBytes:3e4,obfuscator:void 0,onerror:void 0,ptid:void 0,releaseIds:{},session:void 0,timeKeeper:void 0,registeredEntities:[],jsAttributesMetadata:{bytes:0},get harvestCount(){return++b},listeningForIframeMessages:!1},R="BA";var A=r(7836),x=r(3241);const E={accountID:void 0,trustKey:void 0,agentID:void 0,licenseKey:void 0,applicationID:void 0,xpid:void 0};var S=r(9908);const k="newrelic-iframe-";function T(e,t={},n,o){let{init:c,info:u,loader_config:d,runtime:l={},exposed:f=!0}=t;if(!u){const e=(0,i.pV)();c=e.init,u=e.info,d=e.loader_config}var p;e.init=m(c||{}),e.loader_config=(p=d||{},(0,g.a)(p,E)),u.jsAttributes??={},h.bv&&(u.jsAttributes.isWorker=!0),e.info=(0,s.D)(u);const v=e.init;e.runtime??=(e=>{const t=(0,g.a)(e,w),r=Object.keys(y).reduce((e,t)=>(e[t]={value:y[t],writable:!1,configurable:!0,enumerable:!0},e),{});return Object.defineProperties(t,r)})(l),e.runtime.v2Target??={type:R,instance:e.agentIdentifier,get id(){return e.runtime.appMetadata?.agents?.[0]?.entityGuid},get attributes(){return{"entity.guid":this.id,appId:e.info.applicationID}}},v.proxy.assets&&(e=>{const t=e.startsWith("http");e+="/",r.p=t?e:"https://"+e})(v.proxy.assets),e.runtime.configured||(Object.defineProperty(e,"beacons",{get:()=>[e.info.beacon,e.info.errorBeacon,e.init.proxy.assets,e.init.proxy.beacon].filter(Boolean)}),Object.defineProperty(e.runtime,"denyList",{get:()=>[...e.init.ajax.deny_list||[],...e.init.ajax.block_internal?e.beacons:[]]}),e.runtime.ptid=e.agentIdentifier,function(e){const t=(0,i.pV)();Object.getOwnPropertyNames(a.W.prototype).forEach(r=>{const n=a.W.prototype[r];if("function"!=typeof n||"constructor"===n)return;let i=t[r];e[r]&&!1!==e.exposed&&"micro-agent"!==e.runtime?.loaderType&&(t[r]=(...t)=>{const n=e[r](...t);return i?i(...t):n})})}(e),e.runtime.loaderType=n,e.ee=A.ee.get(e.agentIdentifier),e.exposed=f,(0,x.W)({drained:!!e.runtime.activatedFeatures,type:"lifecycle",name:"initialize",feature:void 0,data:e.config}),e.init.api.register.allow_iframe_bridge&&h.gm.addEventListener("message",t=>{"string"==typeof t.data?.type&&t.data.type.startsWith(k)&&(0,S.p)("iframe-message",[t],void 0,"IFRAME",e.ee)}),e.runtime.configured=!0)}var j=r(1863),P=r(4261),N=r(1738);var O=r(1687),M=r(4234),I=r(5289),D=r(7767);function V(e){return!!(0,i.dV)().o.MO&&(0,D.V)(e)&&!0===e?.session_trace.enabled}var W=r(6389),B=r(7699);const C=new WeakSet,K=new WeakMap;class U extends M.W{constructor(e,t){super(e,t),this.abortHandler=void 0,this.featAggregate=void 0,this.loadedSuccessfully=void 0,this.onAggregateImported=new Promise(e=>{this.loadedSuccessfully=e}),this.deferred=Promise.resolve(),!1===e.init[this.featureName].autoStart?this.deferred=new Promise((t,r)=>{this.ee.on("manual-start-all",(0,W.J)(()=>{(0,O.Ak)(e,this.featureName),t()}))}):(0,O.Ak)(e,t)}importAggregator(e,t,n={}){if(this.featAggregate)return;const i=async()=>{if(await this.deferred,this.#t(e),!(0,s.f)(e.info))return(0,f.R)(43),e.ee.abort(),void this.loadedSuccessfully(!1);try{await async function(e,t,n){if(K.has(e))return K.get(e);const i=(async()=>{if((0,D.V)(e.init))try{const{setupAgentSession:t}=await r.e(296).then(r.bind(r,8391));t(e)}catch(e){(0,f.R)(20,e),t.emit("internal-error",[e]),(0,S.p)(B.qh,[e],void 0,n,t)}if(e.init.api.register.allow_iframe_bridge)try{const{setupIframeMFEMessageListener:t}=await Promise.resolve().then(function(){const e=new Error("Cannot find module '../../loaders/configure/iframe-message-handler'");throw e.code="MODULE_NOT_FOUND",e});t(e)}catch(e){(0,f.R)(23,e)}const[{Connector:i},{Harvester:a}]=await Promise.all([r.e(296).then(r.bind(r,6589)),r.e(296).then(r.bind(r,5237))]);e.runtime.connector=new i(e),e.runtime.harvester=new a(e);const s=Object.values(e.features).filter(t=>e.runtime.drainRegistry.has(t.featureName));Promise.all(s.map(e=>e.onAggregateImported)).then(()=>e.runtime.harvester.startTimer())})();K.set(e,i),await i}(e,this.ee,this.featureName)}catch(e){return(0,f.R)(79,e),this.ee.abort(),void this.loadedSuccessfully(!1)}try{if(!this.#r(this.featureName,e.runtime.session,e.init))return this.abortHandler?.(),(0,O.Ze)(this.agentRef,this.featureName),void this.loadedSuccessfully(!1);const{Aggregate:r}=await t();this.featAggregate=new r(e,n),e.runtime.harvester.initializedAggregates.push(this.featAggregate),this.loadedSuccessfully(!0)}catch(e){(0,f.R)(34,e),this.abortHandler?.(),(0,O.Ze)(this.agentRef,this.featureName,!0),this.loadedSuccessfully(!1)}};h.RI?(0,I.GG)(()=>i(),!0):i()}#r(e,r,n){if(this.blocked)return!1;switch(e){case t.K7.sessionReplay:return V(n)&&!!r;case t.K7.sessionTrace:return!!r;default:return!0}}#t(e){if(!C.has(e)&&(C.add(e),!(0,s.f)(e.info))){const t=(0,i.pV)();let r={...t.info?.jsAttributes};try{r={...r,...e.info?.jsAttributes}}catch(e){}T(e,{...t,info:{...t.info,jsAttributes:r},runtime:e.runtime},e.runtime.loaderType)}}}var L=r(6630);class F extends U{static featureName=L.T;constructor(e){var t;super(e,L.T),this.setupInspectionEvents(),t=e,(0,N.Y)(P.Fw,function(e,r){"string"==typeof e&&("/"!==e.charAt(0)&&(e="/"+e),t.runtime.customTransaction=(r||"http://custom.transaction")+e,(0,S.p)("api-"+P.Fw,[(0,j.t)()],void 0,void 0,t.ee))},t),this.importAggregator(e,()=>e.init.feature_flags.includes("rum_v2")?r.e(296).then(r.bind(r,908)):r.e(296).then(r.bind(r,7927)))}setupInspectionEvents(){const e=(e,t)=>{e&&(0,x.W)({timeStamp:e.timeStamp,loaded:"complete"===e.target.readyState,type:"window",name:t,data:e.target.location+""})};(0,I.sB)(t=>{e(t,"DOMContentLoaded")}),(0,I.GG)(t=>{e(t,"load")}),(0,I.Qr)(t=>{e(t,"navigate")}),this.ee.on(l.tS.UPDATE,(e,t)=>{(0,x.W)({type:"lifecycle",name:"session",data:t})})}}class G extends e.d{constructor(e){var t;(super(),h.gm)?(this.features={},(0,i.bQ)(this.agentIdentifier,this),this.desiredFeatures=new Set(e.features||[]),this.desiredFeatures.add(F),T(this,e,e.loaderType||"agent"),t=this,(0,N.Y)(P.cD,function(e,r,n=!1){if("string"==typeof e){if(["string","number","boolean"].includes(typeof r)||null===r)return(0,N.U)(t,e,r,P.cD,n);(0,f.R)(40,typeof r)}else(0,f.R)(39,typeof e)},t),function(e){(0,N.Y)(P.Dl,function(t,r=!1){if("string"!=typeof t&&null!==t)return void(0,f.R)(41,typeof t);const n=e.info.jsAttributes["enduser.id"];r&&null!=n&&n!==t?(0,S.p)("api-setUserIdAndResetSession",[t],void 0,"session",e.ee):(0,N.U)(e,"enduser.id",t,P.Dl,!0)},e)}(this),function(e){(0,N.Y)(P.nb,function(t){if("string"==typeof t||null===t)return(0,N.U)(e,"application.version",t,P.nb,!1);(0,f.R)(42,typeof t)},e)}(this),function(e){(0,N.Y)("start",function(){e.ee.emit("manual-start-all")},e)}(this),function(e){(0,N.Y)(P.Pv,function(t=!0){if("boolean"==typeof t){if((0,S.p)("api-"+P.Pv,[t],void 0,"session",e.ee),e.runtime.consented=t,t){const t=e.features.page_view_event;t.onAggregateImported.then(e=>{const r=t.featAggregate;e&&!r.sentRum&&r.sendRum?.()})}}else(0,f.R)(65,typeof t)},e)}(this),this.run()):(0,f.R)(21)}get config(){return{info:this.info,init:this.init,loader_config:this.loader_config,runtime:this.runtime}}get api(){return this}run(){try{const e=function(e){const t={};return n.forEach(r=>{t[r]=!!e[r]?.enabled}),t}(this.init),r=[...this.desiredFeatures],i=this.init.feature_flags.includes("rum_v2");r.sort((e,r)=>t.P3[e.featureName]-t.P3[r.featureName]),r.forEach(r=>{if(!e[r.featureName]&&(i||r.featureName!==t.K7.pageViewEvent))return;const n=function(e){switch(e){case t.K7.ajax:return[t.K7.jserrors];case t.K7.sessionTrace:return[t.K7.ajax,t.K7.pageViewEvent];case t.K7.sessionReplay:return[t.K7.sessionTrace];case t.K7.pageViewTiming:return[t.K7.pageViewEvent];default:return[]}}(r.featureName).filter(e=>!(e in this.features));n.length>0&&(0,f.R)(36,{targetFeature:r.featureName,missingDependencies:n}),this.features[r.featureName]=new r(this)})}catch(e){(0,f.R)(22,e);for(const e in this.features)this.features[e].abortHandler?.();const t=(0,i.Zm)();delete t.initializedAgents[this.agentIdentifier]?.features,delete this.sharedAggregator;return t.ee.get(this.agentIdentifier).abort(),!1}}}var H=r(2843),z=r(782);class Y extends U{static featureName=z.T;constructor(e){super(e,z.T),h.RI&&((0,H.u)(()=>(0,S.p)("docHidden",[(0,j.t)()],void 0,z.T,this.ee),!0),(0,H.G)(()=>(0,S.p)("winPagehide",[(0,j.t)()],void 0,z.T,this.ee)),this.importAggregator(e,()=>r.e(296).then(r.bind(r,9981))))}}var Z=r(3969);class q extends U{static featureName=Z.TZ;constructor(e){super(e,Z.TZ),this.importAggregator(e,()=>r.e(296).then(r.bind(r,9623)))}}new G({features:[F,Y,q],loaderType:"lite"})})()})();</script>
+<meta name="description" content="The Medicaid Purchase Plan provides health care coverage for certain people with a disability. Learn more." />
+<link rel="canonical" href="https://www.dhs.wisconsin.gov/medicaid/medicaid-purchase-plan.htm" />
+<link rel="shortlink" href="https://www.dhs.wisconsin.gov/node/175" />
+<meta property="og:site_name" content="Wisconsin Department of Health Services" />
+<meta property="og:type" content="Article" />
+<meta property="og:url" content="https://www.dhs.wisconsin.gov/medicaid/medicaid-purchase-plan.htm" />
+<meta property="og:title" content="Medicaid Purchase Plan" />
+<meta property="og:description" content="The Medicaid Purchase Plan provides health care coverage for certain people with a disability. Learn more." />
+<meta property="og:updated_time" content="2026-08-13T16:51:36-05:00" />
+<meta property="article:published_time" content="2014-10-09T20:55:34-05:00" />
+<meta property="article:modified_time" content="2026-08-13T16:51:36-05:00" />
+<meta name="Generator" content="Drupal 10 (https://www.drupal.org)" />
+<meta name="MobileOptimized" content="width" />
+<meta name="HandheldFriendly" content="true" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="shortcut icon" href="/themes/custom/wisdhs/dist/images/favicons/favicon.ico" type="image/ico" />
+    <title>Medicaid Purchase Plan | Wisconsin Department of Health Services</title>
+    <link rel="stylesheet" media="all" href="/sites/default/files/css/css_4W4C2PhpYE7vp4hyjYhH36b-GLniDY37qM2yk3Xt_V4.css?delta=0&amp;language=en&amp;theme=wisdhs&amp;include=eJyNykEOwyAMRNELIVj1PMiAm7gYjDAo6e2rqomUXbqbN_oxY6Ih_eEbz4WqbxCzp5qwDh9YYnZXmCgdXeqzAVt4wW5wH0w1n99B85Q6YEOVgu6y7YbhS7WhQ01633VcJkO_D3Wl8kclTMnoWwcWF0DRbKRpVbewBOBTbQameMj_5HSFgh8nd3h8" />
+<link rel="stylesheet" media="all" href="/sites/default/files/css/css_3sbrjclf4pnopgIIPygs_ObBDTdPVKZAl1zJY3CsRHs.css?delta=1&amp;language=en&amp;theme=wisdhs&amp;include=eJyNykEOwyAMRNELIVj1PMiAm7gYjDAo6e2rqomUXbqbN_oxY6Ih_eEbz4WqbxCzp5qwDh9YYnZXmCgdXeqzAVt4wW5wH0w1n99B85Q6YEOVgu6y7YbhS7WhQ01633VcJkO_D3Wl8kclTMnoWwcWF0DRbKRpVbewBOBTbQameMj_5HSFgh8nd3h8" />
+
+    <script type="application/json" data-drupal-selector="drupal-settings-json">{"path":{"baseUrl":"\/","pathPrefix":"","currentPath":"node\/175","currentPathIsAdmin":false,"isFront":false,"currentLanguage":"en"},"pluralDelimiter":"\u0003","suppressDeprecationErrors":true,"gtag":{"tagId":"","consentMode":false,"otherIds":[],"events":[],"additionalConfigInfo":[]},"ajaxPageState":{"libraries":"eJyNkUFuxCAMRS8UhVWP0m6RAQ9xY3CESTK5fRk1VNN0MZUQ8vt8W7bxMwaqUt7swmukbBfws6UcMFfrWPxsnmHAe2XKswllXYDHE4eb5Ao7qiQ0T_G4o3ugjq5ADvraVzCuDOW1USdK_3AJUxiiSGS0FaKJ7bryCJ9w_y2mQQ-tmIwDxWEnDZO2uK2mSjtLlyKLA-6UxFErodQWBltXl9Ux-ZNsy1Cl22Eu_PN-ttH2pQwVzVXoxu-yRidIfzSqSGkpsiFk4KOS124p7b8L-mp6YIO0rNY1g07dtbURxJKXfPb5XompHh8P_QuRF-Aq","theme":"wisdhs","theme_token":null},"ajaxTrustedUrl":{"\/search":true},"gtm":{"tagId":null,"settings":{"data_layer":"dataLayer","include_environment":false},"tagIds":["GTM-KTKX5Z72"]},"multiselect":{"widths":250},"data":{"extlink":{"extTarget":false,"extTargetAppendNewWindowDisplay":false,"extTargetAppendNewWindowLabel":"(opens in a new window)","extTargetNoOverride":false,"extNofollow":false,"extTitleNoOverride":true,"extNoreferrer":true,"extFollowNoOverride":false,"extClass":"ext","extLabel":"(opens external link)","extImgClass":false,"extSubdomains":false,"extExclude":"(livestream\\.com)|(dhswi.zoom\\.com)|(dhswi.zoomgov\\.com)|(vimeo\\.com)|(www.vimeo\\.com)|(www.youtube\\.com)|(youtu\\.be)|((dhs|access|emhandbooks).wisconsin.gov)|access.wi.gov|(wi-dhs.maps.arcgis.com)|(dhsapps.health.wisconsin.gov)|(beta.dhs.wisconsin\\.gov)|(dev.dhs.wisconsin\\.gov)|(qa.dhs.wisconsin\\.gov)|(dhsinternetode2.prod.acquia-sites\\.com)|(dhsinternetode3.prod.acquia-sites\\.com)|(dhsinternetode4.prod.acquia-sites\\.com)|(dhsinternetode5.prod.acquia-sites\\.com)|(dhsinternetode6.prod.acquia-sites\\.com)","extInclude":"","extCssExclude":".extsite-exception, .usa-button, .c-site-footer, .c-site-footer--dhs, .c-site-header, .site-header--dhs","extCssInclude":"","extCssExplicit":"","extAlert":false,"extAlertText":"This link will take you to an external web site. We are not responsible for their content.","extHideIcons":false,"mailtoClass":"mailto","telClass":"tel","mailtoLabel":"(opens external email)","telLabel":"(link is a phone number)","extUseFontAwesome":true,"extIconPlacement":"append","extPreventOrphan":true,"extFaLinkClasses":"fa fa-external-link-alt","extFaMailtoClasses":"fa fa-regular fa-envelope","extAdditionalLinkClasses":"","extAdditionalMailtoClasses":"","extAdditionalTelClasses":"","extFaTelClasses":"fa fa-phone","allowedDomains":[],"extExcludeNoreferrer":""}},"gesso":{"backToTopThreshold":"200","backToTopSmoothScroll":1},"wisdhs_google_translate":{"skip_translation_words":["Bad River Band of Lake Superior Chippewa","Forest County Potawatomi","Ho-Chunk Nation","Lac Courte Oreilles Band of Lake Superior Chippewa","Lac du Flambeau Band of Lake Superior Chippewa","Menominee Tribe of Wisconsin","Oneida Nation","Red Cliff Band of Lake Superior Chippewa","Sokaogon Chippewa (Mole Lake)","St. Croix Chippewa","Stockbridge-Munsee","Statewide","Adams County","Ashland County","Barron County","Bayfield County","Brown County","Buffalo County","Burnett County","Calumet County","Chippewa County","Clark County","Columbia County","Crawford County","Dane County","Dodge County","Door County","Douglas County","Dunn County","Eau Claire County","Florence County","Fond du Lac County","Forest County","Grant County","Green County","Green Lake County","Iowa County","Iron County","Jackson County","Jefferson County","Juneau County","Kenosha County","Kewaunee County","La Crosse County","Lafayette County","Langlade County","Lincoln County","Manitowoc County","Marathon County","Marinette County","Marquette County","Menominee County","Milwaukee County","Monroe County","Oconto County","Oneida County","Outagamie County","Ozaukee County","Pepin County","Pierce County","Polk County","Portage County","Price County","Racine County","Richland County","Rock County","Rusk County","Sauk County","Sawyer County","Shawano County","Sheboygan County","St. Croix County","Taylor County","Trempealeau County","Vernon County","Vilas County","Walworth County","Washburn County","Washington County","Waukesha County","Waupaca County","Waushara County","Winnebago County","Wood County","2009 Wisconsin Act 146","2009 Wisconsin Act 198","2013 Wisconsin Act 37","ADRC","Adult Lead Program","Aging and Disability Resource Centers","AIDS\/HIV Drug Assistance and Insurance Assistance Programs","A-Z","BadgerCare Plus","Birth Defect Prevention and Surveillance Program","Birth to 3 Program","Care4Kids Program","Caretaker Supplement","CBRF","Central Wisconsin Center","Child Psychiatry Consultation Program","Children and Youth with Special Health Care Needs program","Children\u0027s Community Options Program","Children\u0027s Long-Term Support Program","Children\u2019s Community Options Program","Children\u2019s Long-Term Support Program","Chronic Disease Prevention Program","Client Rights Office","Commodity Supplemental Food Program","Community Support Programs","Community-Based Residential Facilities","Conditional Release Program","Coverdell Stroke Program","COVID-19","CYSHCN","Department of Health Services","Disability Determination Bureau","Division of Care and Treatment Services","Division of Enterprise Services","Division of Hearings and Appeals","Division of Medicaid Services","Division of Public Health","Division of Quality Assurance","eICS","Elderly Nutrition Program","EMResource","EMTrack","Estate Recovery Program","Family Care","Family Care Partnership Program","Family Caregiver Support Programs","Family Planning Only Services","Fight the Bite!","FoodShare","FoodShare Employment and Training","ForwardHealth","Foster Grandparent Program","FSET","Health and Employment Counseling Program","HealthCheck","HIPAA","HIV Program","Hub and Spoke Health Home Pilot Program","Injury and Violence Prevention Program","Institutional Medicaid","Intoxicated Driver Program","IRIS","IRIS (Include, Respect, I Self-Direct)","Katie Beckett Medicaid","Lead-Safe Homes Program","Long-Term Care Insurance Partnership","Maternal and Child Health (MCH) Program","MCH","Medicaid","Medicaid Promoting Interoperability Program","Medicaid Purchase Plan","Medicaid Savings Program","Mendota Juvenile Treatment Center","Mendota Mental Health Institute","Minority Health Program","Music and Memory Program","MyACCESS","Newborn Blood Screening Program","Northern Wisconsin Center","Office of Health Equity","Office of Legal Counsel","Office of Policy Initiatives and Budget","Office of the Inspector General","Office of the Secretary","Oral Health Program","Organ and Tissue Donation Program","Outpatient Competency Examination Program","Outpatient Competency Restoration Program","PACE","Pandemic Electronic Benefit Transfer Program","Primary Care Program","Program of All-Inclusive Care for the Elderly","Radioactive Materials Program","Real Talks","Refugee Health Program","Resilient Wisconsin","Retired and Senior Volunteer Program","Sand Ridge Secure Treatment Center","Senior Companion Program","Senior Farmers Market Nutrition Program","SeniorCare","SeniorCare Prescription Drug Assistance Program","SHIP","Small Talks","SNAP","Social Security Administration","Southern Wisconsin Center","SSI","SSI-Related Medicaid","State Disability Determination Bureau","Statewide Genetics Program","Supervised Release Program","Supplemental Nutrition Assistance Program-Education","Supplemental Security Income","Supplemental Security Income (SSI)","TAP","TEFAP","Telecommunication Assistance Program","The Emergency Food Assistance Program","Tobacco is Changing Program","Tribal Affairs Office","Tuberculosis Program","Vaccines for Children Program","Volunteer for the State Health Insurance Assistance Program","Volunteer Health Care Program","WCRS: Wisconsin-Specific Abstract Plus","Well Badger Resource Center","Well Badger","WIC","WIC Farmers Market Nutrition Program","Winnebago Mental Health Institute","WisCaregiver Careers Program","Wisconsin Conrad 30 Waiver","Wisconsin Emergency Assistance Volunteer Registry (WEAVR)","Wisconsin Funeral and Cemetery Aids Program","Wisconsin Healthcare Emergency Preparedness Program","Wisconsin Medicaid for the Elderly, Blind or Disabled","Wisconsin Resource Center","Wisconsin Senior Employment Program","Wisconsin Site Evaluation Program","Wisconsin Wayfinder","Wisconsin Well Woman Medicaid","Wisconsin Well Woman Program","Wisconsin\u2019s Assistive Technology Program","WISE","WISH (Wisconsin Interactive Statistics on Health) Query System","WisTech","Wraparound Milwaukee"],"skip_translation_query_selectors":["#views-exposed-form-find-my-local-adrc-tribal-adrs-paragraph-block-local-adrc--2 .js-form-item-county .usa-combo-box__list","#views-exposed-form-find-my-local-adrc-tribal-adrs-paragraph-block-local-adrs--2 .js-form-item-tribe .usa-combo-box__list","#edit-field-adrc-resource-service-area ul.multiselect-combo-box__list"]},"user":{"uid":0,"permissionsHash":"60ecf58883e5abc32d0e8542f6ffe74d511e012dd7f45beacfb8e6ddb90356ca"}}</script>
+<script src="/sites/default/files/js/js_MAsq1UqloJvUpXAYeeNZSmxqAk0aMCjC1P45F8SZAKE.js?scope=header&amp;delta=0&amp;language=en&amp;theme=wisdhs&amp;include=eJxdjmEOgzAIhS9k7Gm2vw22rDKxmIJOb78us0tmQgjv4xEe7saUJxfLugD3-JVdEkmM3iC5VNtV9_CE_R_O3Ys0juoGCJM3qbU0lFgG4KZmGaieKUXMsJ3UV48qPQ530b_9-axAVgZDdwXNuKwDU3BKhjQvRTaEDHwYBW2WgpEKBnNt8FHqVc3EoGNzbTWgeAqSz0w3IyY77h_-BjfTfE4"></script>
+<script src="/modules/contrib/google_tag/js/gtag.js?tkrqqo"></script>
+<script src="/modules/contrib/google_tag/js/gtm.js?tkrqqo"></script>
+
+  
+                                <script>!function(e){var n="https://s.go-mpulse.net/boomerang/";if("False"=="True")e.BOOMR_config=e.BOOMR_config||{},e.BOOMR_config.PageParams=e.BOOMR_config.PageParams||{},e.BOOMR_config.PageParams.pci=!0,n="https://s2.go-mpulse.net/boomerang/";if(window.BOOMR_API_key="9CM6M-GFRXS-H84EX-PPBEE-Y5XMX",function(){function e(){if(!i){var e=document.createElement("script");e.id="boomr-scr-as",e.src=window.BOOMR.url,e.async=!0,o.parentNode.appendChild(e),i=!0}}function t(e){i=!0;var n,t,a,r,d=document,O=window;if(window.BOOMR.snippetMethod=e?"if":"i",t=function(e,n){var t=d.createElement("script");t.id=n||"boomr-if-as",t.src=window.BOOMR.url,BOOMR_lstart=(new Date).getTime(),e=e||d.body,e.appendChild(t)},!window.addEventListener&&window.attachEvent&&navigator.userAgent.match(/MSIE [67]\./))return window.BOOMR.snippetMethod="s",void t(o.parentNode,"boomr-async");a=document.createElement("IFRAME"),a.src="about:blank",a.title="",a.role="presentation",a.loading="eager",r=(a.frameElement||a).style,r.width=0,r.height=0,r.border=0,r.display="none",o.parentNode.appendChild(a);try{O=a.contentWindow,d=O.document.open()}catch(_){n=document.domain,a.src="javascript:var d=document.open();d.domain='"+n+"';void(0);",O=a.contentWindow,d=O.document.open()}if(n)d._boomrl=function(){this.domain=n,t()},d.write("<bo"+"dy onload='document._boomrl();'>");else if(O._boomrl=function(){t()},O.addEventListener)O.addEventListener("load",O._boomrl,!1);else if(O.attachEvent)O.attachEvent("onload",O._boomrl);d.close()}function a(e){window.BOOMR_onload=e&&e.timeStamp||(new Date).getTime()}if(!window.BOOMR||!window.BOOMR.version&&!window.BOOMR.snippetExecuted){window.BOOMR=window.BOOMR||{},window.BOOMR.snippetStart=(new Date).getTime(),window.BOOMR.snippetExecuted=!0,window.BOOMR.snippetVersion=12,window.BOOMR.url=n+"9CM6M-GFRXS-H84EX-PPBEE-Y5XMX";var o=document.currentScript||document.getElementsByTagName("script")[0],i=!1,r=document.createElement("link");if(r.relList&&"function"==typeof r.relList.supports&&r.relList.supports("preload")&&"as"in r)window.BOOMR.snippetMethod="p",r.href=window.BOOMR.url,r.rel="preload",r.as="script",r.addEventListener("load",e),r.addEventListener("error",function(){t(!0)}),setTimeout(function(){if(!i)t(!0)},3e3),BOOMR_lstart=(new Date).getTime(),o.parentNode.appendChild(r);else t(!1);if(window.addEventListener)window.addEventListener("load",a,!1);else if(window.attachEvent)window.attachEvent("onload",a)}}(),"".length>0)if(e&&"performance"in e&&e.performance&&"function"==typeof e.performance.setResourceTimingBufferSize)e.performance.setResourceTimingBufferSize();!function(){if(BOOMR=e.BOOMR||{},BOOMR.plugins=BOOMR.plugins||{},!BOOMR.plugins.AK){var n=""=="true"?1:0,t="",a="2c7i4jixah7nw2u5zg5q-f-15ad7fc8e-clientnsv4-s.akamaihd.net",o="false"=="true"?2:1,i={"ak.v":"41","ak.cp":"1436694","ak.ai":parseInt("881505",10),"ak.ol":"0","ak.cr":9,"ak.ipv":4,"ak.proto":"http/1.1","ak.rid":"bd71617c","ak.r":54388,"ak.a2":n,"ak.m":"b","ak.n":"ff","ak.cport":57952,"ak.gh":"2.20.68.77","ak.quicv":"","ak.tlsv":"tls1.3","ak.0rtt":"","ak.0rtt.ed":"","ak.csrc":"-","ak.acc":"bbr","ak.t":"1788725691","ak.ak":"hOBiQwZUYzCg5VSAfCLimQ==ROlMr8QURUI/NhRzEAWsIgjNe/7xAAmztosR5neYJKck2o8p0wvctBXSO5JajVYXue29wLh7q8M25pExvHKfIAeAexkJd3U7tRCWl1JbONDURB5JQOYqXAqPJIn+bq8DDmdLAB+mIX5QyLenatniMzUmUthk+B8GEPAo1aJdIoxH4bRgMVuzqIESYqJ90vc+rKP01PJ68JGvMRhdDjf3M7ngB5UXTrIxydSY99aTgYErriZX/+K4+Z5Rcoia1oZjMhDWlP8X5i73NLDIbdoNYeBy/4UrOjrgc9kYrdCmy6PBjoeRgEVlG/fa2mxhw55ssOBbivsyRwCjuDzpbRUtS7WOnv6kxM4FfKc9SW53gzgxxv7RpsPLJjnUL+4WUseuozY09LJQMdZDSirrazkIPpM9Pr4JXku+ZHgEjP/wYYw=","ak.pv":"41","ak.dpoabenc":"","ak.tf":o};if(""!==t)i["ak.ruds"]=t;var r={i:!1,av:function(n){var t="http.initiator";if(n&&(!n[t]||"spa_hard"===n[t]))i["ak.feo"]=void 0!==e.aFeoApplied?1:0,BOOMR.addVar(i)},rv:function(){var e=["ak.cport","ak.cr","ak.csrc","ak.gh","ak.ipv","ak.m","ak.n","ak.ol","ak.proto","ak.quicv","ak.tlsv","ak.0rtt","ak.0rtt.ed","ak.r","ak.acc","ak.t","ak.tf"];BOOMR.removeVar(e)}};BOOMR.plugins.AK={akVars:i,akDNSPreFetchDomain:a,init:function(){if(!r.i){var e=BOOMR.subscribe;e("before_beacon",r.av,null,null),e("onbeacon",r.rv,null,null),r.i=!0}return this},is_complete:function(){return!0}}}}()}(window);</script></head>
+  <body  class="path-node not-front node-page node-page--node-type-page" id="top">
+    
+<div  class="c-skiplinks">
+  <a href="#main-content" class="c-skiplinks__link u-visually-hidden u-focusable">Skip to main content</a>
+</div>
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KTKX5Z72"
+                  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+      <div class="dialog-off-canvas-main-canvas" data-off-canvas-main-canvas>
+    
+
+
+
+<div  class="site public">
+  <div class="mobile-toggle-buttons">
+    
+<button  class="usa-tooltip c-button button--large-font-toggle" title="Toggle between default and larger font"
+     data-position="left"    aria-label="Toggle Larger Font"    aria-pressed="false"    >
+              <i class="fa fa-font"></i>
+      </button>
+
+    
+<button  class="usa-tooltip c-button button--high-contrast-toggle" title="Toggle between default and high contrast"
+     data-position="left"    aria-label="Toggle High Contrast"    aria-pressed="false"    >
+              <i class="fa fa-circle-half-stroke"></i>
+      </button>
+
+  </div>
+  <div  class="default default--public">
+      
+  
+    
+
+<div  class="c-site-header site-header--public">
+     
+
+      
+<section  class="usa-banner site-header--public" aria-label="Official government website">
+  <div class="usa-accordion">  <header class="usa-banner__header">
+    <div class="usa-banner__inner">
+      <div class="grid-col-auto">
+        <img aria-hidden="true" class="usa-banner__header-flag" src="/themes/custom/wisdhs/dist/images/wi-state-flag.png" 
+          alt="State of Wisconsin flag"
+          width="24"
+          height="16"
+        />
+      </div>
+      <div class="grid-col-fill tablet:grid-col-auto" aria-hidden="true">
+        <p class="usa-banner__header-text">An official website of the State of Wisconsin</p>
+              <p class="usa-banner__header-action">Here’s how you know</p></div>
+        <button type="button" class="usa-accordion__button usa-banner__button" aria-expanded="false" aria-controls="gov-banner">
+          <span class="usa-banner__button-text">Here’s how you know</span>
+        </button>
+          </div>
+  </header>
+      <div class="usa-banner__content usa-accordion__content" id="gov-banner" hidden>
+      <div class="grid-row grid-gap-lg">
+                  <div class="usa-banner__guidance tablet:grid-col-6">
+            <img class="usa-banner__icon usa-media-block__img" src="/themes/custom/wisdhs/dist/images/icon-dot-gov.svg" alt="Dot gov">
+            <div class="usa-media-block__body">
+              <p>
+                <strong>Official websites use .gov</strong>
+                <br> A <strong>.gov</strong> website belongs to an official government organization in the United States.
+              </p>
+            </div>
+          </div>
+                  <div class="usa-banner__guidance tablet:grid-col-6">
+            <img class="usa-banner__icon usa-media-block__img" src="/themes/custom/wisdhs/dist/images/icon-https.svg" alt="HTTPS">
+            <div class="usa-media-block__body">
+              <p>
+                <strong>Secure .gov websites use HTTPS</strong>
+                <br> A <strong>lock</strong> (<span class="icon-lock"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="64" viewBox="0 0 52 64" class="usa-banner__lock-image" role="img" aria-labelledby="banner-lock-description"><title id="banner-lock-title">Lock</title><desc id="banner-lock-description">Locked padlock icon</desc><path fill="#000000" fill-rule="evenodd" d="M26 0c10.493 0 19 8.507 19 19v9h3a4 4 0 0 1 4 4v28a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4V32a4 4 0 0 1 4-4h3v-9C7 8.507 15.507 0 26 0zm0 8c-5.979 0-10.843 4.77-10.996 10.712L15 19v9h22v-9c0-6.075-4.925-11-11-11z"/></svg></span>) or <strong>https://</strong> means you’ve safely connected to the .gov website. Share sensitive information only on official, secure websites.
+              </p>
+            </div>
+          </div>
+              </div>
+    </div>
+  </div>
+  </section>
+      
+
+
+
+<div class="usa-overlay"></div>
+<header  class="usa-header usa-header--extended usa-header--megamenu">
+  
+    
+<div class="usa-navbar">
+                     
+
+<div  id="block-wisdhs-branding" class="usa-logo site-header__logo">
+  <em class="usa-logo__text">
+    <a href="/" title="Wisconsin Department of Health Services" >
+      <img id="usa-logo__img" src="/sites/default/files/dhs-logo.png" 
+        alt="Wisconsin Department of Health Services"
+        width="325"
+        height="63"
+      />
+    </a>
+      </em>
+</div>
+
+     
+      
+                      
+
+<div class="usa-nav__secondary">
+  <ul class="usa-nav__secondary-links">
+                <li class="usa-nav__secondary-item">
+        <a href="/data/topics/a">
+          A-Z Index
+        </a>
+      </li>
+            <li class="usa-nav__secondary-item">
+        <a href="/job-opps/index.htm">
+          Careers
+        </a>
+      </li>
+                  <li class="usa-nav__secondary-item">
+          
+
+
+
+
+
+
+  
+  
+    
+
+  
+      
+
+
+<div  class="usa-language-container language-selector">
+  
+    <ul class="usa-language__primary usa-accordion">
+      <li class="usa-language__primary-item">
+        <button type="button"
+                class="usa-button usa-button--unstyled usa-language__link"
+                 role="button"                 aria-expanded="false"
+                aria-controls="language-options-desktop">  
+          Languages
+        </button>
+        
+                  <ul id="language-options-desktop" class="usa-language__submenu" hidden translate="no">
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="ar" xml:lang="ar">
+                      <strong>العربية</strong> (Arabic)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="en" xml:lang="en">
+                      <strong>English</strong> (English)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="es" xml:lang="es">
+                      <strong>Español</strong> (Spanish)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="fr" xml:lang="fr">
+                      <strong>Français</strong> (French)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="hi" xml:lang="hi">
+                      <strong>हिन्दी</strong> (Hindi)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="hmn" xml:lang="hmn">
+                      <strong>Hmoob</strong> (Hmong)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="ln" xml:lang="ln">
+                      <strong>Lingála</strong> (Lingala)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="lo" xml:lang="lo">
+                      <strong>ລາວ</strong> (Lao)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="ms" xml:lang="ms">
+                      <strong>Bahasa Melayu</strong> (Malay)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="my" xml:lang="my">
+                      <strong>ဗမာစာ</strong> (Myanmar (Burmese))
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="pa" xml:lang="pa">
+                      <strong>ਪੰਜਾਬੀ</strong> (Punjabi)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="ps" xml:lang="ps">
+                      <strong>پښتو</strong> (Pashto)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="ru" xml:lang="ru">
+                      <strong>Русский</strong> (Russian)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="rw" xml:lang="rw">
+                      <strong>Kinyarwanda</strong> (Kinyarwanda)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="so" xml:lang="so">
+                      <strong>Soomaaliga</strong> (Somali)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="sq" xml:lang="sq">
+                      <strong>Shqip</strong> (Albanian)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="sw" xml:lang="sw">
+                      <strong>Kiswahili</strong> (Swahili)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="uk" xml:lang="uk">
+                      <strong>Українська</strong> (Ukrainian)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="ur" xml:lang="ur">
+                      <strong>اردو</strong> (Urdu)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="vi" xml:lang="vi">
+                      <strong>Tiếng Việt</strong> (Vietnamese)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="zh-CN" xml:lang="zh-CN">
+                      <strong>简体中文</strong> (Chinese (Simplified))
+                    </span>
+                                  </a>
+              </li>
+                                  </ul>
+              </li>
+    </ul>
+  </div>
+
+  
+  
+  
+
+
+
+
+
+      </li>
+      </ul>
+
+      
+
+  <section class="search__section" aria-label="Search the site">
+  <form  action="/search" method="get" accept-charset="UTF-8" class="usa-search usa-search--small" id="dhs-search-form" role="search">
+    <label class="usa-sr-only" for="dhs-search-input">
+      Search
+    </label>
+    <input class="usa-input" id="dhs-search-input" type="search" name="search" placeholder="I&#039;m looking for...">
+    <button class="usa-button" type="submit" id="edit-dhs-search-button">
+            <img
+          src="/themes/custom/wisdhs/dist/images/usa-icons-bg/search--white.svg"
+          class="usa-search__submit-icon"
+          alt="Search"
+      >
+    </button>
+  </form>
+  </section>
+
+
+  
+</div>
+
+
+     
+              <button type="button" class="usa-menu-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" class="menu-btn--icon" viewBox="0 0 38 24" fill="currentColor" role="presentation">
+        <path d="M0 23.9615V21.6925H19.5575V23.9615H0ZM0 13.8075V11.5385H9.4615V13.8075H0ZM0 3.654V1.3845H9.4615V3.654H0ZM36.4 24L28.4385 16.096C27.6358 16.7243 26.7665 17.202 25.8305 17.529C24.8948 17.8557 23.9257 18.019 22.923 18.019C20.417 18.019 18.281 17.1435 16.515 15.3925C14.7487 13.6412 13.8655 11.5135 13.8655 9.0095C13.8655 6.50583 14.749 4.37833 16.516 2.627C18.2833 0.875665 20.4205 0 22.9275 0C25.4348 0 27.5705 0.875665 29.3345 2.627C31.0985 4.37833 31.9805 6.50267 31.9805 9C31.9805 10.0027 31.8172 10.9718 31.4905 11.9075C31.1635 12.8435 30.6795 13.7063 30.0385 14.496L38 22.4L36.4 24ZM22.9115 15.75C24.8045 15.75 26.411 15.0962 27.731 13.7885C29.0513 12.4812 29.7115 10.8922 29.7115 9.0215C29.7115 7.15083 29.0553 5.55783 27.743 4.2425C26.4307 2.92717 24.828 2.2695 22.935 2.2695C21.0417 2.2695 19.435 2.92317 18.115 4.2305C16.7947 5.53817 16.1345 7.12733 16.1345 8.998C16.1345 10.8687 16.7907 12.4617 18.103 13.777C19.4153 15.0923 21.0182 15.75 22.9115 15.75Z"/>
+      </svg>
+          Menu
+    </button>
+  </div>
+
+              <nav class="usa-nav" aria-label="Primary navigation">
+                      <div class="usa-nav__inner">
+          
+                 
+
+
+
+
+
+
+<button class="usa-nav__close">
+ <img src="/themes/custom/wisdhs/dist/images/usa-icons/close.svg" role="img" alt="Close" aria-label="Close">
+</button>
+
+  
+
+  <section class="search__section" aria-label="Search the site (mobile navigation)">
+  <form  class="usa-search usa-search--small" action="/search" method="get" id="dhs-search-form-mobile" role="search">
+    <label class="usa-sr-only" for="dhs-search-input-mobile">
+      Search
+    </label>
+    <input class="usa-input" id="dhs-search-input-mobile" type="search" name="search" placeholder="I&#039;m looking for...">
+    <button class="usa-button" type="submit" id="edit-dhs-search-button-mobile">
+            <img
+          src="/themes/custom/wisdhs/dist/images/usa-icons-bg/search--white.svg"
+          class="usa-search__submit-icon"
+          alt="Search"
+      >
+    </button>
+  </form>
+  </section>
+
+
+                                              <ul  class="c-menu c-menu--main usa-nav__primary usa-accordion">
+                                                                                                                                                  
+      
+      
+      <li  class="c-menu__item usa-nav__primary-item has-subnav is-expanded">
+                            <button type="button"  class="c-menu__link js-top-level has-subnav is-expanded usa-nav__link usa-accordion__button" aria-expanded="false" aria-controls="extended-mega-nav-section-work-at-dhs-career-opportunities-26"><span>About DHS</span></button>
+                  
+      <div id="extended-mega-nav-section-work-at-dhs-career-opportunities-26" class="usa-nav__submenu usa-megamenu" hidden>
+      <div class="grid-row">
+      <div class="usa-col">
+      <ul  class="usa-nav__submenu-list">
+                                                                                        
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/glossary.htm" class="c-menu__link" data-drupal-link-system-path="node/108">Acronym Glossary</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/arpa/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/62560">American Rescue Plan Act Funding for Wisconsin</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/business/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/7209">Business Opportunities</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/civil-rights/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/40">Civil Rights</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/clientrights/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/41">Client Rights</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/data/servicesearch.htm" class="c-menu__link" data-drupal-link-system-path="node/11">Contacts by Service Area</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/aboutdhs/regions.htm" class="c-menu__link" data-drupal-link-system-path="node/1521">DHS Regions by County</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/aboutdhs/divisionsoffices.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/13">Divisions and Offices</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/aboutdhs/workforce.htm" class="c-menu__link" data-drupal-link-system-path="node/26252">Employee Information</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/complaints/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/44">File a Complaint or Report Fraud</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/forms/index.htm" class="c-menu__link" data-drupal-link-system-path="node/114">Forms Library</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/budget/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/37952">Governor Evers&#039; Proposed 2025-2027 Budget</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/hipaa/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/110">HIPAA</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/aboutdhs/memos.htm" class="c-menu__link" title="Memos Library" data-drupal-link-system-path="node/49">Memos Library</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/news/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/147751">News Releases</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/newsletters/index.htm" class="c-menu__link" data-drupal-link-system-path="node/78">Newsletter Library</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/des/openrecords.htm" class="c-menu__link" data-drupal-link-system-path="node/51">Open Records Requests</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/aboutdhs/our-locations.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/52">Our Locations</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/publications/index.htm" class="c-menu__link" data-drupal-link-system-path="node/79">Publications Library</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/rhtp/index.htm" class="c-menu__link" data-drupal-link-system-path="node/144166">Rural Health Transformation Program</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/aboutdhs/service-areas.htm" class="c-menu__link" data-drupal-link-system-path="node/54">Service Areas</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/publications/statute-mandated-reporting.htm" class="c-menu__link" data-drupal-link-system-path="node/34564">Statutorily Required Reports</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/aboutdhs/councils.htm" class="c-menu__link" data-drupal-link-system-path="node/48">Statutory Boards, Committees and Councils</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/os/fundamentals.htm" class="c-menu__link" data-drupal-link-system-path="node/43">Vision, Mission, and Values</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/vitalrecords/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/5559">Vital Records</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/job-opps/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/45">Work at DHS: Career Opportunities</a>
+                        </li>
+               </ul>
+       </div>
+       </div>
+       </div>
+      
+              </li>
+                                                                                                                                              
+      
+      
+      <li  class="c-menu__item usa-nav__primary-item has-subnav is-expanded">
+                            <button type="button"  class="c-menu__link js-top-level has-subnav is-expanded usa-nav__link usa-accordion__button" aria-expanded="false" aria-controls="extended-mega-nav-section-wish-wisconsin-interactive-statistics-on-health-query-system-24"><span>Data &amp; Statistics</span></button>
+                  
+      <div id="extended-mega-nav-section-wish-wisconsin-interactive-statistics-on-health-query-system-24" class="usa-nav__submenu usa-megamenu" hidden>
+      <div class="grid-row">
+      <div class="usa-col">
+      <ul  class="usa-nav__submenu-list">
+                                                                                        
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/stats/a-z.htm" class="c-menu__link" data-drupal-link-system-path="node/34655">A-Z Listing of Topics</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/stats/brfs.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/5062">Behavioral Risk Factor Surveillance System</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/stats/births/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/5110">Births &amp; Infant Deaths</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/wcrs/data-pubs.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/29651">Cancer</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/disease/communicable-disease-surveillance-data.htm" class="c-menu__link" data-drupal-link-system-path="node/142691">Communicable Disease Surveillance Data</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/stats/deaths/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/5191">Deaths</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/epht/index.htm" title="Environmental Public Health Tracking" class="c-menu__link" data-drupal-link-system-path="node/318">Environmental Public Health Tracking</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/stats/family-health-survey.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/78021">Family Health Survey</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/hiv/index.htm" title="Wisconsin AIDS/HIV Program" class="c-menu__link" data-drupal-link-system-path="node/1833">HIV</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/immunization/data.htm" class="c-menu__link" data-drupal-link-system-path="node/75378">Immunization Rates</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/lead/data.htm" class="c-menu__link" data-drupal-link-system-path="node/3501">Lead Poisoning, Childhood</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/stats/life-expectancy.htm" class="c-menu__link" data-drupal-link-system-path="node/5098">Life Expectancy</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/stats/marriages.htm" class="c-menu__link" data-drupal-link-system-path="node/5102">Marriages &amp; Divorces</a>
+                        </li>
+                                                                                                                  
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/stats/mental-health.htm" class="is-primary c-menu__link" data-drupal-link-system-path="node/41577">Mental Health Statistics</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/occupational-health/data.htm" class="c-menu__link" data-drupal-link-system-path="node/4060">Occupational Health &amp; Safety</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/stats/prams/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/645">PRAMS (Pregnancy Risk Assessment Monitoring System)</a>
+                        </li>
+                                                                                                                  
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/legislative/data.htm" class="is-primary c-menu__link" data-drupal-link-system-path="node/3575">Public Benefit Program Data</a>
+                        </li>
+                                                                                                                  
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/stats/pubhealth-profiles.htm" class="is-primary c-menu__link" data-drupal-link-system-path="node/5104">Public Health Profiles</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/stats/dhs-reporting.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/115">Reporting Data to DHS</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/disease/respiratory-data.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/80081">Respiratory Virus Data</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/std/data.htm" class="c-menu__link" data-drupal-link-system-path="node/5344">Sexually Transmitted Diseases</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/stats/aoda.htm" class="c-menu__link" data-drupal-link-system-path="node/5060">Substance Use</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/wastewater/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/88076">Wastewater Monitoring</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/wish/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/5707">WISH (Wisconsin Interactive Statistics on Health) Query System</a>
+                        </li>
+               </ul>
+       </div>
+       </div>
+       </div>
+      
+              </li>
+                                                                                                                                              
+      
+      
+      <li  class="c-menu__item usa-nav__primary-item has-subnav is-expanded">
+                            <button type="button"  class="c-menu__link js-top-level has-subnav is-expanded usa-nav__link usa-accordion__button" aria-expanded="false" aria-controls="extended-mega-nav-section-substance-use-disorders-21"><span>Diseases &amp; Conditions</span></button>
+                  
+      <div id="extended-mega-nav-section-substance-use-disorders-21" class="usa-nav__submenu usa-megamenu" hidden>
+      <div class="grid-row">
+      <div class="usa-col">
+      <ul  class="usa-nav__submenu-list">
+                                                                                        
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/disease/a-z.htm" class="c-menu__link" data-drupal-link-system-path="node/34656">A-Z Listing of Topics</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/disease/childhood-communicable-diseases.htm" class="c-menu__link" data-drupal-link-system-path="node/29216">Childhood Communicable Diseases</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/disease/chronic-disease.htm" class="c-menu__link" data-drupal-link-system-path="node/2603">Chronic Disease Prevention</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/covid-19/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/41804">COVID-19</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/disease/prevention.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/138">Disease Prevention</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/disease/reporting.htm" class="c-menu__link" data-drupal-link-system-path="node/64550">Disease Reporting</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/fight-bite/index.htm" class="c-menu__link" data-drupal-link-system-path="node/34801">Fight the Bite!</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/foodborne/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/61981">Food Poisoning</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/disease/fungus.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/36945">Fungal Infections</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/disease/zoonotic.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/36906">Illnesses Spread by Animals</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/mosquito/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/35673">Illnesses Spread by Mosquitoes</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/tick/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/30740">Illnesses Spread by Ticks</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/water/illnesses.htm" class="c-menu__link" data-drupal-link-system-path="node/37883">Illnesses Spread by Water</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/immunization/index.htm" title="Immunizations" class="c-menu__link" data-drupal-link-system-path="node/140">Immunizations</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/invasive-bacteria/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/62836">Invasive Bacteria</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/mh/dcindex.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/16219">Mental Health</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/outbreaks/index.htm" class="c-menu__link" data-drupal-link-system-path="node/35831">Outbreaks Under Investigation</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/respiratory/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/64248">Respiratory Viruses </a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/std/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/38400">Sexually Transmitted Diseases</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/skin-infection/index.htm" class="c-menu__link" data-drupal-link-system-path="node/36936">Skin Infections</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/aoda/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/18739">Substance Use Disorders</a>
+                        </li>
+               </ul>
+       </div>
+       </div>
+       </div>
+      
+              </li>
+                                                                                                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__primary-item has-subnav is-active-trail is-expanded">
+                            <button type="button"  class="c-menu__link js-top-level has-subnav is-active-trail is-expanded usa-nav__link usa-accordion__button" aria-expanded="false" aria-controls="extended-mega-nav-section-wisconsin-well-woman-program-wwwp-30"><span>Health Care &amp; Coverage</span></button>
+                  
+      <div id="extended-mega-nav-section-wisconsin-well-woman-program-wwwp-30" class="usa-nav__submenu usa-megamenu" hidden>
+      <div class="grid-row">
+      <div class="usa-col">
+      <ul  class="usa-nav__submenu-list">
+                                                                                                              
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/badgercareplus/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/1978">BadgerCare Plus</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="https://www.dhs.wisconsin.gov/care4kids/index.htm" class="c-menu__link is-collapsed">Care4Kids</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/guide/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/3194">Consumer Guide to Health Care</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/csc/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/88091">Coordinated Specialty Care</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/crisis/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/63057">Crisis Services</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/ems/dnr.htm" class="c-menu__link" data-drupal-link-system-path="node/155">Do-Not-Resuscitate (DNR) Information</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/guide/end-life-planning.htm" title="End of Life Planning" class="c-menu__link" data-drupal-link-system-path="node/3205">End of Life Planning</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/familycare/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/2895">Family Care</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/fpos/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/14762">Family Planning Only Services</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/guide/find.htm" title="Find a Health Care Facility or Care Proivder" class="c-menu__link" data-drupal-link-system-path="node/188">Find a Health Care Facility or Care Provider</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/getcovered/index.htm" class="c-menu__link" data-drupal-link-system-path="node/40520">Find Affordable Health Insurance</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/forwardhealth/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/168">ForwardHealth</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/forwardhealth/clinics.htm" class="c-menu__link" data-drupal-link-system-path="node/2994">Free or Low Cost Clinics</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/hipaa/index.htm" class="c-menu__link" data-drupal-link-system-path="node/110">Health Insurance Portability and Accountability Act (HIPAA)</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/immunization/index.htm" class="c-menu__link" data-drupal-link-system-path="node/140">Immunizations</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/iris/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/170">IRIS (Include, Respect, I Self-Direct)</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/em/ltcip.htm" class="c-menu__link" data-drupal-link-system-path="node/169">Long-Term Care Insurance Partnership (LTCIP)</a>
+                        </li>
+                                                                                                                                                      
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item has-subnav is-active-trail is-expanded">
+                              <a href="/medicaid/index.htm" class="c-menu__link has-subnav is-active-trail is-expanded" data-drupal-link-system-path="node/33277">Medicaid in Wisconsin</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/medicaid/medicaid-purchase-plan.htm" class="c-menu__link is-active" data-drupal-link-system-path="node/175" aria-current="page">Medicaid Purchase Plan (MAPP)</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/health-care-coverage/records-fees.htm" class="c-menu__link" data-drupal-link-system-path="node/144">Medical Records Fees</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/mh/hccindex.htm" class="c-menu__link" data-drupal-link-system-path="node/16231">Mental Health</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/nemt/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/179">Non-Emergency Medical Transportation</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/donatelife/index.htm" class="c-menu__link" data-drupal-link-system-path="node/156">Organ, Tissue, and Eye Donation</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="https://www.dhs.wisconsin.gov/pncc/index.htm" class="c-menu__link is-collapsed">Prenatal Care Coordination</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/guide/freeprescr.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/3234">Prescription Drug Assistance</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/children/index.htm" class="c-menu__link" data-drupal-link-system-path="node/2266">Services for Children with Delays or Disabilities</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/aoda/hccindex.htm" class="c-menu__link" data-drupal-link-system-path="node/29360">Substance Use</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/medicaid/ssi-related.htm" class="c-menu__link" data-drupal-link-system-path="node/173">Supplemental Security Income-Related Medicaid</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/forwardhealth/wcdp.htm" class="c-menu__link" data-drupal-link-system-path="node/7246">Wisconsin Chronic Disease Program (WCDP)</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/wwwp/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/180">Wisconsin Well Woman Program (WWWP)</a>
+                        </li>
+               </ul>
+       </div>
+       </div>
+       </div>
+      
+              </li>
+                                                                                                                                              
+      
+      
+      <li  class="c-menu__item usa-nav__primary-item has-subnav is-expanded">
+                            <button type="button"  class="c-menu__link js-top-level has-subnav is-expanded usa-nav__link usa-accordion__button" aria-expanded="false" aria-controls="extended-mega-nav-section-wisconsin-wayfinder-childrens-resource-network-17"><span>Long-Term Care &amp; Support</span></button>
+                  
+      <div id="extended-mega-nav-section-wisconsin-wayfinder-childrens-resource-network-17" class="usa-nav__submenu usa-megamenu" hidden>
+      <div class="grid-row">
+      <div class="usa-col">
+      <ul  class="usa-nav__submenu-list">
+                                                                                                              
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/aps/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/210">Adult Protective Services</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/adrc/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/211">Aging and Disability Resource Centers (ADRCs)</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/obvi/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/212">Blind and Visually Impaired</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/clientrights/index.htm" class="c-menu__link" data-drupal-link-system-path="node/41">Client Rights</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/odhh/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/214">Deaf, Hard of Hearing, and Deaf-Blind</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/dementia/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/27686">Dementia</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/familycare/index.htm" title="Family Care" class="c-menu__link" data-drupal-link-system-path="node/2895">Family Care</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/guide/find.htm" class="c-menu__link" data-drupal-link-system-path="node/188">Find a Health Care Facility or Care Provider</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/iris/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/170">IRIS (Include, Respect, I Self-Direct)</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/medicaid/index.htm" title="Medicaid in Wisconsin" class="c-menu__link" data-drupal-link-system-path="node/33277">Medicaid in Wisconsin</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/benefit-specialists/medicare-counseling.htm" class="c-menu__link" data-drupal-link-system-path="node/255">Medicare Counseling</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/nci/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/36231">National Core Indicators Project</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/children/index.htm" class="c-menu__link" data-drupal-link-system-path="node/2266">Services for Children</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/aging/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/239">Services for Older Adults</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/disabilities/index.htm" class="c-menu__link" data-drupal-link-system-path="node/222">Services for People with Developmental/Intellectual Disabilities</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/disabilities/physical/index.htm" title="Physical Disability Programs and Information" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/235">Services for People with Physical Disabilities</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/wiscway/index.htm" class="c-menu__link" data-drupal-link-system-path="node/78536">Wisconsin Wayfinder: Children&#039;s Resource Network</a>
+                        </li>
+               </ul>
+       </div>
+       </div>
+       </div>
+      
+              </li>
+                                                                                                                                              
+      
+      
+      <li  class="c-menu__item usa-nav__primary-item has-subnav is-expanded">
+                            <button type="button"  class="c-menu__link js-top-level has-subnav is-expanded usa-nav__link usa-accordion__button" aria-expanded="false" aria-controls="extended-mega-nav-section-wisconsin-state-health-plan-30"><span>Prevention &amp; Healthy Living</span></button>
+                  
+      <div id="extended-mega-nav-section-wisconsin-state-health-plan-30" class="usa-nav__submenu usa-megamenu" hidden>
+      <div class="grid-row">
+      <div class="usa-col">
+      <ul  class="usa-nav__submenu-list">
+                                                                                                              
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/adolescent/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/30331">Adolescent Health</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/brain-health/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/146861">Brain Health</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/aces/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/75643">Childhood Experiences and Health</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/disease/chronic-disease.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/2603">Chronic Disease Prevention</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/climate/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/2309">Climate and Health</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/tobacco/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/61532">Commercial Tobacco Prevention and Treatment</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/csp/index.htm" title="Community Support Programs (CSP)" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/28390">Community Support Programs (CSP)</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/opioids/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/25026">Dose of Reality: Opioids</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/environmental/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/299">Environmental Health</a>
+                        </li>
+                                                                                                                                        
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/homelessness/index.htm" class="is-primary c-menu__link is-collapsed" data-drupal-link-system-path="node/87881">Homelessness</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/immunization/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/140">Immunization Program</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/ips/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/744">Individual Placement and Support</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/injury-prevention/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/3469">Injury and Violence Prevention</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/lead/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/18033">Lead Poisoning Prevention</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/lgbthealth/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/627">LGBTQ Health</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/prevention-healthy-living/maternal-and-child-health.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/637">Maternal and Child Health</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/mh/phlmhindex.htm" class="c-menu__link" data-drupal-link-system-path="node/16249">Mental Health</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/nutrition/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/660">Nutrition and Food Assistance</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/physical-activity/index.htm" class="c-menu__link" data-drupal-link-system-path="node/4147">Nutrition and Physical Activity</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/occupational-health/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/4061">Occupational Health</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/oral-health/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/669">Oral Health Program</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/peer-services/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/36659">Peer Services</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/real-talks/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/74703">Real Talks Wisconsin: Change the Conversation on Substance Use</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/resilient/index.htm" class="c-menu__link" data-drupal-link-system-path="node/43772">Resilient Wisconsin</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/small-talks/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/42162">Small Talks</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/aoda/phlsasindex.htm" class="c-menu__link" data-drupal-link-system-path="node/16257">Substance Use</a>
+                        </li>
+                                                                                                                                        
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/prevent-suicide/index.htm" class="is-primary c-menu__link is-collapsed" data-drupal-link-system-path="node/40135">Suicide Prevention</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/sr/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/33104">Supervised Release</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/tobaccoischanging/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/31845">Tobacco is Changing</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/statehealthplan/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/25967">Wisconsin State Health Plan</a>
+                        </li>
+               </ul>
+       </div>
+       </div>
+       </div>
+      
+              </li>
+                                                                                                                                              
+      
+      
+      <li  class="c-menu__item usa-nav__primary-item has-subnav is-expanded">
+                            <button type="button"  class="c-menu__link js-top-level has-subnav is-expanded usa-nav__link usa-accordion__button" aria-expanded="false" aria-controls="extended-mega-nav-section-wisconsin-state-health-plan-33"><span>For Partners &amp; Providers</span></button>
+                  
+      <div id="extended-mega-nav-section-wisconsin-state-health-plan-33" class="usa-nav__submenu usa-megamenu" hidden>
+      <div class="grid-row">
+      <div class="usa-col">
+      <ul  class="usa-nav__submenu-list">
+                                                                                                              
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/areaadmin/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/680">Area Administration</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/adrc/pros/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/681">Aging and Disability Resource Centers</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/civil-rights/index.htm" class="c-menu__link" data-drupal-link-system-path="node/40">Civil Rights Compliance</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/evv/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/35435">Electronic Visit Verification</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/em/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/15595">Eligibility Management</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/ems/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/297">Emergency Medical Services</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/forwardhealth/partners/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/77586">ForwardHealth Community Partners</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/business/funding.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/7214">Funding Information</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/gears/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/2246">Grant Enrollment, Application and Reporting System (GEARS)</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/disease/han.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/42229">Health Alert Network</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/ehealth/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/2628">Health IT Program</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/hai/health-pros.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/35134">Healthcare-Associated Infections: Resources for Health Professionals</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/hcbs/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/21942">Home and Community-Based Services Waivers</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/lh-depts/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/75447">Local Public Health</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/partners-providers/long-term-care-and-support.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/710">Long-Term Care and Support</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/mandatoryreports/mastateplan/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/3770">Medicaid State Plan</a>
+                        </li>
+                                                                                                                                        
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/aboutdhs/memos.htm" class="is-primary c-menu__link is-collapsed" data-drupal-link-system-path="node/49">Memos Library</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/mh/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/732">Mental Health Services</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/minority-health/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/628">Minority Health</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/des/my-wi-id.htm" class="c-menu__link" data-drupal-link-system-path="node/136706">MyWisconsin ID</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/nh-rates/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/7249">Nursing Home Reimbursement</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/pasrr/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/27415">Preadmission Screening and Resident Review</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/primarycare/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/748">Primary Care Program</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/preparedness/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/694">Health Emergency Preparedness and Response</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/phmu/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/129">Public Health Registries: Promoting Interoperability</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/ph-workforce/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/4139">Public Health Workforce Development</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/legislative/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/46">Resources for Legislators</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/aoda/partner.htm" class="c-menu__link" data-drupal-link-system-path="node/1870">Substance Use Services</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/trauma/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/784">Trauma Care System</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/tribal-affairs/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/782">Tribal Affairs</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/uniform-fee/index.htm" class="c-menu__link" data-drupal-link-system-path="node/783">Uniform Fee System</a>
+                        </li>
+                                                                                                                                        
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/wic/vendor/index.htm" class="is-primary c-menu__link is-collapsed" data-drupal-link-system-path="node/5671">WIC Vendor</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/statehealthplan/index.htm" class="c-menu__link" data-drupal-link-system-path="node/25967">Wisconsin State Health Plan</a>
+                        </li>
+               </ul>
+       </div>
+       </div>
+       </div>
+      
+              </li>
+                                                                                                                                              
+      
+      
+      <li  class="c-menu__item usa-nav__primary-item has-subnav is-expanded">
+                            <button type="button"  class="c-menu__link js-top-level has-subnav is-expanded usa-nav__link usa-accordion__button" aria-expanded="false" aria-controls="extended-mega-nav-section-wic-vendor-licensing-10"><span>Certification, Licenses &amp; Permits</span></button>
+                  
+      <div id="extended-mega-nav-section-wic-vendor-licensing-10" class="usa-nav__submenu usa-megamenu" hidden>
+      <div class="grid-row">
+      <div class="usa-col">
+      <ul  class="usa-nav__submenu-list">
+                                                                                        
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/regulations/a-z.htm" class="c-menu__link" data-drupal-link-system-path="node/34634">A-Z Listing of Topics</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/regulations/caregivers.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/683">Caregiver Programs</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/provider-portal/index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/140556">DHS DQA Provider Portal</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/regulations/environmental.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/786">Environmental Certification, Licenses, and Permits</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/regulations/medicare-index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/818">Health and Medical Care Licensing and Certification</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/regulations/mentalhealth/certification.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/4694">Mental Health Treatment Programs</a>
+                        </li>
+                                                                                                                                        
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/regulations/plan-review/index.htm" class="is-primary c-menu__link is-collapsed" data-drupal-link-system-path="node/712">Plan Review</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/regulations/residcare-index.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/884">Residential and Community-Based Care Licensing and Certification</a>
+                        </li>
+                                                                                                          
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item is-collapsed">
+                              <a href="/regulations/su/introduction.htm" class="c-menu__link is-collapsed" data-drupal-link-system-path="node/819">Substance Use Treatment Programs</a>
+                        </li>
+                                                                                    
+      
+      
+      <li  class="c-menu__item usa-nav__submenu-item">
+                              <a href="/regulations/food-index.htm" class="c-menu__link" data-drupal-link-system-path="node/5888">WIC Vendor Licensing</a>
+                        </li>
+               </ul>
+       </div>
+       </div>
+       </div>
+      
+              </li>
+              </ul>
+      
+
+  <div class="usa-nav__secondary">
+  <ul class="usa-nav__secondary-links">
+                <li class="usa-nav__secondary-item">
+        <a href="/data/topics/a">
+          A-Z Index
+        </a>
+      </li>
+            <li class="usa-nav__secondary-item">
+        <a href="/job-opps/index.htm">
+          Careers
+        </a>
+      </li>
+                </ul>
+
+  
+</div>
+
+
+
+       
+     
+                      
+                      </div>
+                    
+        </nav>
+      
+                             
+
+
+
+
+
+
+  
+  
+    
+
+  
+      
+
+
+<div  class="usa-language-container language-selector">
+  
+    <ul class="usa-language__primary usa-accordion">
+      <li class="usa-language__primary-item">
+        <button type="button"
+                class="usa-button usa-button--unstyled usa-language__link"
+                 role="button"                 aria-expanded="false"
+                aria-controls="language-options-mobile">  
+          Languages
+        </button>
+        
+                  <ul id="language-options-mobile" class="usa-language__submenu" hidden translate="no">
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="ar" xml:lang="ar">
+                      <strong>العربية</strong> (Arabic)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="en" xml:lang="en">
+                      <strong>English</strong> (English)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="es" xml:lang="es">
+                      <strong>Español</strong> (Spanish)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="fr" xml:lang="fr">
+                      <strong>Français</strong> (French)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="hi" xml:lang="hi">
+                      <strong>हिन्दी</strong> (Hindi)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="hmn" xml:lang="hmn">
+                      <strong>Hmoob</strong> (Hmong)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="ln" xml:lang="ln">
+                      <strong>Lingála</strong> (Lingala)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="lo" xml:lang="lo">
+                      <strong>ລາວ</strong> (Lao)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="ms" xml:lang="ms">
+                      <strong>Bahasa Melayu</strong> (Malay)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="my" xml:lang="my">
+                      <strong>ဗမာစာ</strong> (Myanmar (Burmese))
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="pa" xml:lang="pa">
+                      <strong>ਪੰਜਾਬੀ</strong> (Punjabi)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="ps" xml:lang="ps">
+                      <strong>پښتو</strong> (Pashto)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="ru" xml:lang="ru">
+                      <strong>Русский</strong> (Russian)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="rw" xml:lang="rw">
+                      <strong>Kinyarwanda</strong> (Kinyarwanda)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="so" xml:lang="so">
+                      <strong>Soomaaliga</strong> (Somali)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="sq" xml:lang="sq">
+                      <strong>Shqip</strong> (Albanian)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="sw" xml:lang="sw">
+                      <strong>Kiswahili</strong> (Swahili)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="uk" xml:lang="uk">
+                      <strong>Українська</strong> (Ukrainian)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="ur" xml:lang="ur">
+                      <strong>اردو</strong> (Urdu)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="vi" xml:lang="vi">
+                      <strong>Tiếng Việt</strong> (Vietnamese)
+                    </span>
+                                  </a>
+              </li>
+                          <li class="usa-language__submenu-item">
+                <a href="#">
+                                      <span lang="zh-CN" xml:lang="zh-CN">
+                      <strong>简体中文</strong> (Chinese (Simplified))
+                    </span>
+                                  </a>
+              </li>
+                                  </ul>
+              </li>
+    </ul>
+  </div>
+
+  
+  
+  
+
+
+
+
+
+         
+      
+</header>
+
+ </div>
+
+    
+    
+
+  
+        
+
+
+<div  class="l-breadcrumb">
+          
+
+
+
+
+
+
+
+  
+  
+    
+
+  
+              
+<nav  aria-label="Breadcrumbs" class="usa-breadcrumb  usa-breadcrumb--wrap" role="navigation">
+    <div class="grid-container grid-container-widescreen">
+    <ol class="usa-breadcrumb__list">
+                      <li class="usa-breadcrumb__list-item">
+          <a class="usa-breadcrumb__link" href="/">
+            <span>Home</span>
+          </a>
+        </li>
+                              <li class="usa-breadcrumb__list-item">
+          <a class="usa-breadcrumb__link" href="/health-care-coverage/index.htm">
+            <span>Health Care &amp; Coverage</span>
+          </a>
+        </li>
+                              <li class="usa-breadcrumb__list-item">
+          <a class="usa-breadcrumb__link" href="/medicaid/index.htm">
+            <span>Medicaid in Wisconsin</span>
+          </a>
+        </li>
+                              <li class="usa-breadcrumb__list-item usa-current"  aria-current="page">
+          <span>
+            Medicaid Purchase Plan
+          </span>
+        </li>
+                  </ol>
+  </div>
+</nav>
+
+  
+  
+  
+  
+
+      </div>
+
+  
+      
+  
+      
+  
+  <main id="main-content">
+            
+
+
+    
+        
+        
+<div class="grid-container grid-container-widescreen">
+    
+  <div class="c-page-layout  c-page-layout--left ">
+
+          <aside class="c-page-layout__left" aria-label="section navigation sidebar">
+                
+
+
+
+
+  <div class="usa-overlay--sidenav c-mobile-sidenav__overlay"></div>
+<div  id="block-sidebar-nav-main" class="c-mobile-sidenav">
+          <button class="c-mobile-sidenav__button" type="button" aria-expanded="false" aria-controls="drawer-section-menu-adrc" aria-label="Open section menu"></button>
+    <div class="c-mobile-sidenav__drawer" id="drawer-section-menu-adrc" hidden>
+                  
+<nav class="sidenav-wrapper" aria-label="Secondary navigation">
+
+
+                                <ul  class="usa-sidenav usa-sidenav--section-main">
+                    
+      
+      
+      
+      
+      <li  class="usa-sidenav__item">
+                <a href="/medicaid/index.htm" class="usa-sidenav__link" data-drupal-link-system-path="node/33277">Medicaid: Home</a>
+
+                              </li>
+                
+      
+      
+      
+      
+      <li  class="usa-sidenav__item">
+                <a href="/forwardhealth/apply.htm" class="usa-sidenav__link" data-drupal-link-system-path="node/28105">Apply for Benefits</a>
+
+                              </li>
+                
+      
+      
+      
+      
+      <li  class="usa-sidenav__item">
+                <a href="/forwardhealth/renewals.htm" class="usa-sidenav__link" data-drupal-link-system-path="node/3012">Renew Benefits</a>
+
+                              </li>
+                
+      
+      
+      
+      
+      <li  class="usa-sidenav__item">
+                <a href="/medicaid/work.htm" class="usa-sidenav__link" data-drupal-link-system-path="node/149906">Federal Work Requirement</a>
+
+                              </li>
+                
+      
+      
+      
+      
+      <li  class="usa-sidenav__item">
+                <a href="/badgercareplus/index.htm" class="usa-sidenav__link" data-drupal-link-system-path="node/1978">BadgerCare Plus</a>
+
+                              </li>
+                
+      
+      
+      
+      
+      <li  class="usa-sidenav__item">
+                <a href="/medicaid/publications.htm" class="usa-sidenav__link" data-drupal-link-system-path="node/3831">Medicaid Forms and Publications</a>
+
+                              </li>
+                
+      
+      
+      
+      
+      <li  class="usa-sidenav__item">
+                <a href="/medicaid/privacynotice.htm" class="usa-sidenav__link" data-drupal-link-system-path="node/3833">HIPAA Privacy Information</a>
+
+                              </li>
+                
+      
+      
+      
+      
+      <li  class="usa-sidenav__item">
+                <a href="/foodshare/news.htm" class="usa-sidenav__link" data-drupal-link-system-path="node/47048">FoodShare News</a>
+
+                              </li>
+                
+      
+      
+      
+      
+      <li  class="usa-sidenav__item">
+                <a href="/medicaid/news.htm" class="usa-sidenav__link" data-drupal-link-system-path="node/47047">Medicaid News</a>
+
+                              </li>
+                
+      
+      
+      
+      
+      <li  class="usa-sidenav__item">
+                <a href="/medicaid/advisory-committee.htm" class="usa-sidenav__link" data-drupal-link-system-path="node/81461">Medicaid Advisory Committee</a>
+
+                              </li>
+                
+      
+      
+      
+      
+      <li  class="usa-sidenav__item">
+                <a href="/medicaid/mmec.htm" class="usa-sidenav__link" data-drupal-link-system-path="node/140176">Medicaid Member Experience Council</a>
+
+                              </li>
+                
+      
+      
+      
+      
+      <li  class="usa-sidenav__item">
+                <a href="/medicaid/contacts.htm" class="usa-sidenav__link" data-drupal-link-system-path="node/3835">Medicaid Contacts</a>
+
+                              </li>
+        </ul>
+  
+</nav>
+      </div>
+    <a class="c-mobile-sidenav__parent-link" href="/medicaid/index.htm">Medicaid in Wisconsin</a>
+</div>
+
+
+            </aside>
+    
+    
+    <article  class="c-page-layout__main">
+      
+                                
+                          
+<header  class="c-page-header">
+    <h1>Medicaid Purchase Plan</h1>
+    </header>
+                      
+      
+                              <div data-drupal-messages-fallback class="hidden"></div>
+
+
+                      
+
+
+
+
+<div  class="c-field c-field--name-body c-field--type-text-with-summary c-field--label-hidden" >
+  <div class="c-field__content" >    <div class="grid-row grid-gap"><div class="grid-col-12 mobile-lg:grid-col-6"><p>The Medicaid Purchase Plan (MAPP) offers Medicaid health care coverage to adults with disabilities who work or want to work. With MAPP, you can:</p><ul><li data-list-item-id="e2e5d12c96957af820b4a3330e7e418bd">Earn more income and have more assets than other Medicaid programs for people with disabilities.</li><li data-list-item-id="e11b3515d1d4e167fae8329461b01b857">Save earnings in Independence Accounts, helping you reach personal and financial goals.</li></ul><p>MAPP benefits are the same as those for other Medicaid members. If you are enrolled in MAPP, you may also be eligible to get long-term care services and supports through Family Care, Family Care Partnership, PACE (Program of All-Inclusive Care for the Elderly), IRIS (Include, Respect, I Self-Direct), or the Children’s Long-Term Support program.</p></div><div class="grid-col-12 mobile-lg:grid-col-6"><figure class="c-figure c-figure--iframe" role="group"><div class="c-figure__media"><div class="c-video has-iframe"><iframe src="https://www.youtube.com/embed/7U_x-LeQ2aY?si=rsP9PkhArVlGgZrn&amp;controls=0" title="MAPP Premiums 2025" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div></div></figure></div></div><h2>Resources</h2><ul><li data-list-item-id="e3393a9c17b3188de097709ff812d8bd8"><a href="/library/collection/p-10071">Wisconsin Medicaid Purchase Plan (MAPP) Fact Sheet, P-10071</a></li><li data-list-item-id="ef8fc034482713c7970f326b1bce0b84b"><a href="/library/collection/p-00181">Wisconsin Medicaid Purchase Plan (MAPP) Consumer Guide, P-00181</a></li><li data-list-item-id="eb84d539f203cd74e53a59de2d12b2412"><a href="/library/collection/p-03554">Wisconsin Medicaid Purchase Plan (MAPP) Overview and Eligibility Flyer, P-03554</a></li><li data-list-item-id="e9699d72378e2ceab236573f078a026d4"><a href="/library/collection/mapp-pay-reminder">MAPP—Don't Wait to Pay Reminder</a></li></ul><h3>Resources for partners</h3><p><a href="/forwardhealth/partners/mapp.htm">ForwardHealth MAPP Partner Toolkit</a></p><div class="usa-alert usa-alert--info usa-alert--slim"><div class="usa-alert__body"><p><strong>Reminder:</strong> MAPP premium payments are due on the 10th of each month.</p></div></div><h2>Frequently asked questions</h2><h3>General program information</h3><div class="usa-accordion"><h4 class="usa-accordion__heading"><button class="usa-accordion__button" type="button" aria-expanded="false" aria-controls="a1">Who can get MAPP?</button></h4><div class="usa-accordion__content usa-prose" id="a1"><p>To qualify for MAPP, you must:</p><ul><li data-list-item-id="e47fab3e8305c2aa620c2151451fd17fd">Be at least 18 years old.</li><li data-list-item-id="e1d775d90d3f3283088494324463a6ecf">Be a resident of Wisconsin.</li><li data-list-item-id="e25ccac8375ac6373db02dc3c90e9a052">Be a U.S. citizen or qualifying immigrant.</li><li data-list-item-id="e56050bbbd74fa92df68f8e90d75f3ce2">Be determined disabled by the Disability Determination Bureau.</li><li data-list-item-id="e75274c5dc98cd7f6be8b794a49dff418">Have an adjusted family income of 250% of the <a href="/medicaid/fpl.htm">federal poverty level</a> (FPL) or less, based on your family size.</li><li data-list-item-id="e6f7f5d9b379af55e4bc891ad5f1a07ac">Have individual assets of $15,000 or less.<ul><li data-list-item-id="e24010aff13d032f9cc353977cb8db9fa">Countable assets include:<ul><li data-list-item-id="e7ab65857aecea0a982b2c90f6f1e1469">Cash</li><li data-list-item-id="e862fad0c826dd6e5f8d04083cbf3d996">Checking and savings accounts</li><li data-list-item-id="e45ef20e85c13a7ce68e876d537981929">Certificate of deposits</li><li data-list-item-id="ef82aaf9f800018fb74da955231cd02da">Stocks and bonds</li><li data-list-item-id="eefd17ec25811aa9814623ae42ebf105d">Some life insurance policies</li><li data-list-item-id="eed7e3d60c2f6c6ff3b539f89b28a4478">Some annuities</li><li data-list-item-id="e28a9b4725ee7b9eafc96100959e42319">Some burial assets</li></ul></li><li data-list-item-id="eb730f553af75f1e6651fdde191474865">Countable assets don’t include:<ul><li data-list-item-id="e596d326e7b887b31480ac154adb8f44c">Your home or one car you own</li><li data-list-item-id="ea457dd2b30fce628d8aa472b80234e79">Achieving a Better Life Experience (ABLE) accounts</li></ul></li></ul></li><li data-list-item-id="e45f9c611c56a00e7db683a002479d4d1">Meet the MAPP work requirement.</li><li data-list-item-id="ed2f87b427a82c2d022f4e1d7d787bf8c">Pay a monthly premium, if required.</li></ul><p>MAPP is not a family health care plan. Any members of your family who are not eligible for MAPP may be able to get health coverage through BadgerCare Plus or another Wisconsin Medicaid program.</p></div><h4 class="usa-accordion__heading"><button class="usa-accordion__button" type="button" aria-expanded="false" aria-controls="a2">What does MAPP cover?</button></h4><div class="usa-accordion__content usa-prose" id="a2"><p>MAPP covers:</p><ul><li data-list-item-id="e6f34f379851c46356184ccba39f5020d">Doctor visits</li><li data-list-item-id="ee20d5787074ad40b46b771311041cc3e">Immunizations</li><li data-list-item-id="e9a29e8cc302aeca0142c6b4b28130881">Hospital care</li><li data-list-item-id="ecb08db20c4ba93107aa66e1c570174f1">Medical equipment</li><li data-list-item-id="eb501a37e76c970b763e589b7cb18d71a">Hearing services, including hearing aids</li><li data-list-item-id="e25058f0bb594b9a9499e2facfd8a69e6">Lab and X-ray services</li><li data-list-item-id="e99f229f23a738a2bdc60a3794a9297e4">Transportation to Medicaid services</li><li data-list-item-id="e5be50111260491cea968e5df96998331">Vision care, including eyeglasses</li><li data-list-item-id="eb1d7710c5303eee0088f9295cf63507e">Prescription drugs</li><li data-list-item-id="e89334212ec037d0b747b3b01cb78cb1f">Family planning services and supplies</li><li data-list-item-id="e42a09fe86a63f4d5cf4aa04b023b4667">Speech therapy</li><li data-list-item-id="e449760b780a2bd794c87fff3165689c9">Mental health services</li><li data-list-item-id="e4a533dda3a90a51556c542c68ef15dc2">Dental services</li></ul></div><h4 class="usa-accordion__heading"><button class="usa-accordion__button" type="button" aria-expanded="false" aria-controls="a3">How do I apply for MAPP?</button></h4><div class="usa-accordion__content usa-prose" id="a3"><p>You can apply for MAPP:</p><ul><li data-list-item-id="e20417370390c80ccb3baec02c870f5f9">Online using <a href="https://access.wi.gov/s/?language=en_US">ACCESS</a> (<a href="https://access.wi.gov/s/?language=es">ACCESS in Spanish</a>)</li><li data-list-item-id="e2384ef10644eee9a08e7de88210ad3ab">By mail. Download the <a href="/library/collection/f-10101">Wisconsin Medicaid for the Elderly, Blind, or Disabled Application Packet, F-10101</a>.</li><li data-list-item-id="ebeb96c0ba97a275aa921659b9d183e5c">By phone or in person at your <a href="/forwardhealth/imagency/index.htm">local agency</a>.</li></ul></div></div><h3>Monthly premiums</h3><div class="usa-accordion"><h4 class="usa-accordion__heading"><button class="usa-accordion__button" type="button" aria-expanded="false" aria-controls="b1">What is a premium?</button></h4><div class="usa-accordion__content usa-prose" id="b1"><p>A premium is a set amount of money we are required by state law to charge each month for your MAPP benefits if your gross monthly income is over a certain amount.</p></div><h4 class="usa-accordion__heading"><button class="usa-accordion__button" type="button" aria-expanded="false" aria-controls="b2">How is my premium amount determined?</button></h4><div class="usa-accordion__content usa-prose" id="b2"><p>Your premium amount is determined by your gross monthly income. If your total gross monthly income is above 100% <a href="/medicaid/fpl.htm">federal poverty level</a> (FPL), you will have to pay a monthly premium to keep your MAPP benefits.</p><p>Premiums are based only on your income before taxes and other deductions—not the income of other people in your household.</p><p>If your gross monthly income is below 100% FPL, you will not have to pay a monthly premium.</p></div><h4 class="usa-accordion__heading"><button class="usa-accordion__button" type="button" aria-expanded="false" aria-controls="b3">How do I pay my premium?</button></h4><div class="usa-accordion__content usa-prose" id="b3"><div class="grid-row grid-gap"><div class="grid-col-12 mobile-lg:grid-col-8"><p>Your initial (first) MAPP premium can be paid online in <a href="https://access.wi.gov/s/?language=en_US">ACCESS</a> (<a href="https://access.wi.gov/s/?language=es">ACCESS in Spanish</a>) or the <a href="/forwardhealth/myaccess.htm">MyACCESS</a> mobile app or by mailing a check or money order.</p><p><strong>You make your initial premium payment and one-time payments the following ways:</strong></p><ul><li data-list-item-id="e34f4fca9b17632320b03f6919804ee65">Online in <a href="https://access.wi.gov/s/?language=en_US">ACCESS</a> (<a href="https://access.wi.gov/s/?language=es">ACCESS in Spanish</a>) or the <a href="/forwardhealth/myaccess.htm">MyACCESS</a> mobile app with a:<ul><li data-list-item-id="e321d97a33b226374d09981e4b5a380a7">Checking account or savings account</li><li data-list-item-id="e5ad6c0737b4058281ce3fac213105c0c">Credit card or debit card</li></ul></li><li data-list-item-id="e6cb7f767d3784501b0b32b716946c3cb">By mailing a check or money order to:<br>Medicaid Purchase Plan Program<br>WI Dept of Health Services<br>PO Box 93187<br>Milwaukee, WI 53293-0187</li></ul><p><strong>After the initial premium payment, you can set up recurring monthly payments one of the following ways:</strong></p><ul><li data-list-item-id="e3dd6af92331c512a4654bea1520f1e6b">Online with ACCESS AutoPay in <a href="https://access.wi.gov/s/?language=en_US">ACCESS</a> (<a href="https://access.wi.gov/s/?language=es">ACCESS in Spanish</a>) with a:<ul><li data-list-item-id="e454df23da10ec626870c7aa57bb6186e">Checking account or savings account</li><li data-list-item-id="e1e16db0258ff3b2b02f7fadead447bf2">Credit card or debit card</li></ul></li><li data-list-item-id="efae9559041e31e2a8c677b251a0742ac">Through Electronic Funds Transfer (EFT). Fill out the <a href="/library/collection/f-13023">Member/Employer Electronic Funds Transfer for Medicaid Purchase Plan Premiums, F-13023</a> to pay from a:<ul><li data-list-item-id="e7eed242ecd812bc12e24711a83132005">Checking account</li><li data-list-item-id="e26143794bcacf48a5a1fb3f902a3f50a">Savings account</li></ul></li><li data-list-item-id="e5fcd9b04f35889ce1d79fd553fb3cf97">With wage withholding if offered by your employer. Work with your employer to fill out the <a href="/library/collection/f-13024">Medicaid Purchase Plan Premium Employer Wage Withholding, F-13024</a> form to have the amount taken out of your paycheck.</li></ul></div><div class="grid-col-12 mobile-lg:grid-col-4"><h5>Resources</h5><p><a href="/library/collection/P-03709">How to Pay Your Medicaid Purchase Plan (MAPP) Premium, P-03709</a></p><p><a href="/medicaid/troubleshooting-guide-paying-mapp-online.pdf">Troubleshooting Guide: Paying MAPP Premiums Online (PDF)</a></p></div></div></div><h4 class="usa-accordion__heading"><button class="usa-accordion__button" type="button" aria-expanded="false" aria-controls="b4">Can I pay my premium at the agency?</button></h4><div class="usa-accordion__content usa-prose" id="b4"><p>To avoid processing delays, MAPP premiums should be paid online or by mail. If you go to a local agency with a premium payment, the agency staff will help you pay online or assist you in mailing your check or money order.</p><p>In very limited circumstances, in-person premiums can be accepted for processing by a local agency.</p><p>For this to happen, <strong>all </strong>of the following must be met:</p><ul><li data-list-item-id="ec8feac8557dde953b9611f2e1501f69f">You are unable to pay your premium online, and</li><li data-list-item-id="eb9231f695a7ebc5eec09492998e21b41">Your benefits will end before the payment can be processed by mail, and</li><li data-list-item-id="e1db17b88bd0a664ab9ade1b69bf3eeee">You have a specific and immediate medical need where a delay or a stop in benefits will result in:<ul><li data-list-item-id="e3ba7ef39bfb7201bdd81223cea64cba8">Not being able to get a prescription, or</li><li data-list-item-id="e6c007602643b7e38a63c2aa4d125f2c0">Not being able to attend a medical appointment, or</li><li data-list-item-id="ea60302a86abaa7bd2347c23c6a18cf36">Loss of long-term care services</li></ul></li></ul></div><h4 class="usa-accordion__heading"><button class="usa-accordion__button" type="button" aria-expanded="false" aria-controls="b5">When is my premium due?</button></h4><div class="usa-accordion__content usa-prose" id="b5"><div class="grid-row grid-gap"><div class="grid-col-12 mobile-lg:grid-col-8"><p>MAPP premium payments are due on of the 10<sup>th</sup> day of each month. For example, the premium payment for your January benefits is due on January 10.&nbsp;</p></div><div class="grid-col-12 mobile-lg:grid-col-4"><h5>Resources</h5><p><a href="/library/collection/mapp-pay-reminder">MAPP—Don't Wait to Pay Reminder</a></p></div></div></div><h4 class="usa-accordion__heading"><button class="usa-accordion__button" type="button" aria-expanded="false" aria-controls="b6">What happens if I don't pay my premium on time?</button></h4><div class="usa-accordion__content usa-prose" id="b6"><p>Premium payments are due by the 10<sup>th</sup> of each month. If you don't pay your MAPP premium by the end of the next month, you will be disenrolled. For example, if your premium payment was due February 10, your premium payment must be<strong> received and processed </strong>before March 31 or you will be disenrolled. This extra time allows you to keep your benefits while managing financial challenges.</p><p>If you do not pay your premium or do not have an approved temporary waiver of your premium, your MAPP benefits will end. We will send you a letter telling you this is going to happen.</p><p>If you lose your MAPP benefits after not paying a premium, you can reenroll in MAPP in the future. You will not need to pay the unpaid premium, but you will need to pay any new premiums for you to re-enroll.</p><p>If you participate in an adult long-term care program (Family Care, Family Care Partnership, IRIS, or PACE) and do not pay your MAPP premium, you could be disenrolled from your long-term care program as well. If you stop being enrolled in MAPP and are enrolled in different full-benefit Medicaid health care coverage instead, your monthly cost for your long-term care services could increase.</p></div><h4 class="usa-accordion__heading"><button class="usa-accordion__button" type="button" aria-expanded="false" aria-controls="b7">What if I can't pay my premium?</button></h4><div class="usa-accordion__content usa-prose" id="b7"><div class="grid-row grid-gap"><div class="grid-col-12 mobile-lg:grid-col-8"><p>If you can’t pay your premium due to a difficult situation, you may be able to stop paying for a short time. This is called a temporary waiver. Things to know about temporary waivers:</p><ul><li data-list-item-id="e355a34660e8118f002e67ae6fd128d6f">You may ask for a temporary waiver to last for up to 12 months.</li><li data-list-item-id="e388e2b067eadbcf1928f82142ad92bdc">You can ask for your waiver to backdate up to three months.</li><li data-list-item-id="e01e045d30325c4b3afbd6e3c47e2fc23">You may ask for more than one temporary waiver as long as it does not exceed more than 12 months for the same difficult situation.</li></ul><p>Examples of difficult situations include unexpected expenses related to work, an unexpected expense that may take a few months to pay off, or not being able to find childcare.</p><p>To ask for a temporary waiver, complete the <a href="/library/collection/f-02603">Request for a Temporary Waiver of your Medicaid Purchase Plan Premium Because of a Difficult Situation, F-02603</a> form.</p></div><div class="grid-col-12 mobile-lg:grid-col-4"><h5>Resources</h5><p><a href="/library/collection/P-03699">Medicaid Purchase Plan (MAPP) Hardship Waiver, P-03699</a></p></div></div></div></div><h3>ACCESS AutoPay</h3><div class="usa-accordion"><h4 class="usa-accordion__heading"><button class="usa-accordion__button" type="button" aria-expanded="false" aria-controls="c1">What is ACCESS AutoPay?</button></h4><div class="usa-accordion__content usa-prose" id="c1"><div class="grid-row grid-gap"><div class="grid-col-12 mobile-lg:grid-col-8"><p>ACCESS AutoPay allows you to set up an automatic, ongoing monthly payments from a:</p><ul><li data-list-item-id="e8e541f38bf2001af9f1102ca06dcc807">Credit card</li><li data-list-item-id="ee18a3adf4a80d005ae479a75321330a5">Debit card</li><li data-list-item-id="eddf1018862effa384643e60072b4d6a1">Checking account</li><li data-list-item-id="e48276070049239ee658b211a53e59075">Savings account</li></ul><p>It is available through <a href="https://access.wi.gov/">ACCESS</a> (<a href="https://access.wi.gov/s/?language=es">ACCESS in Spanish</a>) or the <a href="/forwardhealth/myaccess.htm">MyACCESS</a> mobile app. You can set up ACCESS AutoPay after you have paid your initial premium and if you don't owe any past due or current premiums.</p><p>Monthly premiums will be automatically deducted on the third day of each month. This includes weekends and holidays, so you don’t need to worry about delays due to non-business days. This helps ensure timely payments and reduces the risk of benefit loss due to missed payments.</p></div><div class="grid-col-12 mobile-lg:grid-col-4"><h5>Benefits of ACCESS AutoPay</h5><ul><li data-list-item-id="eddc0fa02690a39ff198b013687955a41">It’s a convenient and reliable way to pay ongoing premiums.</li><li data-list-item-id="e6f76332df2400a3cfb5637b19ac02d5f">Helps you pay your premium on time each month.</li><li data-list-item-id="e5b69d7d7febb7ff9efe79513df68f138">Avoids mail or processing delays.</li></ul></div></div></div><h4 class="usa-accordion__heading"><button class="usa-accordion__button" type="button" aria-expanded="false" aria-controls="c2">How do I enroll in ACCESS AutoPay?</button></h4><div class="usa-accordion__content usa-prose" id="c2"><p>Log in to <a href="https://access.wi.gov">ACCESS</a> (<a href="https://access.wi.gov/s/?language=es">ACCESS in Spanish</a>) or the <a href="/forwardhealth/myaccess.htm">MyACCESS</a> mobile app. To enroll, you need to select the link titled <strong>Set Up AutoPay</strong> located on the Premiums Homepage next to your current balance.</p><p>If the AutoPay link is not available, you may not be able to set up AutoPay yet. You cannot have any outstanding premiums due. All benefit months including the current month must be fully paid.</p><p>After you are enrolled, instead of getting a monthly premium statement, you will get a Recurring Payment Reminder for ACCESS AutoPay.</p></div><h4 class="usa-accordion__heading"><button class="usa-accordion__button" type="button" aria-expanded="false" aria-controls="c3">Why was I disenrolled from ACCESS AutoPay</button></h4><div class="usa-accordion__content usa-prose" id="c3"><ul><li data-list-item-id="e280d5a0bcab68930f468f93074c2dace">You will be disenrolled from ACCESS AutoPay if a payment comes back as “unpaid” because we were unable to process your payment using the account information you provided. This could mean that you didn’t have enough money in the account or that the account was closed. In this case, you will need to pay your future premiums using another payment method.</li><li data-list-item-id="e6f795670c0e5b09108245ee87f6011ea">You will be disenrolled from ACCESS AutoPay if you no longer owe a MAPP premium or if you are no longer enrolled in MAPP.</li><li data-list-item-id="ee5f4ec0625b962c4711b3ba100f51c29">You can also voluntarily choose to end ACCESS AutoPay in <a href="https://access.wi.gov/">ACCESS</a> (<a href="https://access.wi.gov/s/?language=es">ACCESS in Spanish</a>) or the <a href="/forwardhealth/myaccess.htm">MyACCESS</a> mobile app.</li></ul></div><h4 class="usa-accordion__heading"><button class="usa-accordion__button" type="button" aria-expanded="false" aria-controls="c4">Is there a fee for using ACCESS AutoPay?</button></h4><div class="usa-accordion__content usa-prose" id="c4"><p>No. There is no service fee or additional charges for paying your monthly premium with ACCESS AutoPay.</p></div><h4 class="usa-accordion__heading"><button class="usa-accordion__button" type="button" aria-expanded="false" aria-controls="c5">Who should I call if I am having trouble paying my premium in ACCESS or MyACCESS?</button></h4><div class="usa-accordion__content usa-prose" id="c5"><p>You can call Member Services at <strong>800-362-3002</strong> for questions about or issues with:</p><ul><li data-list-item-id="ecf5b5208e5bffdc7cd2895b9bf6fc826">ACCESS</li><li data-list-item-id="ef02dec245f810ab9c5f7779710b538d7">MyACCESS</li><li data-list-item-id="e90565929224ea676d7772ba5ff8af37c">ACCESS AutoPay</li></ul></div></div><h3>Work requirement</h3><div class="usa-accordion"><h4 class="usa-accordion__heading"><button class="usa-accordion__button" type="button" aria-expanded="false" aria-controls="d1">What is a work requirement?</button></h4><div class="usa-accordion__content usa-prose" id="d1"><p>A work requirement means you have to engage in a work activity to get and keep your program benefits.</p></div><h4 class="usa-accordion__heading"><button class="usa-accordion__button" type="button" aria-expanded="false" aria-controls="d2">How do I meet the MAPP work requirement?</button></h4><div class="usa-accordion__content usa-prose" id="d2"><p>You have options to meet the MAPP work requirement. You can:</p><ul><li data-list-item-id="e1feed58da39e37aab3d24276223c585a">Engage in a work activity at least once per month. This includes receiving wages from an employer, through self-employment, or by trading in-kind work for goods or services. "In-kind" work means you provide a service for someone in return for something of value, such as food, goods, or services.</li><li data-list-item-id="e2d64b13e739f5cd7e8d8630fd4c11f31">Enroll in the <a href="/employment-skills/hec.htm">Health and Employment Counseling (HEC)</a> pre-employment program if you are not currently employed but are looking for work.</li></ul><p>If you have a health-related hardship and cannot work, you can apply for a temporary work exemption by filling out the <a href="/library/collection/f-10127">Medicaid Purchase Plan Work Requirement Exemption, F-10127</a> form.</p><p>Volunteering does not meet the work requirement. You will still have to pay your premium while you are exempt from the work requirement if you owe one.</p></div></div><h3>Independence accounts</h3><div class="usa-accordion"><h4 class="usa-accordion__heading"><button class="usa-accordion__button" type="button" aria-expanded="false" aria-controls="e1">What is an Independence Account?</button></h4><div class="usa-accordion__content usa-prose" id="e1"><p>An Independence Account is a financial account. Once you are enrolled, you can save up to 100% of your job earnings in an Independence Account without it counting toward the $15,000 asset limit.</p><p>If you save more than 100% of your gross earnings over 12 months in this account, you will have to pay a penalty.</p></div><h4 class="usa-accordion__heading"><button class="usa-accordion__button" type="button" aria-expanded="false" aria-controls="e2">When can I get an Independence Account?</button></h4><div class="usa-accordion__content usa-prose" id="e2"><p>You can set up an Independence Account once you become a MAPP member, but not before.</p><p>All Independence Accounts must be registered with your agency. Do this by filling out the <a href="/library/collection/f-10121">Medicaid Purchase Plan (MAPP) Independence Account Registration, F-10121</a> form.</p></div><h4 class="usa-accordion__heading"><button class="usa-accordion__button" type="button" aria-expanded="false" aria-controls="e3">What if I already have a retirement or pension account?</button></h4><div class="usa-accordion__content usa-prose" id="e3"><p>When you enroll, you can register your retirement or pension accounts as Independence Accounts. The amounts already in these accounts before you enroll will count toward the $15,000 asset limit.</p><p>Deposits, interest, gains, or dividends added after a retirement or pension account becomes an Independence Account won't count toward the $15,000 limit. This is true as long as you are in MAPP.</p></div></div><h2>Questions?</h2><ul><li data-list-item-id="e0d183629214ffca8fc23b8aa8255340d">Contact your <a href="/im-agency">local agency</a> with eligibility and enrollment questions.</li><li data-list-item-id="ed19c15df5b6ee2c4d4506c81938a35ef">For help applying, contact your local <a href="/adrc/consumer/index.htm">Aging and Disability Resource Center (ADRC)</a>.</li><li data-list-item-id="ec3ebd887748e546d3d82338195fa10aa">Call Member Services at 800-362-3002 (voice) or 711 (TTY) for information on covered services or providers.</li></ul>  </div></div>
+
+  
+
+
+
+
+
+
+
+  <div  id="block-wisdhs-wisdhsglossifyinpageglossaryblock" class="c-block c-block--provider-wisdhs-glossify c-block--id-wisdhs-in-page-glossary-block">
+
+  
+  
+      <h2  class="c-block__title">Glossary</h2>
+    
+
+      <div  class="c-block__content">
+  
+      <div id="wisdhs-in-page-glossary-block" class="glossary-terms-list">&nbsp;</div>
+
+  
+      </div>
+  
+  
+  </div>
+
+
+      
+          </article>
+
+          <aside class="c-page-layout__left">
+                
+
+
+
+
+
+  <div  id="block-wisdhs-nodeblock-79946" class="c-block c-block--provider-entity-block c-block--id-entity-blocknode">
+
+  
+  
+    
+
+      <div  class="c-block__content">
+  
+      
+
+
+<aside  class="c-spotlight">
+  <a href="/forwardhealth/myaccess.htm">
+      <img
+  width="1147"  height="1043"   src="/sites/default/files/styles/spotlight/public/dam/image/c/myaccess-mobile-app.png?itok=cpxC-kM2" alt="My Access Mobile App" loading="lazy" title="My Access Mobile App" >
+
+
+  
+    <header class="c-spotlight__header">
+      <h2>Your Benefits on the Go</h2>
+      <div class="c-spotlight__description">
+      
+
+
+
+
+<div  class="c-field c-field--name-body c-field--type-text-with-summary c-field--label-hidden" >
+  <div class="c-field__content" >    <p>Download the MyACCESS app from your app store to manage your benefits anywhere, anytime.</p>  </div></div>
+
+      </div>
+    </header>
+  </a>
+</aside>
+
+
+  
+      </div>
+  
+  
+  </div>
+
+
+
+
+
+
+  <div  id="block-wisdhs-nodeblock-5926" class="c-block c-block--provider-entity-block c-block--id-entity-blocknode">
+
+  
+  
+    
+
+      <div  class="c-block__content">
+  
+      
+
+
+<aside  class="c-spotlight">
+  <a href="/nemt/index.htm">
+      <img
+  width="573"  height="521"   src="/sites/default/files/styles/spotlight/public/dam/image/6/nemt-spotlight.png?itok=1jSTovCA" alt="Non-emergency medical transportation icons, taxi, car and bus" loading="lazy" title="Non-emergency medical transportation icons, taxi, car and bus" >
+
+
+  
+    <header class="c-spotlight__header">
+      <h2>Need a Ride?</h2>
+      <div class="c-spotlight__description">
+      
+
+
+
+
+<div  class="c-field c-field--name-body c-field--type-text-with-summary c-field--label-hidden" >
+  <div class="c-field__content" >    <p>Learn about getting a ride,&nbsp;gas money, or bus vouchers for medical appointments.</p>  </div></div>
+
+      </div>
+    </header>
+  </a>
+</aside>
+
+
+  
+      </div>
+  
+  
+  </div>
+
+
+
+
+
+
+  <div  id="block-wisdhs-nodeblock-79691" class="c-block c-block--provider-entity-block c-block--id-entity-blocknode">
+
+  
+  
+    
+
+      <div  class="c-block__content">
+  
+      
+
+
+<aside  class="c-spotlight">
+  <a href="https://doa.wi.gov/Pages/LicensesHearings/DHAWFSRequestingaHearing.aspx">
+      <img
+  width="573"  height="521"   src="/sites/default/files/styles/spotlight/public/dam/image/3/thoughtful-adult-pen-edited.png?itok=BQoMm2-q" alt="Thoughtful adult holding a notebook and a pen up to his lips" loading="lazy" title="Thoughtful adult holding a notebook and a pen up to his lips" >
+
+
+  
+    <header class="c-spotlight__header">
+      <h2>Request a Fair Hearing</h2>
+      <div class="c-spotlight__description">
+      
+
+
+
+
+<div  class="c-field c-field--name-body c-field--type-text-with-summary c-field--label-hidden" >
+  <div class="c-field__content" >    <p>Get help if you disagree with a decision about your benefits.</p>  </div></div>
+
+      </div>
+    </header>
+  </a>
+</aside>
+
+
+  
+      </div>
+  
+  
+  </div>
+
+
+            </aside>
+    
+      </div>
+</div>
+      
+    
+
+              <div class="grid-container grid-container-widescreen">
+        
+<div  class="c-revision-date margin-bottom-5">
+  <small class="text-base-dark">Last revised August 13, 2026</small>
+</div>
+      </div>
+          </main>
+
+            <div class="c-site-footer c-site-footer--dhs">
+  
+
+<footer  class="usa-footer">
+    <div class="usa-footer__primary-section">
+    <div class="grid-container">
+            
+                
+
+<nav class="usa-footer__nav" aria-label="Footer">
+  <ul class="grid-row grid-gap">
+                <li class="mobile-lg:grid-col-4 desktop:grid-col-auto usa-footer__primary-content">
+        <a class="usa-footer__primary-link" href="https://www.wisconsin.gov/Pages/AllAgencies.aspx">
+          Wisconsin Agencies
+        </a>
+      </li>
+                <li class="mobile-lg:grid-col-4 desktop:grid-col-auto usa-footer__primary-content">
+        <a class="usa-footer__primary-link" href="/job-opps/index.htm">
+          Careers
+        </a>
+      </li>
+                <li class="mobile-lg:grid-col-4 desktop:grid-col-auto usa-footer__primary-content">
+        <a class="usa-footer__primary-link" href="https://publicmeetings.wi.gov/">
+          Public Meeting Notices
+        </a>
+      </li>
+                <li class="mobile-lg:grid-col-4 desktop:grid-col-auto usa-footer__primary-content">
+        <a class="usa-footer__primary-link" href="/dcts/hospital-price-transparency.htm">
+          Price Transparency
+        </a>
+      </li>
+                <li class="mobile-lg:grid-col-4 desktop:grid-col-auto usa-footer__primary-content">
+        <a class="usa-footer__primary-link" href="/your-rights.htm">
+          Your Rights
+        </a>
+      </li>
+                <li class="mobile-lg:grid-col-4 desktop:grid-col-auto usa-footer__primary-content">
+        <a class="usa-footer__primary-link" href="https://www.wisconsin.gov/Pages/Policies.aspx">
+          Website Policies
+        </a>
+      </li>
+                <li class="mobile-lg:grid-col-4 desktop:grid-col-auto usa-footer__primary-content">
+        <a class="usa-footer__primary-link" href="/dhs-website-feedback-form">
+          Site Feedback
+        </a>
+      </li>
+                <li class="mobile-lg:grid-col-4 desktop:grid-col-auto usa-footer__primary-content">
+        <a class="usa-footer__primary-link" href="/aboutdhs/contacts.htm">
+          Contact DHS
+        </a>
+      </li>
+      </ul>
+</nav>
+
+
+        </div>
+  </div>
+  <div class="usa-footer__secondary-section">
+    <div class="grid-container">
+              <div class="grid-row grid-gap">
+          <div class="usa-footer__logo grid-row tablet:grid-col-6 desktop:grid-col-7 mobile-lg:grid-gap-2">
+                                                <div class="usa-footer__legal grid-row grid-gap">
+                              <div id="google_translate_element"></div>
+                            <div>
+                
+
+
+
+
+
+  <div  id="block-sitebranding" class="usa-logo c-block">
+
+  
+  
+    
+
+  
+      
+    
+          
+<span  class="c-site-slogan">Protecting and promoting the health and safety of the people of Wisconsin</span>
+      
+  
+  
+  </div>
+
+
+
+
+
+              </div>
+            </div>
+                                  </div>
+          <div class="usa-footer__contact-links tablet:grid-col-auto desktop:grid-col-5">
+                  
+              
+
+<div class="usa-footer__social-links">
+  <div class="grid-row">
+    <h2 class="grid-col-auto c-social-heading">Connect with DHS</h2>
+  </div>
+  <div class="grid-row">
+      <div class="grid-col-auto">
+                        <a class="usa-social-link" href="https://www.facebook.com/DHSWI/" target="_blank">
+        <img
+          class="usa-social-link__icon"
+          src="/themes/custom/wisdhs/dist/images/placeholder.svg"
+          data-src="/themes/custom/wisdhs/dist/images/usa-icons/facebook.svg"
+          alt="Facebook"
+          width="40"
+          height="46"
+        />
+      </a>
+    </div>
+      <div class="grid-col-auto">
+                        <a class="usa-social-link" href="https://www.instagram.com/dhs.wi/" target="_blank">
+        <img
+          class="usa-social-link__icon"
+          src="/themes/custom/wisdhs/dist/images/placeholder.svg"
+          data-src="/themes/custom/wisdhs/dist/images/usa-icons/instagram.svg"
+          alt="Instagram"
+          width="40"
+          height="46"
+        />
+      </a>
+    </div>
+      <div class="grid-col-auto">
+                        <a class="usa-social-link" href="http://twitter.com/DHSWI" target="_blank">
+        <img
+          class="usa-social-link__icon"
+          src="/themes/custom/wisdhs/dist/images/placeholder.svg"
+          data-src="/themes/custom/wisdhs/dist/images/usa-icons/twitter.svg"
+          alt="Twitter"
+          width="40"
+          height="46"
+        />
+      </a>
+    </div>
+      <div class="grid-col-auto">
+                        <a class="usa-social-link" href="https://www.youtube.com/user/dhswi" target="_blank">
+        <img
+          class="usa-social-link__icon"
+          src="/themes/custom/wisdhs/dist/images/placeholder.svg"
+          data-src="/themes/custom/wisdhs/dist/images/usa-icons/youtube.svg"
+          alt="YouTube"
+          width="40"
+          height="46"
+        />
+      </a>
+    </div>
+      <div class="grid-col-auto">
+                        <a class="usa-social-link" href="https://www.linkedin.com/company/wisconsin-department-of-health-services" target="_blank">
+        <img
+          class="usa-social-link__icon"
+          src="/themes/custom/wisdhs/dist/images/placeholder.svg"
+          data-src="/themes/custom/wisdhs/dist/images/usa-icons/linkedin.svg"
+          alt="LinkedIn"
+          width="40"
+          height="46"
+        />
+      </a>
+    </div>
+      <div class="grid-col-auto">
+                        <a class="usa-social-link" href="/news/rss.xml" target="_blank">
+        <img
+          class="usa-social-link__icon"
+          src="/themes/custom/wisdhs/dist/images/placeholder.svg"
+          data-src="/themes/custom/wisdhs/dist/images/usa-icons/rss_feed.svg"
+          alt="RSS"
+          width="40"
+          height="46"
+        />
+      </a>
+    </div>
+      <div class="grid-col-auto">
+                        <a class="usa-social-link" href="/aboutdhs/alerts.htm" target="_blank">
+        <img
+          class="usa-social-link__icon"
+          src="/themes/custom/wisdhs/dist/images/placeholder.svg"
+          data-src="/themes/custom/wisdhs/dist/images/usa-icons/mail.svg"
+          alt="Mail"
+          width="40"
+          height="46"
+        />
+      </a>
+    </div>
+    </div>
+</div>
+
+
+                          </div>
+        </div>
+          </div>
+  </div>
+  </footer>
+</div>
+
+        </div>
+</div>
+
+
+  </div>
+
+    
+          
+
+
+<a href="#top"  class="c-back-to-top" title="Back to top" aria-hidden="true" tabindex="-1">
+  <svg  class="c-icon c-icon--back-to-top" role="img"><title>Back to top</title><use href="/themes/custom/wisdhs/dist/images/sprite.artifact.svg#angle-up"></use></svg></a>
+        <script src="/sites/default/files/js/js_J1eeQZjSHVuRD4hDC_ofOV7XHQJRQ3i9Nve2IKUXAh0.js?scope=footer&amp;delta=0&amp;language=en&amp;theme=wisdhs&amp;include=eJxdjmEOgzAIhS9k7Gm2vw22rDKxmIJOb78us0tmQgjv4xEe7saUJxfLugD3-JVdEkmM3iC5VNtV9_CE_R_O3Ys0juoGCJM3qbU0lFgG4KZmGaieKUXMsJ3UV48qPQ530b_9-axAVgZDdwXNuKwDU3BKhjQvRTaEDHwYBW2WgpEKBnNt8FHqVc3EoGNzbTWgeAqSz0w3IyY77h_-BjfTfE4"></script>
+<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+<script src="https://siteimproveanalytics.com/js/siteanalyze_6358476.js" async></script>
+<script src="/sites/default/files/js/js_wZbJzJkwJvPAieaJ9cBsy47HD1_wFhtaMMYemulojqM.js?scope=footer&amp;delta=3&amp;language=en&amp;theme=wisdhs&amp;include=eJxdjmEOgzAIhS9k7Gm2vw22rDKxmIJOb78us0tmQgjv4xEe7saUJxfLugD3-JVdEkmM3iC5VNtV9_CE_R_O3Ys0juoGCJM3qbU0lFgG4KZmGaieKUXMsJ3UV48qPQ530b_9-axAVgZDdwXNuKwDU3BKhjQvRTaEDHwYBW2WgpEKBnNt8FHqVc3EoGNzbTWgeAqSz0w3IyY77h_-BjfTfE4"></script>
+
+<script type="text/javascript">window.NREUM||(NREUM={});NREUM.info={"beacon":"bam.nr-data.net","licenseKey":"NRJS-dd458ee62a262e06626","applicationID":"708311829","transactionName":"NFYEMBRXX0MHUhVQCg0cJREVQl5dSVQPTQwXSkgKCVJUHgVQD1YLClAHCFxGUFcD","queueTime":12,"applicationTime":468,"atts":"GBETRlxNTBxEUEMDHh5O","errorBeacon":"bam.nr-data.net","agent":""}</script>
+
+  </body>
+</html>
