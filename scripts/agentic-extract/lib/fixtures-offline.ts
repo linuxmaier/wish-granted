@@ -10,7 +10,11 @@
  * prove the machinery, not to stand in for a live measurement.
  */
 
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
 const H = 'https://www.dhs.wisconsin.gov';
+const DPI = 'https://dpi.wi.gov';
 
 /** BadgerCare Plus income page -- the cited URL, which 404s in the wild. */
 export const BADGERCARE_DEAD_URL = `${H}/badgercareplus/income-limits.htm`;
@@ -85,10 +89,43 @@ export const SENIORCARE_INDEX_HTML = `<!doctype html><html><body><main>
   <p>Your coverage level and copayments depend on your income, but every eligible person can enroll regardless of income. Level 3 has no upper income limit.</p>
 </main></body></html>`;
 
+/**
+ * School meals (#77): the DPI landing page states the rule only as "130% / 185%
+ * of federal poverty guidelines" and links out to the numeric table -- once as a
+ * live federal PDF, once as a dead "Nutshell" link (school-meals-wi's real 404).
+ */
+export const SCHOOL_MEALS_SOURCE_URL = `${DPI}/school-nutrition/programs/national-school-lunch/income-eligibility`;
+/** The real, stable Federal Register PDF the thresholds actually come from. */
+export const SCHOOL_MEALS_PDF_URL =
+  'https://www.govinfo.gov/content/pkg/FR-2025-03-13/pdf/2025-03821.pdf';
+/** A dead "Nutshell" PDF link, like the one #72's run could not recover. */
+export const SCHOOL_MEALS_DEAD_PDF_URL = `${DPI}/sites/default/files/imce/school-nutrition/pdf/nutshell-income-guidelines.pdf`;
+
+/** Byte-for-byte the committed fixture (see __tests__/fixtures/SOURCES.md). */
+export const CNP_IEG_PDF_BYTES: Uint8Array = readFileSync(
+  fileURLToPath(new URL('./__tests__/fixtures/cnp-income-eligibility-guidelines-2025.pdf', import.meta.url)),
+);
+
+export const SCHOOL_MEALS_LANDING_HTML = `<!doctype html><html><head><title>School meal income eligibility</title></head>
+<body><nav>DPI menu</nav><main>
+  <h1>Income eligibility for free and reduced-price school meals</h1>
+  <p>Children from households whose income is at or below the federal income eligibility guidelines
+     may receive free or reduced-price meals. The guidelines are set each year by the U.S.
+     Department of Agriculture at 130 percent of the federal poverty guidelines for free meals and
+     185 percent for reduced-price meals.</p>
+  <h2>Current income limits</h2>
+  <p>See the <a href="${SCHOOL_MEALS_PDF_URL}">USDA Income Eligibility Guidelines (Federal Register notice, PDF)</a>
+     for the dollar amounts by household size, effective July 1, 2025 through June 30, 2026.</p>
+  <p>A one-page summary is also available in the
+     <a href="${SCHOOL_MEALS_DEAD_PDF_URL}">Nutshell income guidelines (PDF)</a>.</p>
+</main><footer>Wisconsin DPI</footer></body></html>`;
+
 export interface OfflineFixtureSet {
   [url: string]: {
     status?: number;
     body?: string;
+    bytes?: Uint8Array;
+    contentType?: 'pdf' | 'html';
     finalUrl?: string;
     unreachable?: string;
     blocked?: string;
@@ -108,6 +145,9 @@ export function offlineFixtures(today = new Date().toISOString().slice(0, 10)): 
     [SENIORCARE_SOURCE_URL]: { body: SENIORCARE_FPL_HTML },
     [SENIORCARE_INDEX_URL]: { body: SENIORCARE_INDEX_HTML },
     [`${H}/seniorcare/`]: { status: 404 },
+    [SCHOOL_MEALS_SOURCE_URL]: { body: SCHOOL_MEALS_LANDING_HTML },
+    [SCHOOL_MEALS_PDF_URL]: { contentType: 'pdf', bytes: CNP_IEG_PDF_BYTES },
+    [SCHOOL_MEALS_DEAD_PDF_URL]: { status: 404 },
     // The eCFR versioner: 406 unless the request carries Accept-Encoding.
     [ecfrUrl.split('?')[0]!]: {
       body: ECFR_273_1_XML,

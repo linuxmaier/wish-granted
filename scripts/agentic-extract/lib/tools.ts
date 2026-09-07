@@ -42,7 +42,7 @@ export function buildTools(): ToolDef[] {
     {
       name: TOOL_NAMES.fetch,
       description:
-        'Fetch a source URL and get back its text with structure preserved (headings kept, every block tagged with the heading path it sits under, tables rendered row-by-row with column headers attached to each cell). Follows redirects. If the URL is dead (404/410) it tries sibling and index pages automatically; if that fails you get the dead-URL report and should try a corrected URL or search_web.',
+        'Fetch a source URL and get back its text with structure preserved (headings kept, every block tagged with the heading path it sits under, tables rendered row-by-row with column headers attached to each cell). Works on HTML pages and on linked PDFs alike -- a PDF income table comes back as a TABLE with its column meanings intact, not flattened prose; cite the PDF\'s own URL as provenance for anything you read in it. Follows redirects. If the URL is dead (404/410) it tries sibling and index pages automatically; if that fails you get the dead-URL report and should try a corrected URL or search_web (or abstain if the governing numbers lived only in a PDF that is gone).',
       input_schema: {
         type: 'object',
         properties: { url: { type: 'string', description: 'Absolute URL to fetch.' } },
@@ -120,6 +120,7 @@ export function buildSystemPrompt(): string {
     `Method:`,
     `- Start from the source URL you are given. Fetch it. Follow "eligibility", "who qualifies", "income limits" links. If a URL is dead, the fetch tool tries to recover it; if that fails, try a corrected URL.`,
     `- Read structure as structure. A number under a column header like "Pregnant people and children monthly income limit (306% FPL)" is scoped to that population -- it is NOT a blanket ceiling. A percentage three paragraphs below a sentence that calls those percentages "cost-sharing tiers" is not an eligibility threshold.`,
+    `- Follow links to PDFs. Income notices often state the rule in prose on a landing page and put the dollar table in a linked PDF; fetch_page reads the PDF and returns its table as a table. Cite the PDF's own URL. If the PDF link is dead and you cannot recover the numbers from a fetched page, abstain -- do not fill them in from memory.`,
     `- If the text says "notwithstanding paragraph (a)" or cites another section, resolve it with resolve_cfr_reference before you rely on it.`,
     `- The eligibility list may be on a different page than the one cited as the source. Assemble across pages.`,
     ``,

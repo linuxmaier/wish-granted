@@ -308,7 +308,16 @@ export function parseStructure(html: string): StructureNode[] {
 
 /** Render a structure node list back to text a model can read, structure intact. */
 export function renderStructured(html: string): string {
-  const nodes = parseStructure(html);
+  return renderNodes(parseStructure(html));
+}
+
+/**
+ * Render an already-parsed structure node list. Split out from `renderStructured`
+ * so the PDF path (lib/pdf.ts) can produce the exact same block/table format the
+ * model and the provenance matcher are built around, from `StructureNode`s it
+ * assembles from glyph coordinates rather than from HTML tags.
+ */
+export function renderNodes(nodes: readonly StructureNode[]): string {
   const out: string[] = [];
   for (const node of nodes) {
     const prefix = node.path.length > 0 ? `[${node.path.join(' > ')}] ` : '';

@@ -239,6 +239,7 @@ export async function runAgent(ctx: ExtractionContext, opts: AgentOptions): Prom
             tool_use_id: use.id,
             content:
               `Fetched: ${nr.page.finalUrl}` +
+              `${nr.page.format === 'pdf' ? ' (PDF -- read as structured text below; cite THIS url)' : ''}` +
               `${nr.page.redirected ? ' (redirected)' : ''}${nr.page.recovered ? ' (RECOVERED from a dead URL -- confirm this is the right page)' : ''}\n\n` +
               `${cap(nr.page.structured)}${refNote}`,
           });
