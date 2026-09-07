@@ -575,6 +575,71 @@ these numbers** -- doing so before the fix is designed would destroy the baselin
 own argument). That work, and whether option 2 closes the gap without making the controls
 abstain, is phase 2 of #51.
 
+#### Phase 2 measured (2026-09-06): option 2 did not work
+
+Option 2 -- a scope-carrying obligation requiring the model to enumerate every precondition
+it saw as `encoded` / `dropped` / `undecidable`, with a dropped precondition outside a
+`manualReview` treated as a gate failure -- was implemented and measured under the phase-2
+discipline: tuned on the 14-case tuning split only, held-out run once, result reported as
+returned. The prompt was **not** touched afterwards.
+
+| Metric | Pre-fix baseline | Post-fix |
+|---|---|---|
+| Correct abstentions | 18 / 21 | 15 / 21 |
+| **Dangerous over-claims** | **3** | **3** (a *different* three) |
+| Correct extractions | 5 / 6 | **1 / 6** |
+| Gate failures | 0 | **3** |
+| Over-cautious | 1 | 4 |
+
+**Safety unchanged, utility collapsed.** Both named controls broke, plus one malformed
+output.
+
+The three original targets *were* neutralised -- `lifeline-survivor-extended` and
+`emergency-assistance-emergency-gate` abstained, and `seniorcare` / `qmb` emitted rules
+whose dropped scope the model **listed**, so the gate caught them (a dangerous over-claim
+converted into a gate failure is a real safety gain). Option 2 does what it promised **when
+the gating clause is a prominent sentence or bullet.**
+
+But three *new* dangerous over-claims appeared, and they share one property: the governing
+scope is **implicit or structural** -- a table column header
+(`badgercare-plus-population-columns`), a negation (`cda-residency-not-required`, where the
+excerpt says residency is *not* required), a "notwithstanding" clause
+(`snap-cfr-elderly-separate-household`). The model never perceived these as preconditions,
+so they never entered the inventory, so the gate had nothing to check.
+
+**That is the self-report hole predicted when option 2 was chosen** -- it catches
+"noticed and discarded", never "never noticed" -- and with option 2 in place it becomes the
+*dominant* failure mode rather than a residual one. Note also that the tuning split looked
+clean (0 dangerous, 0 gate trips, 8/8 abstain across three runs) and could not have
+predicted this: it contains no conditional-scope trap by design.
+
+The implementing PR (#61) was **deliberately not merged** -- it made the extractor
+measurably worse. It stays open as the record of a measured negative result. The finding
+that mattered is recorded here: incremental patching of single-shot,
+fixed-excerpt extraction was not converging, which is what motivated the re-approach in
+issue #65 and the finding below.
+
+#### The excerpt itself was the constraint (2026-09-06)
+
+Every design measured in §4.4-§4.6 evaluated one task: **given a fixed, pre-cut,
+prose-flattened excerpt, emit a `Criterion` in a single shot.** Re-reading the six dangerous
+over-claims, every one is a **context-starvation failure**, not a comprehension failure --
+SNAP's `notwithstanding paragraph (a)` where paragraph (a) was not in the excerpt;
+BadgerCare's column header destroyed by flattening; SeniorCare's cost-sharing tiers
+explained on the page but outside the excerpt.
+
+A wizard-of-oz test gave four agents **only a source URL** -- no excerpt -- for exactly the
+four cases that defeated every design above. **All four got them right**, refusing to encode
+165% FPL as an eligibility ceiling, emitting no income criterion at all for SeniorCare,
+keeping Lifeline's 200% survivor branch in `manualReview`, and reading BadgerCare's column
+headers into a population-scoped rule. Every quoted span was verified verbatim against the
+live pages.
+
+**So the ~17% Tier-3 ceiling reported from these measurements is an artefact of the excerpt,
+not a limit on capability.** See `docs/eligibility-extraction-framing.md` and
+`docs/eligibility-extraction-tier3.md` for the two follow-on investigations, and issue #65
+for the pipeline that replaced this approach.
+
 ### 4.7 Prompt caching (issue #43)
 
 The request is assembled `tools` -> `system` -> `messages`. The ~79 KB schema tool and the
