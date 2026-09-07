@@ -69,10 +69,15 @@ export function buildTools(): ToolDef[] {
     {
       name: TOOL_NAMES.search,
       description:
-        'Search the web for the current location of a program page. NOTE: web search is not wired in this build -- this returns guidance only. Prefer fetch_page with a corrected URL.',
+        'Find a page on the SOURCE\'S OWN SITE that states a rule you cannot reach from the page you were given. Site-scoped: it searches only the host of the source URL (e.g. dhs.wisconsin.gov), by reading that site\'s sitemap and crawling its links -- not the open web, no third-party engine. Returns ranked URLs with a title and a text snippet. The snippet is NOT provenance: fetch_page the URL you pick and quote the real page. Use this when fetch_page keeps 404ing or lands back on an index and the governing figures (income limits, thresholds) are clearly on some other page of the same site.',
       input_schema: {
         type: 'object',
-        properties: { query: { type: 'string' } },
+        properties: {
+          query: {
+            type: 'string',
+            description: 'What the page says, in the site\'s words -- e.g. "FoodShare monthly income limits" or "SeniorCare eligibility spending levels".',
+          },
+        },
         required: ['query'],
         additionalProperties: false,
       },
@@ -119,6 +124,7 @@ export function buildSystemPrompt(): string {
     ``,
     `Method:`,
     `- Start from the source URL you are given. Fetch it. Follow "eligibility", "who qualifies", "income limits" links. If a URL is dead, the fetch tool tries to recover it; if that fails, try a corrected URL.`,
+    `- If the rule is clearly stated somewhere on the source's site but you cannot reach that page -- fetch_page keeps 404ing, or lands back on an index, and the navigation links are not in the page text -- call search_web with what the page would say. It searches only that site and returns candidate URLs; fetch_page the one you pick and quote it. Do not keep guessing URLs.`,
     `- Read structure as structure. A number under a column header like "Pregnant people and children monthly income limit (306% FPL)" is scoped to that population -- it is NOT a blanket ceiling. A percentage three paragraphs below a sentence that calls those percentages "cost-sharing tiers" is not an eligibility threshold.`,
     `- Follow links to PDFs. Income notices often state the rule in prose on a landing page and put the dollar table in a linked PDF; fetch_page reads the PDF and returns its table as a table. Cite the PDF's own URL. If the PDF link is dead and you cannot recover the numbers from a fetched page, abstain -- do not fill them in from memory.`,
     `- If the text says "notwithstanding paragraph (a)" or cites another section, resolve it with resolve_cfr_reference before you rely on it.`,

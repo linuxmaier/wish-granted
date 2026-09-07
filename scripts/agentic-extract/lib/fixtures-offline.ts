@@ -106,6 +106,40 @@ export const CNP_IEG_PDF_BYTES: Uint8Array = readFileSync(
   fileURLToPath(new URL('./__tests__/fixtures/cnp-income-eligibility-guidelines-2025.pdf', import.meta.url)),
 );
 
+/**
+ * FoodShare / site-search (#75): byte-for-byte captures of dhs.wisconsin.gov,
+ * fetched 2026-09-07 (see __tests__/fixtures/SOURCES.md for URLs + SHA-256).
+ *
+ * `foodshare-snap-wi` is #72's last unsolved case: the extractor knew FoodShare
+ * has size-tiered income limits but could not reach the page stating the
+ * figures. That page is `/foodshare/fpl.htm`. The entry page (`/foodshare/
+ * index.htm`) links to it -- but only from the sidebar <nav>, which the
+ * structure renderer drops, so the model never sees the URL. And the site's
+ * paginated Drupal sitemap 403s (Akamai blocks every query string), so the
+ * sitemap is an index of unreachable children. site-search bridges this by
+ * crawling the site's links.
+ */
+const readFixture = (name: string): string =>
+  readFileSync(fileURLToPath(new URL(`./__tests__/fixtures/${name}`, import.meta.url)), 'utf8');
+
+export const DHS_ROBOTS_URL = `${H}/robots.txt`;
+export const DHS_SITEMAP_URL = `${H}/sitemap.xml`;
+export const FOODSHARE_INDEX_URL = `${H}/foodshare/index.htm`;
+export const FOODSHARE_FPL_URL = `${H}/foodshare/fpl.htm`;
+export const FOODSHARE_ELIGIBILITY_URL = `${H}/foodshare/eligibility.htm`;
+
+export const DHS_ROBOTS_TXT = readFixture('dhs-wisconsin-gov-robots.txt');
+export const DHS_SITEMAP_XML = readFixture('dhs-wisconsin-gov-sitemap.xml');
+export const FOODSHARE_INDEX_HTML = readFixture('dhs-foodshare-index.html');
+export const FOODSHARE_FPL_HTML = readFixture('dhs-foodshare-fpl.html');
+
+/** Minimal synthetic host root -- the real one is 200 KB of nav; all the
+ *  search path needs from it is a link into the FoodShare section. */
+export const DHS_ROOT_HTML = `<!doctype html><html><head><title>Wisconsin Department of Health Services</title></head>
+<body><main><h1>Wisconsin Department of Health Services</h1>
+<p>Programs include <a href="/foodshare/index.htm">FoodShare Wisconsin</a> and
+<a href="/badgercareplus/index.htm">BadgerCare Plus</a>.</p></main></body></html>`;
+
 export const SCHOOL_MEALS_LANDING_HTML = `<!doctype html><html><head><title>School meal income eligibility</title></head>
 <body><nav>DPI menu</nav><main>
   <h1>Income eligibility for free and reduced-price school meals</h1>
@@ -153,5 +187,15 @@ export function offlineFixtures(today = new Date().toISOString().slice(0, 10)): 
       body: ECFR_273_1_XML,
       requireHeaders: { 'accept-encoding': 'gzip' },
     },
+    // #75 -- FoodShare site-search: real captured DHS pages, the real sitemap
+    // index, and its children 403ing exactly as Akamai does in the wild.
+    [DHS_ROBOTS_URL]: { body: DHS_ROBOTS_TXT },
+    [DHS_SITEMAP_URL]: { body: DHS_SITEMAP_XML },
+    [`${H}/`]: { body: DHS_ROOT_HTML },
+    [FOODSHARE_INDEX_URL]: { body: FOODSHARE_INDEX_HTML },
+    [FOODSHARE_FPL_URL]: { body: FOODSHARE_FPL_HTML },
+    ...Object.fromEntries(
+      Array.from({ length: 11 }, (_, i) => [`${H}/sitemap.xml?page=${i + 1}`, { status: 403 }]),
+    ),
   };
 }
