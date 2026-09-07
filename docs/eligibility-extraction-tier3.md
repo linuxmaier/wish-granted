@@ -24,12 +24,14 @@ governing scope attached* or abstains with a named reason. Run it with
 ## TL;DR
 
 - **A meaningful slice of Tier 3 is deterministically parseable — but it is a
-  minority, and most of the "correct answers" in Tier 3 are abstentions.** On a
-  frozen held-out split of 10 Tier-3 sources the parser got **10/10**: 8/8
-  correct abstentions, 2/2 correct scoped extractions, **0 dangerous
-  over-claims, 0 over-cautious**. On the 24-source tuning split it got 24/24
-  (17/17 abstain, 7/7 extract, 0 dangerous). Both numbers have heavy caveats —
-  see [§6](#6-how-much-to-believe).
+  minority, and most of the "correct answers" in Tier 3 are abstentions.** On the
+  24-source tuning split the parser got 24/24 (17/17 abstain, 7/7 extract, 0
+  dangerous). On the first held-out split it got **10/10 — but that number is
+  tuned** (the signal set was extended against its 3 first-run failures). The
+  **clean, untuned measurement** ([§9](#9-clean-held-out-measurement-issue-71),
+  issue #71) — a third frozen set the tuned rules were never written against — is
+  **2 dangerous over-claims in 14 sources**, 10/12 abstentions, 2/2 extractions.
+  All three numbers have heavy caveats — see [§6](#6-how-much-to-believe) and §9.
 - **The parser correctly handles the exact failure class that is blocking the
   LLM path.** Of the six dangerous over-claims ever measured from an LLM (#62's
   own table), this parser reaches the right answer on **five** —
@@ -246,9 +248,10 @@ the survivor-only 200% never surfaced. Both match the shipped records.
 
 **This 10/10 is no longer a clean held-out number** — the classifier was
 adjusted for the exact failures this set surfaced. The clean measurement is
-§4.1's 3-dangerous baseline. What §4.2 shows is the *shape of the fix*: the
-failures clustered, and closing them cost 5 rules and no redesign, and did not
-regress the tuning split.
+§4.1's 3-dangerous baseline, and now [§9](#9-clean-held-out-measurement-issue-71)'s
+untuned re-measurement on a third frozen set (**2 dangerous in 14**). What §4.2
+shows is the *shape of the fix*: the failures clustered, and closing them cost 5
+rules and no redesign, and did not regress the tuning split.
 
 ---
 
@@ -292,9 +295,9 @@ Stated plainly, because the numbers look better than they are:
   mechanism works, not evidence about coverage.
 - **The held-out 10/10 is post-hoc.** §4.1's 3-dangerous baseline is the clean
   number. A truly clean re-measurement needs a *third* frozen set that the §4.2
-  rules were not written against. This spike did not build one — that is the
-  obvious next step and it is cheap (fetch ~10 more WI/CFR sources, freeze, run
-  once).
+  rules were not written against. **[§9](#9-clean-held-out-measurement-issue-71)
+  (issue #71) built one: 2 dangerous over-claims in 14, one describable class the
+  §4.2 rules miss.** The tuned 0 did not hold.
 - **The abstention count is inflatable.** 10 of the 24 tuning abstentions and
   several held-out ones are "no income figure on the page" — a `grep '%'` gets
   those too. The load-bearing abstentions are the ~7 tuning + ~5 held-out where
@@ -364,10 +367,126 @@ Stated plainly, because the numbers look better than they are:
 
 - `scripts/tier3-extract/` — the parser (`ecfr-structure.mjs`,
   `html-structure.mjs`, `classify.mjs`, `extract.mjs`, `sources.mjs`,
-  `index.mjs`). `npm run extract:tier3` / `-- --verbose` / `-- --split=heldout`
-  / `-- --live`.
+  `index.mjs`). `npm run extract:tier3` / `-- --verbose` /
+  `-- --split=heldout` / `-- --split=heldout2` / `-- --live`.
 - `tests/data/tier3-extraction.test.ts` — locks the measured result (offline,
   in CI).
-- `tests/fixtures/tier3/` + `tests/fixtures/tier3-heldout/` — real source
-  snapshots, `SOURCES.md` in each.
+- `tests/fixtures/tier3/` + `tests/fixtures/tier3-heldout/` +
+  `tests/fixtures/tier3-heldout2/` — real source snapshots, `SOURCES.md` in
+  each.
 - Not wired into `src/` in any way; `npm run build` is unaffected.
+
+---
+
+## 9. Clean held-out measurement (issue #71)
+
+§4.2's 10/10 is **tuned** — the five signal-set rules were written against the
+exact failures §4.1's split surfaced. §6 flagged the fix: "a truly clean
+re-measurement needs a *third* frozen set that the §4.2 rules were not written
+against." This is that set.
+
+**Method.** 14 new sources (`TIER3_HELDOUT2` in `scripts/tier3-extract/sources.mjs`,
+`tests/fixtures/tier3-heldout2/SOURCES.md`), fetched 2026-09-07 with a
+desktop-Chrome user agent, **after** the §4.2 rules landed and **before** the
+parser was run against them. None reused from the tuning or §4 splits. Weighted
+per #71 toward the shape that has broken every design so far — a plausible
+percentage whose governing scope sits somewhere structural (an age band, a
+Medicare / disability / disease-diagnosis gate, an income-deductible tier, a
+"higher of" floor, a four-way subpopulation branch). 12 expected-abstain, 2
+expected-extract controls (a WIC categorical situational test; a Head Start
+poverty-line ceiling). `expected` for each was written by reading the frozen
+fixture against `src/domain/facts.ts` and the shipped records — never from parser
+output. `classify.mjs` / `extract.mjs` were **not touched** before or after the
+run. The parser was run **once**; the result is recorded here as-is and locked in
+the test.
+
+### 9.1 The four numbers (never blended)
+
+| | count |
+|---|---|
+| correct abstentions | **10 / 12** |
+| correct extractions (scope intact) | **2 / 2** |
+| **dangerous over-claims** | **2** |
+| over-cautious | **0** |
+| parse failures | 0 |
+
+**The parser's tuned 0 did not hold up on a clean set: 2 dangerous over-claims
+in 14 sources.** Both are an income ceiling emitted with its scope-gating
+co-condition dropped:
+
+| Source | Emitted | Scope dropped |
+|---|---|---|
+| `h2-hdap` (WI HIV Drug Assistance Program) | `incomeAtOrBelow(fpl, 300)` | "Be living with HIV, confirmed by a doctor" — a disease-diagnosis gate, one of three items in a `To be eligible, you must:` AND-list |
+| `h2-cfr-423-773` (Medicare Part D low-income subsidy) | `incomeAtOrBelow(fpl, 150)` | "a Part D eligible individual … enrolled in … a Part D plan" (a Medicare gate) **and** "resources at or below the resource thresholds" (an asset test) |
+
+### 9.2 Do they cluster?
+
+**Yes — into one class the five §4.2 rules do not cover: an income ceiling in an
+eligibility AND-list whose gating co-condition is a categorical
+enrolment-or-health-status that (a) has no fact and (b) is not phrased the way the
+signal set expects.** The §4/tuning splits *do* handle this shape — QMB and SLMB
+abstain — but only through the literal string `entitled to Medicare Part A or
+Part B-ID` in `RE.undecidableGate`. Neither clean failure uses that wording:
+
+- Part D §423.773 states the identical Medicare gate as "a Part D eligible
+  individual … enrolled in … a Part D plan". Same concept, different words, regex
+  misses it → the 150% ceiling passes the gates.
+- HDAP's gate is a **disease diagnosis** ("living with HIV, confirmed by a
+  doctor"), a category the tuning and §4 corpora never contained at all.
+
+Corroborating that this is a class and not two flukes: `h2-wcdp` is *also*
+disease-gated (cystic fibrosis / hemophilia / renal disease) and the parser
+abstained on it — but only by luck. WCDP phrases its figure as an income
+deductible ("if you make more than 300% … you must pay a certain amount
+yourself"), so it fell through to `NO_ELIGIBILITY_CONTEXT`. Had WCDP written "to
+be eligible your income must be at or below 300%", it would almost certainly have
+over-claimed too. So the disease-diagnosis-gate exposure is wider than the count
+of 2.
+
+This is a cluster, which per #71's framing "suggests one more auditable rule" —
+a `RE.enrolmentOrDiagnosisGate` generalising `entitled to Medicare` to
+`(Part [A-D] eligible|enrolled in (a )?Part [A-D] plan|living with [A-Z]{2,}|
+diagnosed (with|by)|confirmed by a (doctor|physician))`. **It is deliberately not
+added here** (issue #71: build the set, run once, report, stop — fixing is what
+burned the previous split). The honest read is the same as §4's: the
+deterministic path's failure mode is an incomplete model of scope-gating
+language, the failures cluster rather than scatter, and each gap is a one-line
+reviewable regex — but the clean rate is **2 dangerous in 14**, not 0, and the
+signal set will keep needing this kind of extension as the corpus grows.
+
+### 9.3 What went right, and the honesty caveats on the 10
+
+- **Both extract controls passed.** `h2-wic-index` →
+  `anyOf(isPregnantOrPostpartum, hasChildUnder5)`; `h2-headstart` →
+  `incomeAtOrBelow(fpl, 100)` (the "below the poverty guidelines" ceiling, with
+  the foster-care / homeless / TANF-SSI-SNAP routes correctly treated as
+  additional inclusion, not surfaced as a bare higher number). So the parser is
+  not merely abstaining on everything.
+- **The age-band rule generalised cleanly.** `h2-cfr-435-119` (133% FPL, "age 19
+  or older and under age 65") and `h2-cfr-435-118` (133% / 185% by age group)
+  both abstained `UNDECIDABLE_COCONDITION` on the age band — a real §4.2 rule
+  doing its job on unseen eCFR sources.
+- **Three of the 10 abstained for a reason adjacent to, not identical to, the
+  true one.** `h2-cfr-24-5-603` abstained on "be employed" (matched inside the
+  *child-care-expenses* definition) rather than "this is a definitions section,
+  not a program ceiling"; `h2-tmj` abstained on "18 or older" rather than on its
+  decisive four-way subpopulation branch; `h2-dor-eic` abstained `NO_SCALE` on a
+  `$30,000` figure lifted from a worked example rather than recognising the
+  4/11/34%-of-federal-credit figures as non-income. Right answer, lucky path —
+  the same "the load-bearing abstentions are fewer than the count" caveat §6
+  makes about the tuning split.
+- Of the 12 expected-abstain sources, **4 were "no income figure on the page"**
+  (`h2-caretaker-supplement`, `h2-family-care`, and effectively `h2-dor-eic`) —
+  a `grep '%'` gets those. The load-bearing abstentions here are the ~6 where a
+  plausible percentage had to be rejected on structural grounds, and the parser
+  got 4 of those 6 (missing `h2-hdap` and `h2-cfr-423-773`).
+
+### 9.4 Bottom line for #69 / #62
+
+The §4.2 "0 dangerous over-claims, held-out" line **cannot be cited as the
+held-out rate.** The clean, untuned rate is **2 dangerous over-claims in 14
+sources** (≈14%), clustered into a single describable class (an enrolment- or
+diagnosis-gated ceiling the signal regex doesn't match by wording). That is
+still materially better than the LLM path's measured baseline and every failure
+is a one-line auditable diff — the §7 recommendation stands — but the number that
+belongs in the #69 summary is this one, not the tuned 0.

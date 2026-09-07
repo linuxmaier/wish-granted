@@ -3,6 +3,7 @@ import {
   evaluate,
   TIER3_SOURCES,
   TIER3_HELDOUT,
+  TIER3_HELDOUT2,
   type Tier3Source,
 } from '../../scripts/tier3-extract/index.mjs';
 
@@ -50,10 +51,28 @@ describe('Tier-3 deterministic parse (issue #62, experiment 3)', () => {
     expect(t['correct-extraction'] ?? 0).toBe(2);
   });
 
+  it('held-out split 2 (frozen 2026-09-07, clean / untuned): 2 dangerous over-claims, 10/12 abstentions, 2/2 extractions', async () => {
+    // The CLEAN measurement issue #71 asked for. classify.mjs / extract.mjs were
+    // NOT touched after this split was frozen, so unlike the §4.2 held-out this
+    // number is not tuned. It is reported and locked exactly as the single run
+    // produced it -- see docs/eligibility-extraction-tier3.md §9. The two
+    // dangerous over-claims (h2-hdap, h2-cfr-423-773) are deliberately NOT
+    // fixed; fixing is what burned the previous split.
+    const rows = await evaluate({ split: 'heldout2' });
+    const t = tally(rows);
+    expect(rows).toHaveLength(TIER3_HELDOUT2.length);
+    expect(t['dangerous-over-claim'] ?? 0).toBe(2);
+    expect(t['correct-abstention'] ?? 0).toBe(10);
+    expect(t['correct-extraction'] ?? 0).toBe(2);
+    expect(t['over-cautious'] ?? 0).toBe(0);
+    expect(t['parse-failure'] ?? 0).toBe(0);
+  });
+
   it('every extraction that fires carries a Criterion that passes the source\'s scope check', async () => {
-    for (const split of ['tuning', 'heldout'] as const) {
+    for (const split of ['tuning', 'heldout', 'heldout2'] as const) {
       const rows = await evaluate({ split });
-      const srcs: readonly Tier3Source[] = split === 'tuning' ? TIER3_SOURCES : TIER3_HELDOUT;
+      const srcs: readonly Tier3Source[] =
+        split === 'tuning' ? TIER3_SOURCES : split === 'heldout' ? TIER3_HELDOUT : TIER3_HELDOUT2;
       for (const row of rows) {
         const src = srcs.find((s) => s.id === row.id);
         if (
