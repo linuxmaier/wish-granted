@@ -69,6 +69,8 @@ jobs:
         run: npm run typecheck:llm-extraction
       - name: Typecheck (scripts/program-benchmark)
         run: npm run typecheck:program-benchmark
+      - name: Typecheck (scripts/agentic-extract)
+        run: npm run typecheck:agentic-extract
       - name: Typecheck (scripts/check-sources)
         run: npm run typecheck:check-sources
       - name: Typecheck (scripts/ingest-descriptive)
@@ -107,6 +109,13 @@ jobs:
       # invariants. See scripts/program-benchmark/index.ts.
       - name: 'Smoke test: scripts/program-benchmark scores offline (issue #66)'
         run: npm run eval:program-extraction:self-test
+      # agentic-extract's self-test drives the full agent loop with a scripted
+      # model transcript + fixture fetcher (no network, no model): 404 recovery,
+      # table-structure preservation, the eCFR versioner cross-reference with its
+      # Accept-Encoding header, verbatim provenance (incl. the cross-ref URL),
+      # and step-budget abstention. See scripts/agentic-extract/index.ts.
+      - name: 'Smoke test: scripts/agentic-extract runs offline (issue #67)'
+        run: npm run extract:agentic:self-test
       - name: 'Smoke test: scripts/refresh-income-tables starts (issue #55)'
         run: npm run refresh:income-tables:self-test
       - name: 'Smoke test: scripts/build-snapshot starts (issue #55)'
@@ -137,6 +146,14 @@ jobs:
       # Also Node's test runner, also network-free.
       - name: Unit tests (Node test runner -- scripts/program-benchmark)
         run: npm run test:program-benchmark
+
+      # scripts/agentic-extract (#67): the structure-preserving HTML tokeniser,
+      # dead-URL recovery, eCFR cross-reference resolution, provenance
+      # verification, cost instrumentation, and the whole agent loop end to end
+      # against saved fixtures. Also Node's test runner, also network-free and
+      # model-free (both the fetcher and the model client are injected).
+      - name: Unit tests (Node test runner -- scripts/agentic-extract)
+        run: npm run test:agentic-extract
 
       - name: Build
         run: npm run build
