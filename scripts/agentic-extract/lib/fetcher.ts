@@ -14,11 +14,14 @@
  *     scripts/ingest-descriptive/lib/robots.ts (findhelp.org, auntbertha.com,
  *     211 Wisconsin are never fetched, per the issue).
  *
- * It adds two things scripts/ingest-descriptive/lib/fetch.ts does not need but
+ * It adds three things scripts/ingest-descriptive/lib/fetch.ts does not need but
  * this pipeline does: per-request extra headers (the eCFR versioner API needs
- * `Accept-Encoding`), and a `moved` outcome distinct from `ok` when the final
- * URL's host changed (#7's gone/moved distinction, which the issue calls "the
- * natural input" for URL recovery).
+ * `Accept-Encoding`), a `moved` outcome distinct from `ok` when the final URL's
+ * host changed (#7's gone/moved distinction, which the issue calls "the natural
+ * input" for URL recovery), and BINARY bodies -- a linked PDF (#77) comes back
+ * as `bytes` with `contentType: 'pdf'` so the navigator can run it through
+ * lib/pdf.ts instead of the HTML renderer. Robots.txt and the hard-deny list
+ * gate PDF URLs exactly as they gate pages -- it is the same fetch path.
  */
 import { USER_AGENT } from '../../refresh-income-tables/lib/http.ts';
 import {
@@ -28,9 +31,28 @@ import {
   type RobotsTxt,
 } from '../../ingest-descriptive/lib/robots.ts';
 
+/** `'pdf'` when the response was `application/pdf` or began with `%PDF-`. */
+export type ContentKind = 'html' | 'pdf';
+
 export type FetchOutcome =
-  | { readonly kind: 'ok'; readonly finalUrl: string; readonly status: number; readonly body: string; readonly redirected: boolean }
-  | { readonly kind: 'moved'; readonly finalUrl: string; readonly status: number; readonly body: string }
+  | {
+      readonly kind: 'ok';
+      readonly finalUrl: string;
+      readonly status: number;
+      readonly body: string;
+      readonly redirected: boolean;
+      readonly contentType?: ContentKind;
+      /** Present (and `body` empty) when `contentType === 'pdf'`. */
+      readonly bytes?: Uint8Array;
+    }
+  | {
+      readonly kind: 'moved';
+      readonly finalUrl: string;
+      readonly status: number;
+      readonly body: string;
+      readonly contentType?: ContentKind;
+      readonly bytes?: Uint8Array;
+    }
   | { readonly kind: 'gone'; readonly requestedUrl: string; readonly finalUrl: string; readonly status: number }
   | { readonly kind: 'unreachable'; readonly requestedUrl: string; readonly reason: string }
   | { readonly kind: 'blocked'; readonly requestedUrl: string; readonly reason: string };
@@ -101,7 +123,6 @@ export function createLiveFetcher(): Fetcher {
         signal: AbortSignal.timeout(TIMEOUT_MS),
         redirect: 'follow',
       });
-      const body = await res.text();
       const finalUrl = res.url || url;
       if (res.status === 404 || res.status === 410) {
         return { kind: 'gone', requestedUrl: url, finalUrl, status: res.status };
@@ -109,10 +130,18 @@ export function createLiveFetcher(): Fetcher {
       if (!res.ok) {
         return { kind: 'unreachable', requestedUrl: url, reason: `HTTP ${res.status}` };
       }
+      const ab = await res.arrayBuffer();
+      const buf = new Uint8Array(ab);
+      const ctHeader = (res.headers.get('content-type') ?? '').toLowerCase();
+      const isPdf =
+        ctHeader.includes('application/pdf') ||
+        (buf.length >= 5 && buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46 && buf[4] === 0x2d);
+      const body = isPdf ? '' : new TextDecoder('utf-8', { fatal: false }).decode(buf);
+      const common = isPdf ? { contentType: 'pdf' as const, bytes: buf } : {};
       if (hostOf(finalUrl) !== parsed.hostname) {
-        return { kind: 'moved', finalUrl, status: res.status, body };
+        return { kind: 'moved', finalUrl, status: res.status, body, ...common };
       }
-      return { kind: 'ok', finalUrl, status: res.status, body, redirected: finalUrl !== url };
+      return { kind: 'ok', finalUrl, status: res.status, body, redirected: finalUrl !== url, ...common };
     } catch (err) {
       return { kind: 'unreachable', requestedUrl: url, reason: err instanceof Error ? err.message : String(err) };
     }
@@ -124,6 +153,10 @@ export interface FixtureEntry {
   readonly status?: number;
   /** Response body. */
   readonly body?: string;
+  /** Raw bytes -- set (with `contentType: 'pdf'`) for a PDF fixture. */
+  readonly bytes?: Uint8Array;
+  /** `'pdf'` makes this a binary response served from `bytes`. */
+  readonly contentType?: ContentKind;
   /** Final URL if this fixture represents a redirect. */
   readonly finalUrl?: string;
   /** Simulate a transport failure. */
@@ -175,17 +208,18 @@ export function createFixtureFetcher(fixtures: Readonly<Record<string, FixtureEn
 
     const status = entry.status ?? 200;
     const finalUrl = entry.finalUrl ?? url;
-    const body = entry.body ?? '';
+    const body = entry.contentType === 'pdf' ? '' : entry.body ?? '';
     if (status === 404 || status === 410) {
       return { kind: 'gone', requestedUrl: url, finalUrl, status };
     }
     if (status >= 400) {
       return { kind: 'unreachable', requestedUrl: url, reason: `HTTP ${status}` };
     }
+    const common = entry.contentType === 'pdf' ? { contentType: 'pdf' as const, bytes: entry.bytes ?? new Uint8Array() } : {};
     if (hostOf(finalUrl) && hostOf(finalUrl) !== hostOf(url)) {
-      return { kind: 'moved', finalUrl, status, body };
+      return { kind: 'moved', finalUrl, status, body, ...common };
     }
-    return { kind: 'ok', finalUrl, status, body, redirected: finalUrl !== url };
+    return { kind: 'ok', finalUrl, status, body, redirected: finalUrl !== url, ...common };
   };
 
   return { fetcher, calls };

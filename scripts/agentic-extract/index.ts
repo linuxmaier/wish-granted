@@ -276,8 +276,9 @@ async function selfTest(): Promise<number> {
     `\nagentic-extract self-test OK: ${OFFLINE_SCENARIOS.length} offline scenarios pass ` +
       `(404 recovery, table structure, eCFR versioner cross-reference with Accept-Encoding, ` +
       `verbatim provenance incl. cross-ref URL, reserved-fact rule gate-rejected and re-routed ` +
-      `to manualReview, raised step budget honored, budget-exhaustion abstention tagged distinctly), ` +
-      `and the #66 seam reports SKIPPED with no key. No network, no model.`,
+      `to manualReview, raised step budget honored, budget-exhaustion abstention tagged distinctly, ` +
+      `a linked PDF income table read as a table and cited by its own URL, a dead PDF link abstaining ` +
+      `cleanly), and the #66 seam reports SKIPPED with no key. No network, no model.`,
   );
   return 0;
 }

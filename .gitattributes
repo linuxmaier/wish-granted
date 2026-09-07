@@ -19,6 +19,11 @@ tests/data/snapshot.test.ts text eol=lf
 scripts/check-sources/source-hashes.json text eol=lf
 scripts/ingest-descriptive/proposals.json text eol=lf
 
+# Saved PDF fixtures (scripts/agentic-extract, #77) are byte-for-byte archives of
+# a real government document, hashed in their SOURCES.md -- never let autocrlf or
+# any text filter touch them.
+*.pdf binary
+
 # Shell scripts must be LF or bash fails on the stray carriage returns
 # ("$'\r': command not found"). The WorktreeCreate hook (#56) runs through Git
 # Bash on Windows, so a CRLF checkout would break agent worktree isolation --

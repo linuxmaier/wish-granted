@@ -16,6 +16,7 @@
  */
 import type { Fetcher, FetchOutcome } from './fetcher.ts';
 import { renderStructured, flattenText } from './html-structure.ts';
+import { extractPdf } from './pdf.ts';
 
 export interface FetchedPage {
   readonly requestedUrl: string;
@@ -27,6 +28,8 @@ export interface FetchedPage {
   readonly redirected: boolean;
   /** True when recovered from a dead URL rather than fetched directly. */
   readonly recovered: boolean;
+  /** `'pdf'` when the source was a fetched PDF read via lib/pdf.ts. */
+  readonly format?: 'html' | 'pdf';
 }
 
 export type NavResult =
@@ -78,14 +81,42 @@ export function recoveryCandidates(url: string): string[] {
   return [...candidates];
 }
 
-function toPage(outcome: Extract<FetchOutcome, { kind: 'ok' | 'moved' }>, requestedUrl: string, recovered: boolean): FetchedPage {
+type OkOrMoved = Extract<FetchOutcome, { kind: 'ok' | 'moved' }>;
+
+/** `FetchedPage`, or -- for a PDF whose text cannot be read -- an abstain reason. */
+type PageOrPdfError = { readonly page: FetchedPage } | { readonly pdfError: string };
+
+function toPage(outcome: OkOrMoved, requestedUrl: string, recovered: boolean): PageOrPdfError {
+  const redirected = outcome.kind === 'ok' ? outcome.redirected : true;
+
+  if (outcome.contentType === 'pdf') {
+    const result = extractPdf(outcome.bytes ?? new Uint8Array());
+    if (!result.ok) {
+      return { pdfError: `fetched the PDF at ${outcome.finalUrl} but its text is not machine-extractable (${result.reason})` };
+    }
+    return {
+      page: {
+        requestedUrl,
+        finalUrl: outcome.finalUrl,
+        structured: result.structured,
+        flat: result.flat,
+        redirected,
+        recovered,
+        format: 'pdf',
+      },
+    };
+  }
+
   return {
-    requestedUrl,
-    finalUrl: outcome.finalUrl,
-    structured: renderStructured(outcome.body),
-    flat: flattenText(outcome.body),
-    redirected: outcome.kind === 'ok' ? outcome.redirected : true,
-    recovered,
+    page: {
+      requestedUrl,
+      finalUrl: outcome.finalUrl,
+      structured: renderStructured(outcome.body),
+      flat: flattenText(outcome.body),
+      redirected,
+      recovered,
+      format: 'html',
+    },
   };
 }
 
@@ -111,21 +142,27 @@ export class Navigator {
     const outcome = await this.fetcher({ url, ...(headers ? { headers } : {}) });
 
     if (outcome.kind === 'ok') {
-      const page = toPage(outcome, url, false);
-      this.remember(page);
-      return { ok: true, page };
+      const r = toPage(outcome, url, false);
+      if ('pdfError' in r) {
+        return { ok: false, reason: 'unreachable', requestedUrl: url, detail: r.pdfError };
+      }
+      this.remember(r.page);
+      return { ok: true, page: r.page };
     }
 
     if (outcome.kind === 'moved') {
-      const page = toPage(outcome, url, false);
-      this.remember(page);
+      const r = toPage(outcome, url, false);
+      if ('pdfError' in r) {
+        return { ok: false, reason: 'unreachable', requestedUrl: url, detail: r.pdfError };
+      }
+      this.remember(r.page);
       return {
         ok: false,
         reason: 'moved-host',
         requestedUrl: url,
         detail: `source host redirected to ${outcome.finalUrl} -- fetched, but a reviewer must confirm this is the same program`,
         movedTo: outcome.finalUrl,
-        page,
+        page: r.page,
       };
     }
 
@@ -143,9 +180,10 @@ export class Navigator {
       tried.push(candidate);
       const rec = await this.fetcher({ url: candidate, ...(headers ? { headers } : {}) });
       if (rec.kind === 'ok' || rec.kind === 'moved') {
-        const page = toPage(rec, candidate, true);
-        this.remember(page);
-        return { ok: true, page };
+        const r = toPage(rec, candidate, true);
+        if ('pdfError' in r) continue;
+        this.remember(r.page);
+        return { ok: true, page: r.page };
       }
     }
     return {

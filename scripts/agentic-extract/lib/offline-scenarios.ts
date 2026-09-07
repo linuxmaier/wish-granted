@@ -339,6 +339,115 @@ const raisedBudgetHonored: OfflineScenario = {
   },
 };
 
+/**
+ * 7. A linked PDF is fetched, its income table read as a table, and a rule is
+ *    emitted whose provenance URL is the PDF's own URL -- not the page that
+ *    linked to it. (#77: school-meals-wi abstained because the numeric
+ *    thresholds lived only in a PDF it could not read.)
+ */
+const schoolMealsPdf: OfflineScenario = {
+  name: 'pdf: linked income-table PDF is fetched, quoted, and cited by its OWN url (not the linking page)',
+  async run() {
+    const context = ctx({
+      programId: 'school-meals-wi',
+      sourceUrl: F.SCHOOL_MEALS_SOURCE_URL,
+      sourceName: 'Wisconsin DPI — free and reduced-price school meals',
+    });
+    const eligibility = {
+      kind: 'allOf',
+      of: [
+        income('fpl', 185),
+        {
+          kind: 'manualReview',
+          note:
+            'Two benefit tiers: free meals at or below 130% FPL, reduced-price at or below 185% FPL. ' +
+            'The rule encodes the outer (185%) bound; the free/reduced split is a benefit-level review.',
+        },
+      ],
+    };
+    const script: ScriptedTurn[] = [
+      { toolCalls: [{ name: 'fetch_page', input: { url: F.SCHOOL_MEALS_SOURCE_URL } }] },
+      { toolCalls: [{ name: 'fetch_page', input: { url: F.SCHOOL_MEALS_PDF_URL } }] },
+      {
+        toolCalls: [
+          {
+            name: 'emit_record',
+            input: {
+              eligibility,
+              name: 'Free and reduced-price school meals',
+              provenance: [
+                {
+                  quote:
+                    'multiplying the year 2025 Federal income poverty guidelines by 1.30 and 1.85, respectively',
+                  url: F.SCHOOL_MEALS_PDF_URL,
+                },
+                {
+                  quote: 'Income Eligibility Guidelines to be effective from July 1, 2025 through June 30, 2026',
+                  url: F.SCHOOL_MEALS_PDF_URL,
+                },
+              ],
+              notes: 'Dollar amounts by household size are in the fetched PDF table.',
+            },
+          },
+        ],
+      },
+    ];
+    const { run, calls } = await execute(context, F.offlineFixtures(DATE), script);
+    const failures: string[] = [];
+    if (isAbstention(run.result)) failures.push(`expected a record, got abstention: ${run.result.reason}`);
+    if (!run.record) failures.push('no ExtractedRecord attached');
+    else {
+      if (run.record.provenance.length !== 2) failures.push(`expected 2 verified spans, got ${run.record.provenance.length}`);
+      if (run.record.provenance.some((s) => s.url !== F.SCHOOL_MEALS_PDF_URL)) {
+        failures.push(`a provenance span was attributed to something other than the PDF url: ${run.record.provenance.map((s) => s.url).join(', ')}`);
+      }
+      if (run.record.provenance.some((s) => s.urlCorrected)) {
+        failures.push('the matcher had to correct a provenance url -- the model should have cited the PDF directly');
+      }
+    }
+    if (!run.pagesVisited.includes(F.SCHOOL_MEALS_PDF_URL)) failures.push('the PDF url is not in pagesVisited');
+    if (run.pagesVisited.includes(F.SCHOOL_MEALS_SOURCE_URL) === false) failures.push('the landing page is not in pagesVisited');
+    if (!calls.some((c) => c.url === F.SCHOOL_MEALS_PDF_URL)) failures.push('the PDF was never fetched');
+    if (!run.trace.some((t) => t.includes('.pdf'))) failures.push('trace does not show the PDF fetch');
+    return { run, failures };
+  },
+};
+
+/**
+ * 8. A dead PDF link abstains cleanly -- no crash, no record. school-meals-wi's
+ *    "Nutshell" PDF 404s today; that must stay an honest abstention.
+ */
+const deadPdfAbstains: OfflineScenario = {
+  name: 'pdf: a dead PDF link (404) abstains cleanly rather than erroring',
+  async run() {
+    const context = ctx({
+      programId: 'school-meals-wi',
+      sourceUrl: F.SCHOOL_MEALS_SOURCE_URL,
+      sourceName: 'Wisconsin DPI — free and reduced-price school meals',
+    });
+    const script: ScriptedTurn[] = [
+      { toolCalls: [{ name: 'fetch_page', input: { url: F.SCHOOL_MEALS_SOURCE_URL } }] },
+      { toolCalls: [{ name: 'fetch_page', input: { url: F.SCHOOL_MEALS_DEAD_PDF_URL } }] },
+      {
+        toolCalls: [
+          {
+            name: 'abstain',
+            input: { reason: 'the linked Nutshell PDF with the dollar thresholds 404s and could not be recovered' },
+          },
+        ],
+      },
+    ];
+    const { run } = await execute(context, F.offlineFixtures(DATE), script);
+    const failures: string[] = [];
+    if (!isAbstention(run.result)) failures.push('expected an abstention when the linked PDF is dead');
+    if (run.record) failures.push('a record was emitted despite the source PDF being unreachable');
+    if (!run.trace.some((t) => /nutshell|\.pdf/i.test(t) && /gone|unreachable/i.test(t))) {
+      failures.push(`trace does not record the dead-PDF fetch: ${run.trace.join(' | ')}`);
+    }
+    return { run, failures };
+  },
+};
+
 export const OFFLINE_SCENARIOS: readonly OfflineScenario[] = [
   badgercare,
   snapCrossRef,
@@ -346,4 +455,6 @@ export const OFFLINE_SCENARIOS: readonly OfflineScenario[] = [
   stepBudget,
   reservedFactRejected,
   raisedBudgetHonored,
+  schoolMealsPdf,
+  deadPdfAbstains,
 ];

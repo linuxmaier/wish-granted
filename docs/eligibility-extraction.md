@@ -156,6 +156,19 @@ the HUD dataset API), out of scope for this script, and recorded as such rather 
 silently dropped from the count. The 4/4 figure above is the HTML-table subset's hit rate,
 not a claim about all 6 Tier-1 sources.
 
+> **PDF gap closed for the agentic path (issue #77, 2026-09-07).** The "a PDF table
+> extractor" this paragraph flagged as missing now exists as a zero-dependency reader in
+> `scripts/agentic-extract/lib/pdf.ts` -- it decompresses a page content stream, recovers a
+> glyph coordinate for every character, and reconstructs both multi-column prose and ruled
+> tables (column boundaries from the vector ruling lines the document draws). It is wired
+> into the agentic extractor's `fetch_page`, so a linked income-table PDF is now quotable
+> with the PDF's own URL as provenance. Proven offline against a committed Federal Register
+> fixture (USDA's Child Nutrition Income Eligibility Guidelines -- the 130% / 185% FPL
+> school-meal table); `scripts/refresh-income-tables/lib/pdf.ts` was **not** reused (Poppler
+> `pdftotext -layout` bleeds columns on exactly this table shape -- see that file's own
+> docstring -- and is a system binary CI does not carry). The refresh-income-tables path is
+> unchanged.
+
 **Even "deterministic" needed a per-source adapter, not one universal parser.** All four
 sources use different table markup: `<td>N</td><td>$amt</td>` (FPL) vs.
 `<th>N</th><td>$amt</td>` (MadCAP) vs. a 4-column region table (Lifeline) vs. a
