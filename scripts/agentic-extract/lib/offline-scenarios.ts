@@ -14,6 +14,7 @@ import { createFixtureFetcher } from './fetcher.ts';
 import { ScriptedModelClient, type ScriptedTurn } from './scripted-model.ts';
 import { runAgent, type AgentRun } from './agent.ts';
 import { ecfrSectionUrl } from './cross-reference.ts';
+import { renderStructured } from './html-structure.ts';
 import { isAbstention } from '../../program-benchmark/lib/extractor.ts';
 import { factsReferenced, type Criterion } from '../../../src/domain/criteria.ts';
 import { RESERVED_FACT_KEYS } from '../../../src/domain/facts.ts';
@@ -448,6 +449,82 @@ const deadPdfAbstains: OfflineScenario = {
   },
 };
 
+/**
+ * 9. #75 -- the last retrieval gap. `foodshare-snap-wi` (#72's one unsolved
+ *    case) abstained because it could not reach the page stating FoodShare's
+ *    size-tiered income limits. That page (`/foodshare/fpl.htm`) is linked from
+ *    the entry page only in the sidebar <nav>, which the structure renderer
+ *    drops -- so the model never sees the URL -- and the site's paginated
+ *    sitemap 403s. search_web (site-scoped, crawls the site's links) finds it;
+ *    the model fetches it and emits a 200%-FPL rule quoted verbatim from it.
+ *
+ *    Before this change search_web returned guidance text only and this exact
+ *    transcript ended in an abstention.
+ */
+const foodshareSiteSearch: OfflineScenario = {
+  name: 'search: foodshare income-limits page unreachable from the entry page is found by site-scoped search',
+  async run() {
+    const context = ctx({
+      programId: 'foodshare-snap-wi',
+      sourceUrl: F.FOODSHARE_INDEX_URL,
+      sourceName: 'Wisconsin DHS — FoodShare',
+    });
+    const eligibility = {
+      kind: 'allOf',
+      of: [cmp('state', 'WI'), income('fpl', 200)],
+    };
+    const script: ScriptedTurn[] = [
+      { toolCalls: [{ name: 'fetch_page', input: { url: F.FOODSHARE_INDEX_URL } }] },
+      { toolCalls: [{ name: 'search_web', input: { query: 'FoodShare monthly income limits household size gross income' } }] },
+      { toolCalls: [{ name: 'fetch_page', input: { url: F.FOODSHARE_FPL_URL } }] },
+      {
+        toolCalls: [
+          {
+            name: 'emit_record',
+            input: {
+              eligibility,
+              name: 'FoodShare Wisconsin (SNAP)',
+              provenance: [
+                { quote: 'at or below 200% of the federal poverty level', url: F.FOODSHARE_FPL_URL },
+                { quote: 'Effective October 1, 2025, through September 30, 2026', url: F.FOODSHARE_FPL_URL },
+              ],
+              notes: 'Wisconsin BBCE gross-income limit is 200% FPL; the dollar table by household size is on the fetched page.',
+            },
+          },
+        ],
+      },
+    ];
+    const { run, calls } = await execute(context, F.offlineFixtures(DATE), script, 12);
+    const failures: string[] = [];
+
+    if (isAbstention(run.result)) failures.push(`expected a record, got abstention: ${run.result.reason}`);
+    if (!run.record) failures.push('no ExtractedRecord attached');
+    else {
+      if (run.record.provenance.length !== 2) failures.push(`expected 2 verified spans, got ${run.record.provenance.length}`);
+      if (run.record.provenance.some((s) => s.url !== F.FOODSHARE_FPL_URL)) {
+        failures.push(`a span resolved to a URL other than the income-limits page: ${run.record.provenance.map((s) => s.url).join(', ')}`);
+      }
+    }
+    if (!run.pagesVisited.includes(F.FOODSHARE_FPL_URL)) failures.push('the income-limits page is not in pagesVisited');
+
+    // The URL was NOT visible to the model on the entry page -- it came from search.
+    if (renderStructured(F.FOODSHARE_INDEX_HTML).includes('/foodshare/fpl.htm')) {
+      failures.push('fixture invalid: the entry page render leaks the fpl.htm URL, so search is not what found it');
+    }
+    const searchLine = run.trace.find((t) => t.startsWith('search_web'));
+    if (!searchLine) failures.push('trace does not record a search_web call');
+    else if (!/-> [1-9]\d* hit/.test(searchLine)) failures.push(`search_web returned no hits: ${searchLine}`);
+
+    // The sitemap path was exercised and degraded to a link crawl (Akamai 403s
+    // the paginated children).
+    if (!calls.some((c) => c.url === F.DHS_SITEMAP_URL)) failures.push('the sitemap index was never fetched');
+    if (!calls.some((c) => /sitemap\.xml\?page=/.test(c.url))) failures.push('the crawler did not try the child sitemaps');
+    if (!calls.some((c) => c.url === F.DHS_ROBOTS_URL)) failures.push('robots.txt was never consulted for sitemap discovery');
+
+    return { run, failures };
+  },
+};
+
 export const OFFLINE_SCENARIOS: readonly OfflineScenario[] = [
   badgercare,
   snapCrossRef,
@@ -457,4 +534,5 @@ export const OFFLINE_SCENARIOS: readonly OfflineScenario[] = [
   raisedBudgetHonored,
   schoolMealsPdf,
   deadPdfAbstains,
+  foodshareSiteSearch,
 ];

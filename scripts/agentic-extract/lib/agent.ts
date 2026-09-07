@@ -29,6 +29,7 @@ import type { ExtractionContext, ExtractionResult } from '../../program-benchmar
 import { Navigator } from './navigator.ts';
 import type { Fetcher } from './fetcher.ts';
 import { resolveEcfrSection, detectReferences } from './cross-reference.ts';
+import { siteSearch, formatSearchResult } from './site-search.ts';
 import { verifyAllSpans, type SpanSource, type ClaimedSpan } from './provenance.ts';
 import { CostMeter, type CostSummary } from './cost.ts';
 import { toCandidateRecord, type ExtractedRecord } from './record.ts';
@@ -295,12 +296,21 @@ export async function runAgent(ctx: ExtractionContext, opts: AgentOptions): Prom
       }
 
       if (use.name === TOOL_NAMES.search) {
-        trace.push('search_web (stub)');
+        const query = typeof input.query === 'string' ? input.query : '';
+        if (query.trim() === '') {
+          toolResults.push({ type: 'tool_result', tool_use_id: use.id, content: 'search_web needs a non-empty query', is_error: true });
+          continue;
+        }
+        const res = await siteSearch(opts.fetcher, { query, seedUrl: ctx.sourceUrl });
+        trace.push(
+          `search_web "${query}" on ${res.host} -> ${res.hits.length} hit(s) ` +
+            `(${res.pagesFetched} page(s) examined, ${res.sitemapUrls} sitemap URL(s))`,
+        );
         toolResults.push({
           type: 'tool_result',
           tool_use_id: use.id,
-          content:
-            'search_web is not wired in this build. Options: call fetch_page with a corrected URL (try the site root, the program section index, or drop a stale filename), or abstain if you cannot reach the governing text.',
+          content: formatSearchResult(query, res),
+          is_error: res.hits.length === 0,
         });
         continue;
       }

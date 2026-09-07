@@ -24,6 +24,13 @@ scripts/ingest-descriptive/proposals.json text eol=lf
 # any text filter touch them.
 *.pdf binary
 
+# Saved HTML/XML/robots fixtures (scripts/agentic-extract, #75) are byte-for-byte
+# captures of real dhs.wisconsin.gov responses, hashed in their SOURCES.md. Pin
+# them so a Windows autocrlf checkout does not rewrite the bytes (and the SHAs).
+scripts/agentic-extract/lib/__tests__/fixtures/*.html -text
+scripts/agentic-extract/lib/__tests__/fixtures/*.xml -text
+scripts/agentic-extract/lib/__tests__/fixtures/dhs-wisconsin-gov-robots.txt -text
+
 # Shell scripts must be LF or bash fails on the stray carriage returns
 # ("$'\r': command not found"). The WorktreeCreate hook (#56) runs through Git
 # Bash on Windows, so a CRLF checkout would break agent worktree isolation --

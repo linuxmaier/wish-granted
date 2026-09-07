@@ -169,6 +169,23 @@ not a claim about all 6 Tier-1 sources.
 > docstring -- and is a system binary CI does not carry). The refresh-income-tables path is
 > unchanged.
 
+> **Retrieval gap closed for the agentic path (issue #75, 2026-09-07).** #72's verified run
+> reached 0 dangerous over-claims at 17/17 coverage but abstained on `foodshare-snap-wi`
+> because it could not *find* the page stating FoodShare's size-tiered income limits --
+> "the site's sitemap is too large to search without a working text-search tool." The
+> `search_web` stub is now a real **site-scoped** search in `scripts/agentic-extract/lib/
+> site-search.ts`: confined to the host of the source URL, it reads that site's sitemap and
+> crawls its links, ranks pages by matching the query against their text, and returns
+> candidate URLs. No third-party engine, no API key, zero new dependencies. Provenance is
+> untouched -- the model still `fetch_page`s the page it picks and quotes it verbatim
+> through the existing gate. Proven offline against committed `dhs.wisconsin.gov` captures
+> (`__tests__/fixtures/SOURCES.md`): `/foodshare/fpl.htm`, unreachable from the entry page
+> because its only link is in a stripped `<nav>`, is found and its 200%-FPL spans verify.
+> Candour: for `dhs.wisconsin.gov` specifically, site search proper is unavailable
+> (`/search/` is robots-disallowed; the paginated sitemap is Akamai-blocked like every
+> query string on that host) -- what works is the link crawl, which reaches any page linked
+> from a crawlable section hub but not one orphaned from all of them.
+
 **Even "deterministic" needed a per-source adapter, not one universal parser.** All four
 sources use different table markup: `<td>N</td><td>$amt</td>` (FPL) vs.
 `<th>N</th><td>$amt</td>` (MadCAP) vs. a 4-column region table (Lifeline) vs. a
