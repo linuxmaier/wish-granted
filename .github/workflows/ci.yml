@@ -71,6 +71,8 @@ jobs:
         run: npm run typecheck:program-benchmark
       - name: Typecheck (scripts/agentic-extract)
         run: npm run typecheck:agentic-extract
+      - name: Typecheck (scripts/cross-check)
+        run: npm run typecheck:cross-check
       - name: Typecheck (scripts/check-sources)
         run: npm run typecheck:check-sources
       - name: Typecheck (scripts/ingest-descriptive)
@@ -120,6 +122,14 @@ jobs:
       # plus a dead PDF link abstaining cleanly. See scripts/agentic-extract/index.ts.
       - name: 'Smoke test: scripts/agentic-extract runs offline (issue #67)'
         run: npm run extract:agentic:self-test
+      # cross-check's self-test (issue #84) runs both routing paths offline: the
+      # deterministic parser against committed Tier-3 fixtures cross-checked via
+      # criterionEquivalence, a parser abstention falling through to the exclusion
+      # probe, and the probe's mechanical span check -- plus the SKIPPED wiring
+      # (the live probe throws without a key). No network, no model. See
+      # scripts/cross-check/index.ts.
+      - name: 'Smoke test: scripts/cross-check proves both paths offline (issue #84)'
+        run: npm run extract:cross-check:self-test
       - name: 'Smoke test: scripts/refresh-income-tables starts (issue #55)'
         run: npm run refresh:income-tables:self-test
       # render-fallback's self-test does more than "does it start": it runs the
@@ -169,6 +179,14 @@ jobs:
       # model-free (both the fetcher and the model client are injected).
       - name: Unit tests (Node test runner -- scripts/agentic-extract)
         run: npm run test:agentic-extract
+
+      # scripts/cross-check (#84): the both-directions dangerous check over the
+      # criterionEquivalence referee, the routing table (Path A + Path B), the
+      # exclusion probe's mechanical span verification and tool-call parsing, the
+      # program<->Tier-3 corpus mapping, and the end-to-end offline scenarios.
+      # Also Node's test runner, also network-free and model-free.
+      - name: Unit tests (Node test runner -- scripts/cross-check)
+        run: npm run test:cross-check
 
       # scripts/render-fallback (#76): the form-shell unwrap (depth-balanced tag
       # scan, wrapper heuristic, structure survival), the recovery ladder with an
