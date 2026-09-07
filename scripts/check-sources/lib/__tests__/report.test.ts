@@ -81,6 +81,29 @@ test('an escalated unreachable renders the Unreachable section and is actionable
   assert.match(md, /runs running/);
 });
 
+test('#82: hasActionableFindings and isBookkeepingOnly treat `unreadable` as a real finding', () => {
+  assert.equal(hasActionableFindings([result({ id: 'a', status: 'unreadable' })]), true);
+  assert.equal(
+    isBookkeepingOnly([result({ id: 'a', status: 'unreadable' }), result({ id: 'b', status: 'unchanged' })]),
+    false,
+  );
+});
+
+test('#82: an `unreadable` result renders its own section and is not counted as unchanged', () => {
+  const md = renderReport({
+    ...base,
+    wrote: true,
+    results: [
+      result({ id: 'wheap-energy-assistance', status: 'unreadable', detail: 'normalized to 0 chars (< 50)' }),
+      result({ id: 'b', status: 'unchanged' }),
+    ],
+  });
+  assert.match(md, /## Unreadable \(1\)/);
+  assert.match(md, /\*\*wheap-energy-assistance\*\*/);
+  assert.match(md, /[Dd]o not re-baseline/);
+  assert.match(md, /- 1 unchanged/);
+});
+
 test('renderReport names records that fell back to the weak <body> region', () => {
   const md = renderReport({
     ...base,

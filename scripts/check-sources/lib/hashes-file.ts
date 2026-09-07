@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 
 export const HASHES_PATH = fileURLToPath(new URL('../source-hashes.json', import.meta.url));
 
-export type SourceStatus = 'ok' | 'gone' | 'unreachable';
+export type SourceStatus = 'ok' | 'gone' | 'unreachable' | 'unreadable';
 
 export interface SourceHashEntry {
   /** The `source.url` this hash was taken from, copied in so the file reads standalone. */

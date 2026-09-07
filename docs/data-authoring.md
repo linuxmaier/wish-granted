@@ -302,6 +302,23 @@ time-based check; a false "changed" trains the reviewer to ignore the job. Run-t
 stability is proven, not asserted, in `lib/__tests__/normalize.test.ts` (and was verified
 against all 17 live pages: two consecutive real fetches, zero baseline churn).
 
+The one place `<form>`-stripping backfires: ASP.NET WebForms / SharePoint wraps the whole
+`<body>` in a single `<form id="aspnetForm">`, so stripping `<form>` wholesale deletes the
+entire page (issue #82 — this silently disabled change detection for the three
+`energyandhousing.wi.gov` records; an empty normalization hashes consistently, so they
+compared nothing to nothing every run and always reported `unchanged`). So `check.ts`
+wraps `normalize()` in `normalizeWithUnwrap()`: when the plain reduction comes back
+near-empty (`< 200` chars), it retries once with that wrapper `<form>` neutralised to a
+`<div>` — `unwrapContentShell` from `scripts/render-fallback/lib/unwrap-shell.ts`, the
+exact transform the ingestion path (`recoverEmptyPage`) runs, reused rather than
+reimplemented. The CSRF/nonce/session inputs it was hiding are still dropped by
+`normalize()`'s blanket tag strip and opaque-token scrub. A real `<main>` page never
+enters the retry (it reduces well above 200), so the #7 stability property is untouched —
+re-verified across all 17 live pages, two consecutive runs, byte-identical baseline. As a
+backstop, a record whose normalized text is shorter than `MIN_PLAUSIBLE_CHARS` (50; the
+smallest real page is ~350) is reported as **unreadable**, never `unchanged` — an empty
+normalization is a reducer bug, never a valid baseline.
+
 When a record falls all the way through to the `<body>` fallback, the report names it under
 **Weak content-region fallback** — nav/header/footer are in its hash, so a site-wide
 template change can flag it (and every sibling on that domain) at once without the
@@ -309,13 +326,14 @@ eligibility rule moving. If one of those shows up as `changed`, check the diff f
 before treating it as a real edit; a hand-picked selector for that page is the fix if it
 churns (issue #49).
 
-### The four outcomes, and why they are kept distinct
+### The outcomes, and why they are kept distinct
 
 | Outcome | Means | What a human does |
 |---|---|---|
 | **unchanged** | normalized text hashes to the stored value | nothing — silent, no PR |
 | **new** | no baseline yet (first run, or the URL changed) | nothing — baseline recorded |
 | **changed** | reachable, 200, normalized text moved | re-verify the record against the source (below) |
+| **unreadable** | reachable, 200, but normalized text is empty or `< MIN_PLAUSIBLE_CHARS` | a reducer bug, not an edit — fix `normalize.ts` until it sees the page; **do not** re-baseline against the empty hash (issue #82). Escalates on the first run |
 | **gone** | 404 / 410 — the page was removed, not edited | find the current official page; fix `source.url` in the record **and** in `source-hashes.json`; note "moved" vs "never correct" per the section above; then re-verify. **Escalates on the first run** — a retry counter must never hide a vanished program |
 | **unreachable** | timeout, 403, 5xx, network error | almost always a blip at 17 monthly sources. The last good hash is kept and a `consecutiveFailures` counter is recorded (force-pushed to the `automation/source-change-detection` branch as bookkeeping, never to `main`, no PR). Only the **2nd consecutive** failed run escalates to a re-verification PR; a successful fetch resets the counter. Once escalated, treat a genuinely-removed page as "gone" |
 
@@ -354,8 +372,8 @@ Exit codes: **0** clean, or the only change is a first-time `unreachable`'s fail
 (bookkeeping — force-pushed to `automation/source-change-detection`, never `main`, no PR);
 **1** a write was refused because the script was run on `main`/`master` (it never advances
 the committed baseline without a PR, same rule as
-`refresh-income-tables`); **2** at least one record is changed, gone, or `unreachable` for
-two consecutive runs.
+`refresh-income-tables`); **2** at least one record is changed, gone, `unreadable`, or
+`unreachable` for two consecutive runs.
 
 ## Descriptive-field ingestion (scripts/ingest-descriptive)
 
@@ -428,10 +446,10 @@ list (`scripts/ingest-descriptive/lib/robots.ts`) alongside findhelp.org.
 a JS-rendered SPA that "normalizes to zero readable text". It is not (issue #76). A plain
 fetch returns the full server-rendered page, income table included; both text reducers just
 threw it away because ASP.NET WebForms wraps the whole `<body>` in one `<form>` and they
-strip `<form>` wholesale. `scripts/render-fallback/` now unwraps that shell whenever a page
-reduces to nothing, so these three records are back in scope for descriptive ingestion and
-agentic extraction. See `scripts/render-fallback/lib/unwrap-shell.ts` and
-`tests/fixtures/js-pages/SOURCES.md`.
+strip `<form>` wholesale. `scripts/render-fallback/lib/unwrap-shell.ts` unwraps that shell
+whenever a page reduces to nothing — used by descriptive ingestion, agentic extraction, and
+(issue #82) `check-sources`' `normalize()` — so these three records are back in scope. See
+`scripts/render-fallback/lib/unwrap-shell.ts` and `tests/fixtures/js-pages/SOURCES.md`.
 
 ## Adding a new program
 

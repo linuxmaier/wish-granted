@@ -53,6 +53,7 @@ export function renderReport(input: ReportInput): string {
   const by = (s: CheckResult['status']) => results.filter((r) => r.status === s);
   const changed = by('changed');
   const gone = by('gone');
+  const unreadable = by('unreadable');
   const unreachableEscalated = by('unreachable').filter(isEscalated);
   const unreachableTransient = by('unreachable').filter((r) => !isEscalated(r));
   const fresh = by('new');
@@ -102,6 +103,23 @@ export function renderReport(input: ReportInput): string {
     );
     lines.push('');
     for (const r of gone) lines.push(`- **${r.id}** -- ${r.detail}\n  ${r.url}`);
+    lines.push('');
+  }
+
+  if (unreadable.length > 0) {
+    lines.push(`## Unreadable (${unreadable.length}) -- fetched 200, reduced to no usable text`);
+    lines.push('');
+    lines.push(
+      'The page responded 200 but `normalize()` produced (near-)nothing. This is almost always a ' +
+        'reducer bug -- an element wrapping and hiding the body (the ASP.NET WebForms `<form>` case ' +
+        'from issue #82), or a template the `<main>` / `[role="main"]` / `#content` chain does not ' +
+        'match -- not a real edit. **Do not re-baseline these.** An empty normalization hashes ' +
+        'consistently, so an empty baseline reports `unchanged` every run and change detection is ' +
+        'silently off for that record. Fix the reducer until it sees the page, then let the ' +
+        'baseline advance through the normal `changed` path.',
+    );
+    lines.push('');
+    for (const r of unreadable) lines.push(`- **${r.id}** -- ${r.detail}\n  ${r.url}`);
     lines.push('');
   }
 
