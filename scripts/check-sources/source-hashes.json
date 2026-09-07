@@ -92,16 +92,16 @@
     },
     "wheap-crisis-assistance": {
       "url": "https://energyandhousing.wi.gov/Pages/AgencyResources/energy-assistance.aspx",
-      "normalizedSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "normalizedChars": 0,
+      "normalizedSha256": "sha256:b45f53f63af8ea11b08da4eae10082df8abcecac85e54e46bddc3cdd31fc34a0",
+      "normalizedChars": 6479,
       "status": "ok",
       "firstSeen": "2026-09-05",
       "lastChanged": "2026-09-05"
     },
     "wheap-energy-assistance": {
       "url": "https://energyandhousing.wi.gov/Pages/AgencyResources/energy-assistance.aspx",
-      "normalizedSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "normalizedChars": 0,
+      "normalizedSha256": "sha256:b45f53f63af8ea11b08da4eae10082df8abcecac85e54e46bddc3cdd31fc34a0",
+      "normalizedChars": 6479,
       "status": "ok",
       "firstSeen": "2026-09-05",
       "lastChanged": "2026-09-05"
@@ -132,8 +132,8 @@
     },
     "wisconsin-weatherization": {
       "url": "https://energyandhousing.wi.gov/Pages/AgencyResources/weatherization.aspx",
-      "normalizedSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "normalizedChars": 0,
+      "normalizedSha256": "sha256:e536353a74af819b8a259493b69e7f5444aa0958d2bfef27386d1c1cd5221376",
+      "normalizedChars": 2782,
       "status": "ok",
       "firstSeen": "2026-09-05",
       "lastChanged": "2026-09-05"
