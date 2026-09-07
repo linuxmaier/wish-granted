@@ -15,11 +15,14 @@ import { ScriptedModelClient, type ScriptedTurn } from './scripted-model.ts';
 import { runAgent, type AgentRun } from './agent.ts';
 import { ecfrSectionUrl } from './cross-reference.ts';
 import { isAbstention } from '../../program-benchmark/lib/extractor.ts';
+import { factsReferenced, type Criterion } from '../../../src/domain/criteria.ts';
+import { RESERVED_FACT_KEYS } from '../../../src/domain/facts.ts';
 import * as F from './fixtures-offline.ts';
 
 const DATE = '2026-09-06';
 
 const cmp = (fact: string, value: unknown) => ({ kind: 'compare', fact, op: 'eq', value });
+const cmpOp = (fact: string, op: string, value: unknown) => ({ kind: 'compare', fact, op, value });
 const income = (scale: string, percent: number) => ({ kind: 'incomeAtOrBelow', scale, percent });
 
 export interface OfflineScenario {
@@ -196,9 +199,9 @@ const fabricatedQuoteRejected: OfflineScenario = {
   },
 };
 
-/** 4. Step budget exhaustion abstains, never guesses. */
+/** 4. Step budget exhaustion abstains, never guesses -- and is tagged distinctly. */
 const stepBudget: OfflineScenario = {
-  name: 'budget: exhausting the step budget abstains',
+  name: 'budget: exhausting the step budget abstains, tagged budget-exhausted (not substantive)',
   async run() {
     const context = ctx({
       programId: 'seniorcare',
@@ -210,7 +213,129 @@ const stepBudget: OfflineScenario = {
     const failures: string[] = [];
     if (!isAbstention(run.result)) failures.push('expected an abstention when the step budget ran out');
     else if (!run.result.reason.includes('budget')) failures.push(`abstention reason should mention the budget: ${run.result.reason}`);
+    if (run.abstention !== 'budget-exhausted') {
+      failures.push(`expected abstention tagged "budget-exhausted", got "${run.abstention}"`);
+    }
     return { run, failures };
+  },
+};
+
+/**
+ * 5. A rule over a RESERVED fact is rejected by the gate and sent back; the
+ *    model re-routes the condition to manualReview and the corrected record is
+ *    accepted with no reserved fact left in the tree. (PR #72 defect 1 --
+ *    the two dangerous cases.)
+ */
+const reservedFactRejected: OfflineScenario = {
+  name: 'reserved facts: a rule over age/citizenshipStatus is gate-rejected, re-routed to manualReview',
+  async run() {
+    const context = ctx({
+      programId: 'seniorcare',
+      sourceUrl: F.SENIORCARE_SOURCE_URL,
+      sourceName: 'Wisconsin DHS — SeniorCare',
+    });
+    const badRule = {
+      kind: 'allOf',
+      of: [
+        cmp('state', 'WI'),
+        cmpOp('age', 'gte', 65),
+        { kind: 'set', fact: 'citizenshipStatus', op: 'includesAny', values: ['us-citizen', 'qualified-immigrant'] },
+      ],
+    };
+    const correctedRule = {
+      kind: 'allOf',
+      of: [
+        cmp('state', 'WI'),
+        {
+          kind: 'manualReview',
+          note:
+            'SeniorCare requires age 65+ and U.S. citizen / qualifying immigrant status. Neither `age` nor `citizenshipStatus` is a fact the interview asks, so both conditions are routed here rather than encoded as a rule that could never be satisfied.',
+        },
+      ],
+    };
+    const prov = [
+      { quote: 'Wisconsin resident', url: F.SENIORCARE_INDEX_URL },
+      { quote: '65 years of age or older', url: F.SENIORCARE_INDEX_URL },
+    ];
+    const script: ScriptedTurn[] = [
+      { toolCalls: [{ name: 'fetch_page', input: { url: F.SENIORCARE_SOURCE_URL } }] },
+      { toolCalls: [{ name: 'fetch_page', input: { url: F.SENIORCARE_INDEX_URL } }] },
+      { toolCalls: [{ name: 'emit_record', input: { eligibility: badRule, provenance: prov } }] },
+      { toolCalls: [{ name: 'emit_record', input: { eligibility: correctedRule, provenance: prov } }] },
+    ];
+    const { run } = await execute(context, F.offlineFixtures(DATE), script);
+    const failures: string[] = [];
+
+    const rejection = run.trace.find((t) => t.includes('rejected'));
+    if (!rejection) failures.push('trace does not record the emit rejection');
+    else if (!/age|citizenshipStatus|reserved/.test(rejection)) {
+      failures.push(`rejection did not name the reserved fact: ${rejection}`);
+    }
+
+    if (isAbstention(run.result)) {
+      failures.push(`expected the corrected record to be accepted, got abstention: ${run.result.reason}`);
+    } else {
+      const referenced = [...factsReferenced(run.result.eligibility as Criterion)];
+      const leaked = referenced.filter((k) => (RESERVED_FACT_KEYS as readonly string[]).includes(k));
+      if (leaked.length > 0) failures.push(`reserved fact(s) survived into the accepted rule: ${leaked.join(', ')}`);
+      if (run.result.eligibility.kind !== 'allOf') failures.push('expected an allOf with a manualReview leaf');
+      if (!run.record?.provenance.length) failures.push('accepted record has no verified provenance');
+    }
+    return { run, failures };
+  },
+};
+
+/**
+ * 6. A step budget raised above PR #72's 12 is actually honored: the same
+ *    13-fetch transcript exhausts at maxSteps=12 (tagged budget-exhausted) and
+ *    completes at maxSteps=16. Exhaustion still abstains -- that stays.
+ */
+const raisedBudgetHonored: OfflineScenario = {
+  name: 'budget: a raised step budget is honored (13 fetches complete at 16, exhaust at 12)',
+  async run() {
+    const context = ctx({
+      programId: 'seniorcare',
+      sourceUrl: F.SENIORCARE_SOURCE_URL,
+      sourceName: 'Wisconsin DHS — SeniorCare',
+    });
+    const spin: ScriptedTurn = { toolCalls: [{ name: 'fetch_page', input: { url: F.SENIORCARE_INDEX_URL } }] };
+    const emitTurn: ScriptedTurn = {
+      toolCalls: [
+        {
+          name: 'emit_record',
+          input: {
+            eligibility: {
+              kind: 'allOf',
+              of: [
+                cmp('state', 'WI'),
+                { kind: 'manualReview', note: 'Age 65+ and citizenship gate SeniorCare; neither is an asked fact.' },
+              ],
+            },
+            provenance: [{ quote: 'Wisconsin resident', url: F.SENIORCARE_INDEX_URL }],
+          },
+        },
+      ],
+    };
+    const thirteenFetchesThenEmit: ScriptedTurn[] = [...Array(13).fill(spin), emitTurn];
+
+    const failures: string[] = [];
+
+    // Old ceiling: exhausts before reaching the emit on turn 14.
+    const tight = await execute(context, F.offlineFixtures(DATE), thirteenFetchesThenEmit, 12);
+    if (!isAbstention(tight.run.result)) failures.push('at maxSteps=12 the 13-fetch transcript should exhaust the budget');
+    if (tight.run.abstention !== 'budget-exhausted') {
+      failures.push(`at maxSteps=12 expected budget-exhausted, got "${tight.run.abstention}"`);
+    }
+
+    // Raised ceiling: the extra steps are spent and the record lands.
+    const roomy = await execute(context, F.offlineFixtures(DATE), thirteenFetchesThenEmit, 16);
+    if (isAbstention(roomy.run.result)) {
+      failures.push(`at maxSteps=16 the record should be emitted, got abstention: ${roomy.run.result.reason}`);
+    }
+    if (roomy.run.steps !== 14) failures.push(`expected the emit on step 14, got step ${roomy.run.steps}`);
+    if (roomy.run.cost.calls !== 14) failures.push(`expected 14 model calls at maxSteps=16, got ${roomy.run.cost.calls}`);
+
+    return { run: roomy.run, failures };
   },
 };
 
@@ -219,4 +344,6 @@ export const OFFLINE_SCENARIOS: readonly OfflineScenario[] = [
   snapCrossRef,
   fabricatedQuoteRejected,
   stepBudget,
+  reservedFactRejected,
+  raisedBudgetHonored,
 ];

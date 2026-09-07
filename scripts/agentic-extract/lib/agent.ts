@@ -12,6 +12,16 @@
  *   - a step budget -- exhausting it abstains, never guesses.
  * A failed emit is returned to the model as a tool error so it can fix it or
  * abstain; it never ends the loop with a bad record.
+ *
+ * Step budget: `DEFAULT_MAX_STEPS` is the ceiling on model turns (each fetch,
+ * cross-ref resolve, or emit attempt costs one). PR #72's live run set this to
+ * 12 and four multi-page sources abstained on exhaustion -- exactly the sources
+ * the design exists to handle (the SeniorCare wizard-of-oz case alone needed
+ * four pages, before any cross-reference or emit retry). Raised to 24 and made
+ * sweepable from the CLI (`--max-steps=N`) so it can be tuned without a code
+ * change. Exhaustion still abstains -- that is the safe behaviour -- but the
+ * abstention is tagged `budget-exhausted` (see `AgentRun.abstention`) so a
+ * tuning limit is not miscounted as the source stating no rule.
  */
 import { gateCriterion } from '../../llm-extraction/schema-gate.ts';
 import type { Criterion } from '../../../src/domain/criteria.ts';
@@ -33,11 +43,25 @@ import {
 
 const PAGE_CHAR_CAP = 24_000;
 
+/**
+ * Model-turn ceiling. Was 12 in PR #72's live run, which starved the multi-page
+ * sources the agentic path exists for. Sweep it with `--max-steps=N`.
+ */
+export const DEFAULT_MAX_STEPS = 24;
+
 export interface AgentOptions {
   readonly model: ModelClient;
   readonly fetcher: Fetcher;
   readonly maxSteps?: number;
 }
+
+/**
+ * Why a top-level abstention happened. `budget-exhausted` means the loop ran
+ * out of steps (a tuning signal); `substantive` means the model chose to
+ * abstain because the source states no decidable rule (the real safety
+ * outcome). Conflating the two hides a tuning problem inside a safety metric.
+ */
+export type AbstentionKind = 'substantive' | 'budget-exhausted';
 
 export interface AgentRun {
   readonly result: ExtractionResult;
@@ -48,6 +72,9 @@ export interface AgentRun {
   readonly pagesVisited: readonly string[];
   /** A short trail of what the loop did, for the CLI report and debugging. */
   readonly trace: readonly string[];
+  /** Present only when `result` is an abstention. Distinguishes a tuning
+   *  limit (`budget-exhausted`) from a genuine "the source states no rule". */
+  readonly abstention?: AbstentionKind;
 }
 
 function cap(s: string): string {
@@ -55,7 +82,7 @@ function cap(s: string): string {
 }
 
 export async function runAgent(ctx: ExtractionContext, opts: AgentOptions): Promise<AgentRun> {
-  const maxSteps = opts.maxSteps ?? 12;
+  const maxSteps = opts.maxSteps ?? DEFAULT_MAX_STEPS;
   const nav = new Navigator(opts.fetcher);
   const cost = new CostMeter();
   const crossRefSources: SpanSource[] = [];
@@ -81,12 +108,13 @@ export async function runAgent(ctx: ExtractionContext, opts: AgentOptions): Prom
     ...crossRefSources,
   ];
 
-  const finishAbstain = (reason: string, steps: number): AgentRun => ({
+  const finishAbstain = (reason: string, steps: number, kind: AbstentionKind = 'substantive'): AgentRun => ({
     result: { abstained: true, reason },
     cost: cost.summary(),
     steps,
     pagesVisited,
     trace,
+    abstention: kind,
   });
 
   type Finalize =
@@ -280,5 +308,9 @@ export async function runAgent(ctx: ExtractionContext, opts: AgentOptions): Prom
   }
 
   trace.push(`step budget (${maxSteps}) exhausted -> abstain`);
-  return finishAbstain(`step budget (${maxSteps}) exhausted without a decidable rule`, maxSteps);
+  return finishAbstain(
+    `step budget (${maxSteps}) exhausted without a decidable rule`,
+    maxSteps,
+    'budget-exhausted',
+  );
 }

@@ -128,6 +128,27 @@ describe('schema gate agrees with tests/data/vocabulary.test.ts on the real data
     const result = gateCriterion(manualReview('subject to funding availability'));
     expect(result.ok).toBe(true);
   });
+
+  it('rejects a compare/set over a RESERVED fact (PR #72: the [age lte 64] / [citizenshipStatus ...] dangerous cases)', () => {
+    const ageRule = gateCriterion({ kind: 'compare', fact: 'age', op: 'lte', value: 64 });
+    expect(ageRule.ok).toBe(false);
+    if (!ageRule.ok) expect(ageRule.problems.join(' ')).toMatch(/age.*reserved|reserved.*age/i);
+
+    const citizenshipRule = gateCriterion({
+      kind: 'set',
+      fact: 'citizenshipStatus',
+      op: 'includesAny',
+      values: ['us-citizen', 'qualified-immigrant'],
+    });
+    expect(citizenshipRule.ok).toBe(false);
+
+    // The same condition is fine as prose inside a manualReview note.
+    const routed = gateCriterion({
+      kind: 'allOf',
+      of: [oneOf('state', ['WI']), manualReview('SeniorCare requires age 65+; age is not an asked fact.')],
+    });
+    expect(routed.ok).toBe(true);
+  });
 });
 
 describe('LLM extraction eval set (docs/eligibility-extraction.md Section 4)', () => {

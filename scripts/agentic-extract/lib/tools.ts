@@ -9,6 +9,7 @@
  */
 import { buildCriterionJsonSchema } from '../../llm-extraction/criterion-schema.ts';
 import { describeEnumFacts } from '../../llm-extraction/enum-vocab.ts';
+import { describeAskableFacts } from './askable-facts.ts';
 import type { ToolDef } from './model-client.ts';
 
 export const TOOL_NAMES = {
@@ -127,8 +128,11 @@ export function buildSystemPrompt(): string {
     `- Carry scope into the rule. If an income limit applies only to pregnant people, encode that (anyOf of population-scoped branches), or use manualReview -- do not flatten it to one ceiling.`,
     `- The worst possible error is a rule NARROWER than reality: it tells someone they do not qualify when they do. Over-inclusive is recoverable; narrower is not. When unsure whether a condition belongs, leave it out or use manualReview.`,
     `- Only use fact keys and enum slugs that actually exist (listed below). Drop any program/category the source names that has no slug; never invent one.`,
+    `- Only reference facts the interview actually asks (the "Askable" list below). A condition that turns on a RESERVED fact -- age, citizenship/immigration status, employment status, veteran or disability status -- must go in a manualReview note, never a compare/set node: a rule testing an unaskable fact can never be satisfied and silently rules everyone out. This is gate-enforced.`,
     `- manualReview can be the whole rule or one leaf inside allOf. Do not collapse a whole program to manualReview because one condition is undecidable; do not force a rule when the honest answer is manualReview.`,
     `- If the source does not state a clear decidable rule, call abstain. That is a correct, expected outcome.`,
+    ``,
+    describeAskableFacts(),
     ``,
     describeEnumFacts(),
   ].join('\n');

@@ -6,6 +6,9 @@ import { agenticExtractor } from '../../extractor.ts';
 import { createFixtureFetcher } from '../fetcher.ts';
 import { ScriptedModelClient } from '../scripted-model.ts';
 import { MissingApiKeyError } from '../../../program-benchmark/lib/extractor.ts';
+import { buildSystemPrompt } from '../tools.ts';
+import { describeAskableFacts } from '../askable-facts.ts';
+import { RESERVED_FACT_KEYS } from '../../../../src/domain/facts.ts';
 import * as F from '../fixtures-offline.ts';
 
 for (const scenario of OFFLINE_SCENARIOS) {
@@ -36,6 +39,19 @@ test('agenticExtractor runs offline when a model is injected, ignoring hasApiKey
     hasApiKey: false,
   });
   assert.equal((result as { abstained?: boolean }).abstained, true);
+});
+
+test('the system prompt names every reserved fact and tells the model to route it to manualReview', () => {
+  const prompt = buildSystemPrompt();
+  const askable = describeAskableFacts();
+  assert.ok(prompt.includes(askable), 'prompt should embed the askable/reserved fact list');
+  for (const key of RESERVED_FACT_KEYS) {
+    assert.ok(askable.includes(key), `reserved fact ${key} missing from the prompt`);
+  }
+  assert.match(askable, /RESERVED/);
+  assert.match(askable, /manualReview/);
+  // Askable facts the interview really does supply must still be listed as askable.
+  assert.match(askable, /annualHouseholdIncome/);
 });
 
 test('the emitted CandidateRecord carries provenance in notes for the reviewer', async () => {
