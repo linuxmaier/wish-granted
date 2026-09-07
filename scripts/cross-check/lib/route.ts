@@ -25,7 +25,7 @@ export type RoutePriority = 'high' | 'low';
 
 /** How the verdict was reached -- the interesting axis for the report. */
 export type RouteBasis =
-  | 'methods-agree' // Path A: both methods emitted the same rule
+  | 'methods-agree' // Path A: the two methods agree on the dimension the parser constrains
   | 'methods-agree-abstain' // Path A: both methods independently found no rule
   | 'methods-diverge-dangerous' // Path A: divergent, dangerous direction
   | 'methods-diverge-safe' // Path A: divergent, over-inclusive only
@@ -72,7 +72,8 @@ export async function crossCheck(input: CrossCheckInput): Promise<RouteDecision>
           basis: 'methods-agree',
           reason:
             'Two independent methods -- a deterministic parser and an LLM with source access -- ' +
-            'produced the same rule. Neither method\'s known failure mode fired.',
+            'agree on the dimension the parser constrains (geography, gates and manualReview are ' +
+            'out of scope -- the parser never examined them). Neither method\'s known failure mode fired.',
           agreement,
         };
       case 'divergent-dangerous':

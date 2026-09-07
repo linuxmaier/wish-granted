@@ -9,10 +9,13 @@
  *
  *   Path A -- run the deterministic Tier-3 parser (scripts/tier3-extract, no
  *     model) and the agentic extractor (scripts/agentic-extract) on the same
- *     source, and feed both `Criterion` trees to `criterionEquivalence`
- *     (scripts/program-benchmark, UNCHANGED -- it is the referee). Equivalent ->
- *     high confidence. Divergent in the dangerous direction, either way -> route
- *     to a human.
+ *     source. The parser emits a narrow fragment, the agentic extractor a full
+ *     record, so we PROJECT both `Criterion` trees onto the dimension the parser
+ *     actually constrains (lib/scoped-agreement.ts, issue #84/#85) and hand the
+ *     projections to `criterionEquivalence` (scripts/program-benchmark,
+ *     UNCHANGED -- it is the referee). Equivalent on that dimension -> high
+ *     confidence. Divergent in the dangerous direction, either way -> route to a
+ *     human.
  *
  *   Path B -- where the parser abstains and Path A has nothing to compare, a
  *     FRESH model call (no extraction memory) is asked one narrow question:
@@ -24,8 +27,9 @@
  * key it reports SKIPPED for the live measurement (never a fabricated result --
  * #63's mistake) and still prints the model-free analysis: the corpus overlap,
  * the deterministic parser's outcomes on every mapped source, and -- the number
- * #84 turns on -- how often the parser's rule already diverges from the verified
- * record, which bounds how often Path A can possibly say "agree".
+ * #84 turns on -- how often the parser's fragment agrees with the verified
+ * record ON THE DIMENSION THE PARSER SPEAKS TO (both projected onto the parser's
+ * constrained facts before the referee runs -- issue #84/#85).
  *
  * Usage:
  *   npm run extract:cross-check                 # model-free analysis + SKIPPED live
@@ -37,7 +41,7 @@ import { resolve as resolvePath } from 'node:path';
 
 import { PROGRAMS } from '@/data/programs';
 import { partitionPrograms } from '../program-benchmark/lib/cases.ts';
-import { criterionEquivalence } from '../program-benchmark/lib/criterion-equivalence.ts';
+import { scopedAgreement } from './lib/scoped-agreement.ts';
 import { agenticExtractor } from '../agentic-extract/extractor.ts';
 import { DEFAULT_MAX_STEPS } from '../agentic-extract/lib/agent.ts';
 import type { ExtractionContext } from '../program-benchmark/lib/extractor.ts';
@@ -83,12 +87,15 @@ function renderCorpusAnalysis(): string {
   L.push(`No Tier-3 fixture -> Path A cannot run: ${noFixture.length} (${noFixture.join(', ')})`);
   L.push('');
 
-  L.push('--- What the deterministic parser produces on each mapped source, vs the VERIFIED record ---');
-  L.push('    (model-free. This bounds Path A: for the referee to say "agree", the agentic method');
-  L.push('     would have to diverge from verified in the same way the parser does -- unlikely by design.)');
+  L.push('--- What the deterministic parser produces on each mapped source, SCOPED against the VERIFIED record ---');
+  L.push('    (model-free. Path A compares only the dimension the parser speaks to: both trees are');
+  L.push('     projected onto the parser fragment\'s constrained facts / income scales, then the referee');
+  L.push('     runs on the projections. Geography, program gates and manualReview are pruned, not');
+  L.push('     counted as divergence -- see scripts/cross-check/lib/scoped-agreement.ts, issue #84/#85.)');
   let parserAbstains = 0;
-  let parserExtractsEquivToVerified = 0;
-  let parserExtractsDivergent = 0;
+  let agreeOnDimension = 0;
+  let divergentOnDimension = 0;
+  let dangerousOnDimension = 0;
   for (const e of CORPUS) {
     const p = byId.get(e.programId);
     if (!p) continue;
@@ -98,28 +105,32 @@ function renderCorpusAnalysis(): string {
       L.push(`  ${e.programId.padEnd(28)} parser ABSTAINS -> Path B  (${outcome.reason.split(':')[0]})`);
       continue;
     }
-    const fwd = criterionEquivalence(p.eligibility, outcome.criterion);
-    const rev = criterionEquivalence(outcome.criterion, p.eligibility);
-    const equiv = fwd.verdict === 'equivalent' && rev.verdict === 'equivalent';
-    const danger = fwd.dangerousWitnesses.length > 0 || rev.dangerousWitnesses.length > 0;
-    if (equiv) parserExtractsEquivToVerified += 1;
-    else parserExtractsDivergent += 1;
+    const scoped = scopedAgreement(outcome.criterion, p.eligibility);
+    const agree = scoped.verdict === 'equivalent';
+    const dangerous = scoped.verdict === 'divergent-dangerous';
+    if (agree) agreeOnDimension += 1;
+    else divergentOnDimension += 1;
+    if (dangerous) dangerousOnDimension += 1;
     L.push(
       `  ${e.programId.padEnd(28)} parser EXTRACTS -> Path A  ` +
-        `[vs verified: ${equiv ? 'EQUIVALENT' : `divergent${danger ? ', dangerous direction' : ''}`}]`,
+        `[scoped vs verified: ${agree ? 'AGREE' : scoped.verdict.toUpperCase()}]`,
     );
   }
   L.push('');
-  L.push(`  parser abstains (-> Path B):                 ${parserAbstains}`);
-  L.push(`  parser extracts, matches verified:           ${parserExtractsEquivToVerified}`);
-  L.push(`  parser extracts, diverges from verified:     ${parserExtractsDivergent}`);
+  L.push(`  parser abstains (-> Path B):                       ${parserAbstains}`);
+  L.push(`  parser extracts, agrees on its dimension:          ${agreeOnDimension}`);
+  L.push(`  parser extracts, diverges on its dimension:        ${divergentOnDimension}  (of which dangerous: ${dangerousOnDimension})`);
   L.push('');
-  L.push('  PREDICTION for the live run: Path A "agree" will land close to the');
-  L.push(`  "matches verified" count above (${parserExtractsEquivToVerified}); the divergent rows will route to a human because`);
-  L.push('  the parser emits a narrow income/categorical fragment while the agentic extractor emits a');
-  L.push('  full record (geography envelope, program gates, manualReview branches). The referee treats');
-  L.push('  an added `state = WI` leaf as a real dangerous-direction divergence -- correctly. So most of');
-  L.push('  the mapped cases exercise Path B, and Path A mainly contributes a divergence flag, not agreement.');
+  L.push('  PRE-MEASUREMENT PREDICTION for the live run (stated before the coordinator runs it):');
+  L.push(`  Against the VERIFIED record as a proxy for a correct agentic extraction, ${agreeOnDimension} of the`);
+  L.push(`  ${agreeOnDimension + divergentOnDimension} comparable cases agree on the parser\'s own dimension -- an ~${Math.round((100 * agreeOnDimension) / Math.max(1, agreeOnDimension + divergentOnDimension))}% scoped agreement rate,`);
+  L.push('  where the OLD whole-tree comparison predicted ~1 in 6 (17%). The 1-in-6 figure was an');
+  L.push('  artefact: an added `state = WI` leaf was scored as a dangerous-direction divergence on');
+  L.push('  every full record. Scoped to the dimension the parser speaks to, that artefact is gone.');
+  L.push('  The live agentic extractor will not match the verified record perfectly, so expect the');
+  L.push('  measured rate to land somewhat below this proxy -- but the mechanical inflation is removed,');
+  L.push('  and a case that still routes to a human (e.g. school-meals: parser over-lists medicaid as a');
+  L.push('  direct-certification category) is a real divergence a reviewer should see, not noise.');
   L.push('');
   return L.join('\n');
 }
@@ -211,8 +222,9 @@ async function selfTest(): Promise<number> {
       `(agreeing pair -> high confidence; dangerous divergence both directions -> human/high; ` +
       `parser abstention -> Path B; probe names a span-verified excluded person -> human/high; ` +
       `fabricated span discarded; corroborated abstention; referee-undecided -> human/low; ` +
-      `no-probe -> never trusted), the ${CORPUS.length}-entry corpus resolves, and the live probe ` +
-      `reports SKIPPED with no key. No network, no model.`,
+      `no-probe -> never trusted; fragment-vs-record: an added geography envelope -> agreement; ` +
+      `the foodshare shape: a dropped categorical branch -> human/high), the ${CORPUS.length}-entry ` +
+      `corpus resolves, and the live probe reports SKIPPED with no key. No network, no model.`,
   );
   return 0;
 }

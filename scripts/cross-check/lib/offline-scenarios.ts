@@ -17,7 +17,7 @@
  *   3. a parser abstention falling through to Path B
  *   4. Path B naming an excluded person (span verified) -> route to human
  */
-import { incomeAtOrBelow, allOf, atLeast, atMost, livesIn } from '../../../src/domain/criteria.ts';
+import { incomeAtOrBelow, allOf, atLeast, atMost, isTrue, livesIn } from '../../../src/domain/criteria.ts';
 import { MissingApiKeyError } from '../../program-benchmark/lib/extractor.ts';
 import { corpusFor, runDeterministic, fixtureSourceText, type CorpusEntry } from './corpus.ts';
 import type { MethodOutcome } from './methods.ts';
@@ -49,6 +49,7 @@ function spyAsker(answer: ProbeAnswer): ProbeAsker & { calls: ProbeQuestion[] } 
 
 const wheapEntry = () => entry('wheap-energy-assistance');
 const foodshareEntry = () => entry('foodshare-snap-wi');
+const lifelineEntry = () => entry('lifeline-phone-internet');
 
 /** 1. Two methods produce the same rule -> high confidence. */
 const agreeing: OfflineScenario = {
@@ -242,6 +243,69 @@ const liveProbeNoKey: OfflineScenario = {
   },
 };
 
+/**
+ * 10. Fragment-vs-record fix (#84/#85). The parser emits a bare income ceiling;
+ * a CORRECT agentic record wraps that same ceiling in a geography envelope and a
+ * program gate the parser never looks at. Whole-tree comparison called this
+ * "agentic rule narrower -> dangerous" on every such case. Scoped to the
+ * dimension the parser speaks to (wi-smi income), the two AGREE.
+ */
+const recordAddsGeography: OfflineScenario = {
+  name: 'fragment vs record: parser income ceiling + agentic record that adds geography -> agreement, not divergence',
+  async run() {
+    const deterministic = runDeterministic(wheapEntry()).outcome; // incomeAtOrBelow(wi-smi, 100)
+    const failures: string[] = [];
+    if (deterministic.decision !== 'extract') {
+      failures.push(`expected the parser to extract from the WHEAP fixture, got ${deterministic.decision}`);
+      return { failures };
+    }
+    const agentic: MethodOutcome = {
+      decision: 'extract',
+      criterion: allOf(livesIn.wisconsin, incomeAtOrBelow('wi-smi', 100), isTrue('paysHeatingCost')),
+    };
+    const decision = await crossCheck({ deterministic, agentic });
+    if (decision.route !== 'high-confidence') failures.push(`expected high-confidence, got ${decision.route}`);
+    if (decision.basis !== 'methods-agree') failures.push(`expected basis methods-agree, got ${decision.basis}`);
+    if (decision.agreement.verdict !== 'equivalent') {
+      failures.push(`expected referee verdict equivalent on the parser dimension, got ${decision.agreement.verdict}`);
+    }
+    if (decision.agreement.agenticNarrower) failures.push('the added geography/gate must NOT be read as the agentic rule being narrower');
+    return { decision, failures };
+  },
+};
+
+/**
+ * 11. The foodshare shape (#84's must-catch). The parser sees the categorical
+ * route (`anyOf(income, currentBenefits)`); the agentic tree emitted an income
+ * ceiling only, dropping the categorical branch. Narrower on the dimension the
+ * parser speaks to -> dangerous divergence, human/high. This survives projection
+ * because the dropped branch IS on the parser's dimension.
+ */
+const recordDropsCategoricalBranch: OfflineScenario = {
+  name: 'foodshare shape: parser categorical branch + agentic income-only tree -> dangerous divergence, human/high',
+  async run() {
+    const deterministic = runDeterministic(lifelineEntry()).outcome; // anyOf(incomeAtOrBelow(fpl,135), currentBenefits includesAny [...])
+    const failures: string[] = [];
+    if (deterministic.decision !== 'extract') {
+      failures.push(`expected the parser to extract from the Lifeline fixture, got ${deterministic.decision}`);
+      return { failures };
+    }
+    // The agentic extractor kept only the income ceiling.
+    const agentic: MethodOutcome = { decision: 'extract', criterion: incomeAtOrBelow('fpl', 135) };
+    const decision = await crossCheck({ deterministic, agentic });
+    if (decision.route !== 'human' || decision.priority !== 'high') {
+      failures.push(`expected human/high, got ${decision.route}/${decision.priority}`);
+    }
+    if (decision.basis !== 'methods-diverge-dangerous') {
+      failures.push(`expected basis methods-diverge-dangerous, got ${decision.basis}`);
+    }
+    if (!decision.agreement.agenticNarrower) {
+      failures.push('expected the agentic rule flagged as narrower on the parser dimension (dropped categorical route)');
+    }
+    return { decision, failures };
+  },
+};
+
 export const OFFLINE_SCENARIOS: readonly OfflineScenario[] = [
   agreeing,
   divergingDangerous,
@@ -252,4 +316,6 @@ export const OFFLINE_SCENARIOS: readonly OfflineScenario[] = [
   undecided,
   noProbeAvailable,
   liveProbeNoKey,
+  recordAddsGeography,
+  recordDropsCategoricalBranch,
 ];

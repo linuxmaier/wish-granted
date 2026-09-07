@@ -19,22 +19,45 @@ model of its own; the two methods it compares are run elsewhere.
 
 Run the deterministic Tier-3 parser (`scripts/tier3-extract`, no model) and the
 agentic extractor (`scripts/agentic-extract`, an LLM with source access) on the
-same source. Feed both `Criterion` trees to `criterionEquivalence`
+same source. The referee is `criterionEquivalence`
 (`scripts/program-benchmark/lib/criterion-equivalence.ts`), **used unchanged** --
-it is the referee, it is validated (identity test 16/16), and changing it would
-invalidate comparison against the three prior benchmark runs.
+it is validated (identity test 16/16), and changing it would invalidate
+comparison against the three prior benchmark runs.
+
+### Scope the comparison to the dimension the parser speaks to
+
+The two methods do **not** emit comparable units. The parser emits a narrow
+*fragment* -- "the income (or categorical) rule at this source is X". The agentic
+extractor emits a *full record* -- a geography envelope (`livesIn.wisconsin`),
+program gates (`paysHeatingCost`), `manualReview` leaves. A **correct** agentic
+record is therefore legitimately narrower than a bare income fragment, because it
+adds real conjuncts the parser never looks for. Feeding both whole trees to the
+referee reports the agentic side as "rules out profiles the parser accepts"
+almost every time -- for the wrong reason (it added `state = WI`, not because a
+branch was dropped).
+
+So Path A first **projects both trees onto the parser fragment's dimension**
+(`scripts/cross-check/lib/scoped-agreement.ts`): read the facts and income scales
+the fragment actually constrains, then prune every leaf the parser is silent on,
+collapsing the combinators through their identities (a dropped `allOf` conjunct
+is vacuously true; a dropped `anyOf` alternative is a path the parser cannot
+see). Geography, gates and `manualReview` are gone before the referee runs. What
+survives a dangerous witness is a true positive: the parser admits an income
+level the agentic tree rules out, or offers a categorical path the agentic tree
+lacks.
 
 `criterionEquivalence(a, b)` is asymmetric: it reports when `b` rules out a
 profile `a` accepts or flags for review, by three-valued model checking with no
 model call. #84 wants the dangerous direction caught *either way*, so we run it
-**both ways** and treat a dangerous witness in either direction as the dangerous
-outcome. We never need to know which method is wrong.
+**both ways on the projections** and treat a dangerous witness in either
+direction as the dangerous outcome. We never need to know which method is wrong.
 
-| Referee verdict (both directions) | Route |
+| Referee verdict on the projections (both directions) | Route |
 |---|---|
-| equivalent | **high confidence** -- two independent methods, neither failure mode fired |
-| a dangerous witness either way | **human, high priority** -- one method dropped a branch |
+| equivalent on the parser's dimension | **high confidence** -- two independent methods, neither failure mode fired |
+| a dangerous witness either way | **human, high priority** -- one method dropped a branch the other has |
 | undecided (un-modellable leaf / state space too large) | human, low priority -- not provably safe |
+| no shared dimension (agentic rule mentions none of the parser's facts) | human, low priority -- methods examined different things |
 | divergent only around unknowns | human, low priority |
 
 Both methods abstaining is itself an agreement: **high confidence**, the
@@ -77,26 +100,48 @@ bought by never committing. `summariseRouting` reports the **agreement rate**
 `npm run extract:cross-check` (model-free) maps the 16 verified program records
 to Tier-3 fixtures: **10 have a fixture at (9) or near (1) their source URL** --
 coverage is real, not marginal. Of those 10, the parser abstains on 4 (-> Path
-B) and extracts on 6. On those 6, comparing the parser's rule to the
-**verified** record:
+B) and extracts on 6. On those 6, comparing the parser's fragment to the
+**verified** record *on the dimension the parser speaks to* (both projected):
 
-- **1** (`lifeline-phone-internet`) is equivalent;
-- **5** diverge, all in the dangerous direction.
+- **5** agree on the parser's dimension (`lifeline-phone-internet`, both WHEAP
+  records, `wisconsin-shares-child-care`, `wic-wisconsin`);
+- **1** diverges: `school-meals-wi`, where the parser lists `medicaid-badgercare`
+  as a direct-certification category and the verified record does not. That is a
+  real categorical divergence a reviewer should see -- a genuine finding, not an
+  artefact.
 
-The 5 diverge because the parser emits a narrow income/categorical *fragment*
-while a correct agentic extraction emits a *full record* -- geography envelope,
-program gates, `manualReview` branches. The referee treats an added `state = WI`
-leaf as a real dangerous-direction divergence, and it is right to.
+**Pre-measurement prediction for the live run:** against the verified record as a
+proxy for a correct agentic extraction, the scoped agreement rate is **5 of 6
+(~83%)**. The live agentic extractor will not match the verified record
+perfectly, so expect the *measured* rate to land somewhat below this -- call it
+**roughly 3 in 5 to 4 in 5** of comparable cases -- but the mechanical inflation
+is gone. Stated before the coordinator runs it.
 
-**Prediction for the live run:** Path A's "agree" rate will be roughly **1 in
-6** comparable cases. Path A's main contribution is the divergence *flag*, not
-agreement; the design leans on Path B for the abstention-heavy majority of
-Tier-3. This is a real limitation of comparing a deliberately-narrow parser
-against a full extractor -- stated here rather than discovered after a
-measurement run. It is **not** classify-first: every route carries a concrete,
+### The fragment-vs-record limitation: diagnosed and fixed
+
+An earlier draft of this doc predicted a **1-in-6** agreement rate and concluded
+that Path A would "mainly contribute a divergence flag, not agreement", with the
+design leaning on Path B. That was **wrong -- and, usefully, wrong before we
+spent ~$8 measuring it.** The 1-in-6 figure was an artefact of feeding a narrow
+parser fragment and a full agentic record to a whole-tree comparison: the referee
+scored an added `state = WI` leaf (a leaf the parser never looks at) as a
+dangerous-direction divergence on *every* full record. Path A had become a
+false-positive machine -- it flagged correctness as danger.
+
+The fix is to compare only the dimension the parser has an opinion about (see
+"Scope the comparison" above). Projecting both trees onto the parser fragment's
+constrained facts removes the artefact without touching the referee: `state = WI`,
+`paysHeatingCost` and `manualReview` are pruned before `criterionEquivalence`
+runs, so they can no longer masquerade as dropped branches. A divergence that
+*survives* projection -- like `school-meals-wi`'s extra `medicaid-badgercare` --
+is a real disagreement between the two methods on the parser's own dimension.
+
+This is **not** classify-first: every route still carries a concrete,
 mechanically-derived reason (which profile is excluded, which span), and the
-high-confidence bucket is non-empty by construction only where two methods
-actually converge.
+high-confidence bucket is non-empty only where two independent methods actually
+converge on the dimension they can both see. If the *measured* rate still comes
+back poor, that is now a real finding -- the two methods genuinely disagree --
+rather than a measurement artefact, and the two are worth telling apart.
 
 ## Running it
 

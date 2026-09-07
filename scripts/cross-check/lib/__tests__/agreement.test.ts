@@ -5,6 +5,7 @@ import {
   incomeAtOrBelow,
   allOf,
   anyOf,
+  hasAnyOf,
   isTrue,
   atLeast,
   atMost,
@@ -66,14 +67,60 @@ test('undecided when a leaf cannot be modelled (two numeric bounds on one fact)'
   assert.equal(r.deterministicNarrower, false);
 });
 
-test('any strict narrowing counts as dangerous-direction (checked both ways, per #84 "either way")', () => {
-  // A rule that merely ADDS a required leaf is narrower -> dangerous direction.
+test('fragment-vs-record fix (#84/#85): a parser-silent conjunct the agentic record adds is NOT divergence', () => {
+  // The parser fragment speaks only to fpl income. The agentic record adds a
+  // required `isPregnantOrPostpartum` leaf -- a dimension the parser never looks
+  // at. Whole-tree comparison used to call this "agentic rule narrower ->
+  // dangerous" on every such case; scoped to the parser's dimension the two
+  // AGREE (both say: eligible at or below 100% FPL).
   const r = crossMethodAgreement(
     ex(incomeAtOrBelow('fpl', 100)),
     ex(allOf(incomeAtOrBelow('fpl', 100), isTrue('isPregnantOrPostpartum'))),
   );
+  assert.equal(r.verdict, 'equivalent');
+  assert.equal(r.agenticNarrower, false);
+  assert.equal(r.deterministicNarrower, false);
+});
+
+test('fragment-vs-record fix (#84/#85): agreeing income rule + an added geography envelope -> agreement', () => {
+  // The case PR #85 currently misreports: parser emits `incomeAtOrBelow(fpl,200)`,
+  // the agentic record wraps the same ceiling in `livesIn.wisconsin` + a gate.
+  const r = crossMethodAgreement(
+    ex(incomeAtOrBelow('fpl', 200)),
+    ex(allOf(livesIn.wisconsin, incomeAtOrBelow('fpl', 200), isTrue('paysHeatingCost'))),
+  );
+  assert.equal(r.verdict, 'equivalent');
+  assert.equal(r.agenticNarrower, false);
+});
+
+test('scoped comparison still catches a genuine narrowing ON the parser dimension', () => {
+  // Same fpl dimension, lower ceiling on the agentic side -> real dangerous
+  // divergence, not an artefact of unrelated leaves.
+  const r = crossMethodAgreement(
+    ex(allOf(livesIn.wisconsin, incomeAtOrBelow('fpl', 200))),
+    ex(allOf(livesIn.wisconsin, incomeAtOrBelow('fpl', 130), isTrue('paysHeatingCost'))),
+  );
   assert.equal(r.verdict, 'divergent-dangerous');
   assert.equal(r.agenticNarrower, true);
+});
+
+test('scoped comparison catches the foodshare shape: parser categorical branch the agentic tree lacks', () => {
+  // Parser sees the SSI/W-2 categorical route; the agentic tree emitted an
+  // income ceiling only. Narrower on the dimension the parser speaks to.
+  const r = crossMethodAgreement(
+    ex(anyOf(incomeAtOrBelow('fpl', 200), hasAnyOf('currentBenefits', ['ssi', 'w2-tanf']))),
+    ex(allOf(livesIn.wisconsin, incomeAtOrBelow('fpl', 200))),
+  );
+  assert.equal(r.verdict, 'divergent-dangerous');
+  assert.equal(r.agenticNarrower, true);
+});
+
+test('no shared dimension: the agentic rule mentions none of the parser fragment\'s facts -> undecided', () => {
+  const r = crossMethodAgreement(
+    ex(incomeAtOrBelow('fpl', 200)),
+    ex(allOf(livesIn.wisconsin, isTrue('paysHeatingCost'))),
+  );
+  assert.equal(r.verdict, 'undecided');
 });
 
 test('divergent-safe: the two rules disagree only around an unknown (never T-vs-F)', () => {
