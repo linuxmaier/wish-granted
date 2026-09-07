@@ -19,7 +19,15 @@
  *   npm run extract:agentic                      # over #66's cases; SKIPPED with no key
  *   npm run extract:agentic -- --report-file=out.txt
  *   npm run extract:agentic -- --max-steps=32    # sweep the step budget without a code change
+ *   npm run extract:agentic -- --dump=run.json   # capture candidate + verified trees per case (read-only)
  *   npm run extract:agentic:self-test            # offline: scenarios + scorer wiring, exit 0
+ *
+ * `--dump` writes one JSON record per case: the verified `Criterion`, the
+ * candidate `Criterion` (or the abstention reason), the equivalence verdict with
+ * its divergence/dangerous witnesses, the abstention score, and the run trace.
+ * It changes NOTHING about scoring -- it is a read-only tap on the data the
+ * benchmark already computed, added for #74's divergence analysis so that
+ * classifying "divergent vs wrong" does not need a second model run.
  *
  * Exit codes: 0 normal / SKIPPED / self-test pass; 1 self-test failure or a
  * live run that produced a dangerous finding (BLOCKING, delegated to #66's
@@ -32,6 +40,7 @@ import { resolve as resolvePath } from 'node:path';
 import { PROGRAMS } from '@/data/programs';
 import { runBenchmark } from '../program-benchmark/lib/run.ts';
 import { renderReport } from '../program-benchmark/lib/report.ts';
+import type { CaseScore } from '../program-benchmark/lib/score.ts';
 import { agenticExtractor } from './extractor.ts';
 import type { AgentRun } from './lib/agent.ts';
 import { isAbstention, type ExtractionContext } from '../program-benchmark/lib/extractor.ts';
@@ -42,21 +51,50 @@ import { OFFLINE_SCENARIOS } from './lib/offline-scenarios.ts';
 interface Args {
   readonly reportFile: string | undefined;
   readonly maxSteps: number | undefined;
+  readonly dumpFile: string | undefined;
 }
 
 function parseArgs(argv: readonly string[]): Args {
   let reportFile: string | undefined;
   let maxSteps: number | undefined;
+  let dumpFile: string | undefined;
   for (const arg of argv) {
     if (arg === '--self-test') continue;
     if (arg.startsWith('--report-file=')) reportFile = arg.slice('--report-file='.length);
+    else if (arg.startsWith('--dump=')) dumpFile = arg.slice('--dump='.length);
     else if (arg.startsWith('--max-steps=')) {
       const n = Number(arg.slice('--max-steps='.length));
       if (!Number.isInteger(n) || n < 1) throw new Error(`--max-steps must be a positive integer, got "${arg}"`);
       maxSteps = n;
     } else throw new Error(`Unrecognized argument: ${arg}`);
   }
-  return { reportFile, maxSteps };
+  return { reportFile, maxSteps, dumpFile };
+}
+
+/**
+ * One per-case row of a `--dump` file. Everything here is already computed by
+ * the benchmark or the agent loop; this type just names the subset #74 needs to
+ * classify a divergence without re-running the model.
+ */
+interface DumpEntry {
+  readonly programId: string;
+  readonly sourceUrl: string;
+  readonly outcome: CaseScore['outcome'];
+  readonly eligibility: CaseScore['eligibility'];
+  readonly eligibilityDetail: string | undefined;
+  readonly equivalence: CaseScore['equivalence'];
+  readonly dangerous: CaseScore['dangerous'];
+  readonly abstention: CaseScore['abstention'];
+  /** The hand-verified ground-truth rule. */
+  readonly verifiedEligibility: unknown;
+  /** The candidate rule the extractor emitted, or null if it abstained / errored. */
+  readonly candidateEligibility: unknown;
+  readonly candidateAbstentionReason: string | undefined;
+  readonly abstentionKind: string | undefined;
+  readonly steps: number | undefined;
+  readonly pagesVisited: readonly string[] | undefined;
+  readonly provenanceSpans: number | undefined;
+  readonly trace: readonly string[] | undefined;
 }
 
 function renderCostTable(rows: { id: string; cost: CostSummary; steps: number; pages: number }[]): string {
@@ -109,10 +147,14 @@ async function runMain(args: Args): Promise<number> {
   const maxSteps = args.maxSteps ?? DEFAULT_MAX_STEPS;
   const costRows: { id: string; cost: CostSummary; steps: number; pages: number }[] = [];
   const abstentions: { id: string; kind: string; reason: string }[] = [];
+  /** Per-case agent-loop detail, keyed by programId, merged into the dump. */
+  const runsById = new Map<string, AgentRun>();
+  const verifiedById = new Map(PROGRAMS.map((p) => [p.id, p]));
 
   const extractor = agenticExtractor({
     maxSteps,
     onRun: (ctx: ExtractionContext, run: AgentRun) => {
+      runsById.set(ctx.programId, run);
       costRows.push({ id: ctx.programId, cost: run.cost, steps: run.steps, pages: run.pagesVisited.length });
       if (run.abstention && isAbstention(run.result)) {
         abstentions.push({ id: ctx.programId, kind: run.abstention, reason: run.result.reason });
@@ -120,11 +162,39 @@ async function runMain(args: Args): Promise<number> {
     },
   });
 
+  const dumpEntries: DumpEntry[] = [];
   const run = await runBenchmark({
     extractor,
     programs: PROGRAMS,
     hasApiKey,
     extractorLabel: 'agentic (#67): real source access, provenance-gated',
+    onCase: args.dumpFile
+      ? (score: CaseScore) => {
+          const agentRun = runsById.get(score.programId);
+          const result = agentRun?.result;
+          const candidate =
+            result && !isAbstention(result) ? result.eligibility : null;
+          dumpEntries.push({
+            programId: score.programId,
+            sourceUrl: score.sourceUrl,
+            outcome: score.outcome,
+            eligibility: score.eligibility,
+            eligibilityDetail: score.eligibilityDetail,
+            equivalence: score.equivalence,
+            dangerous: score.dangerous,
+            abstention: score.abstention,
+            verifiedEligibility: verifiedById.get(score.programId)?.eligibility ?? null,
+            candidateEligibility: candidate,
+            candidateAbstentionReason:
+              result && isAbstention(result) ? result.reason : undefined,
+            abstentionKind: agentRun?.abstention,
+            steps: agentRun?.steps,
+            pagesVisited: agentRun?.pagesVisited,
+            provenanceSpans: agentRun?.record?.provenance.length,
+            trace: agentRun?.trace,
+          });
+        }
+      : undefined,
   });
   const report = renderReport(run);
 
@@ -144,11 +214,28 @@ async function runMain(args: Args): Promise<number> {
       'utf8',
     );
   }
+  if (args.dumpFile) {
+    writeFileSync(args.dumpFile, `${JSON.stringify(dumpEntries, null, 2)}\n`, 'utf8');
+    console.log(`\n--dump: wrote ${dumpEntries.length} per-case record(s) to ${args.dumpFile}`);
+  }
   return report.blocking ? 1 : 0;
 }
 
 async function selfTest(): Promise<number> {
   parseArgs(['--self-test']);
+
+  // --dump / --report-file / --max-steps parse; an unknown flag is rejected.
+  const parsed = parseArgs(['--dump=run.json', '--report-file=r.txt', '--max-steps=8']);
+  if (parsed.dumpFile !== 'run.json' || parsed.reportFile !== 'r.txt' || parsed.maxSteps !== 8) {
+    throw new Error('self-test: parseArgs did not round-trip --dump / --report-file / --max-steps');
+  }
+  let rejectedUnknown = false;
+  try {
+    parseArgs(['--nope']);
+  } catch {
+    rejectedUnknown = true;
+  }
+  if (!rejectedUnknown) throw new Error('self-test: parseArgs accepted an unknown flag');
 
   if (!Array.isArray(PROGRAMS) || PROGRAMS.length === 0) {
     throw new Error('self-test: PROGRAMS did not load as a non-empty array');

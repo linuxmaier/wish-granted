@@ -269,3 +269,147 @@ All four are wired into CI alongside the existing script gates (#48, #55).
 
 Exit codes: `0` normal / SKIPPED / nothing-wired; `1` a live run produced a
 dangerous finding (BLOCKING), or the self-test failed.
+
+---
+
+## Divergent is not wrong: the #74 analysis (2026-09-07)
+
+The agentic extractor's verified run (#72, `pipeline/67-agentic-extraction`,
+post-fix, $6.51) scored **0 / 16 eligibility-equivalent, 10 divergent, 0
+dangerous, 0 undecided**, with **9 spurious abstentions** and **6 whole-record
+abstentions**. #74 asked whether 0/16 is the real utility ceiling or an artefact
+of tree shape.
+
+### The candidate trees were not persisted
+
+The run's report records only `eligibility=divergent` per case. The equivalence
+detail and `divergenceWitnesses` are computed by `lib/criterion-equivalence.ts`
+but `lib/report.ts` never renders them, and no candidate `Criterion` is written
+anywhere. PR #72's comments quote abstention reasons and the two *pre-fix*
+dangerous witnesses, but not one post-fix divergent candidate tree. #74 forbids a
+fresh model call. **So a literal side-by-side of the 10 actual candidate trees
+cannot be produced from existing artefacts.**
+
+Two things were done instead:
+
+1. **`npm run extract:agentic -- --dump=run.json`** was added (read-only; it does
+   not touch scoring). It writes, per case, the verified `Criterion`, the
+   candidate `Criterion` (or the abstention reason), the full `EquivalenceResult`
+   with its divergence/dangerous witnesses, the abstention score, and the agent
+   trace. The next marginal-cost live run should pass it; #74's per-case
+   classification then needs **zero** further tokens.
+2. The structural analysis below, from the verified records + the #72
+   reserved-fact gate + the scorer's own semantics + the two numbers the report
+   *does* expose (spurious = 9, dangerous = 0, undecided = 0).
+
+### The 10 divergent cases (by elimination)
+
+17 records; `dane-eviction-prevention` is abstention-only; 16 scored. The 6
+whole-record abstentions (#72's comment: `wi-211` by policy; `wheap-energy`,
+`wheap-crisis`, `wisconsin-weatherization` on `energyandhousing.wi.gov` fetch
+failure; `foodshare-snap-wi`, `school-meals-wi` missing-page) leave exactly these
+10 divergent:
+
+| # | program | verified `eligibility` (real) | reserved / undecidable condition the verified record keeps in prose | most likely divergence class |
+|---|---|---|---|---|
+| 1 | `badgercare-plus` | `allOf(WI, anyOf(inc≤100 FPL, allOf(anyOf(pregnant, childU5, schoolAge), inc≤306 FPL)))` | "Covers ages 0–64 only"; immigration status — **caveat prose, not in the tree** | **4** (candidate forced to a `manualReview` leaf), leans **5** — see below |
+| 2 | `madison-housing-choice-voucher` | `allOf(WI, housingStatus∈{renting,unhoused-or-temporary,living-with-others}, inc≤50 dane-ami, manualReview(waitlist closed))` | citizenship (the *pre-fix* dangerous witness here); waitlist already a leaf | concrete-leaf divergence (AMI %, housingStatus set, or an added citizenship leaf); not dangerous |
+| 3 | `madison-water-bill-assistance` | `allOf(livesIn.madison, anyOf(inc≤50 dane-ami, currentBenefits⊇any{snap-foodshare,housing-choice-voucher,wic}))` | — | concrete-leaf divergence (city-vs-county scope, benefit-list membership, AMI %) — **3** or **1**, direction unknown |
+| 4 | `second-harvest-southern-wi` | `livesIn.daneCounty` | 16-county service area is in the caveat, not the tree | **3** broader (candidate likely `WI` or a wider geo) or **4** |
+| 5 | `sun-bucks-wi` | `allOf(WI, hasSchoolAgeChild, anyOf(inc≤185 FPL, currentBenefits⊇any{snap-foodshare,medicaid-badgercare,w2-tanf}))` | NSLP-school attendance caveat | likely **4** (spurious `manualReview` for the school-participation caveat) |
+| 6 | `the-river-food-pantry` | `livesIn.daneCounty` | TEFAP 200% FPL self-attestation is **deliberately** left in the caveat (see the record's own comment) | **4** (added `manualReview`) or **3** (broadened to `WI`). Not a positive income test — that would have tripped a dangerous witness, and dangerous = 0 |
+| 7 | `wic-wisconsin` | `allOf(WI, anyOf(pregnant, childU5), anyOf(inc≤185 FPL, currentBenefits⊇any{...}))` | nutritional-need check caveat | likely **4** (spurious `manualReview` for the clinic nutrition assessment) |
+| 8 | `wisconsin-shares-child-care` | `allOf(WI, anyOf(childU5, schoolAge), inc≤200 FPL, manualReview(work/school activity))` | work-activity already a leaf | concrete-leaf divergence (200% FPL scale/percent, or the child-age set); abstention likely `correct`, not spurious |
+| 9 | `lifeline-phone-internet` | `anyOf(inc≤135 FPL, currentBenefits⊇any{snap-foodshare,medicaid-badgercare,ssi,housing-choice-voucher,federal-public-housing})` — **no residency leaf** | AK/HI FPL differ from the `state` fact (the WOZ run noticed this) | concrete-leaf divergence (benefit-list membership, an added residency leaf, or a `manualReview` for AK/HI) |
+| 10 | `dane-joining-forces-for-families` | `livesIn.daneCounty` | referral service, no real test | **3** / **4** (candidate likely `always` or `WI`) |
+
+### What the numbers that *are* exposed tell us
+
+- **spurious abstentions = 9**, of which 3 are whole-record (`foodshare`,
+  `school-meals`, `wi-211`). That leaves **6 scored divergent records where the
+  candidate added a `manualReview` leaf the verified record does not have** —
+  i.e. 6 of the 10 are the reserved-fact / caveat-prose collapse, scored
+  `divergent` purely because `allOf(rule, manualReview)` evaluates to `unknown`
+  wherever the verified rule evaluates `true`. Under #74's taxonomy that is
+  **category 4** almost by definition ("a condition the verified record put in
+  `eligibilityCaveats` prose that the candidate encoded as a `manualReview`
+  leaf").
+- The remaining **~4** diverge on concrete leaves (income scale/percent,
+  set membership, geographic scope). With **dangerous = 0** none of these is
+  narrower-in-a-modellable-way; they are over-inclusive (**category 3**) or a
+  genuine but non-dangerous misread (**category 1**). Direction unresolved
+  without the trees.
+
+### Is there a category-2 (narrower, undetected) scorer gap? No — not on this run.
+
+A candidate that is narrower via *any* modellable leaf — a tighter
+`incomeAtOrBelow`, a dropped `anyOf` branch, an extra askable `compare` in an
+`allOf` — produces a state where `verified = T` and `candidate = F`, which
+`criterionEquivalence` records as a dangerous witness. `dangerous = 0` **and**
+`undecided = 0` together mean the model check ran on every one of the 10 and
+found no such state. The two latent escape routes documented above —
+`undecided` + a multi-bound numeric `compare` on a shared fact, and the
+`abstention-replaced` net-leaf-count edge — both require `undecided > 0` or a
+verified `manualReview`; neither fired. A candidate `manualReview` always
+evaluates `unknown`, never `false`, so routing a population to review is never
+flagged dangerous — but that is **correct by design** (unknown = "might qualify"
+= the safe direction), not a gap.
+
+**Conclusion: the 0-dangerous result is trustworthy, and #74's most-feared
+finding is absent.**
+
+### `badgercare-plus` — the verified record is arguably the weaker one (category 5)
+
+The verified tree omits the 0–64 age bound entirely; it lives only in
+`eligibilityCaveats`. `src/engine/match.ts` does **not** consult
+`eligibilityCaveats` when it buckets a program, so a 66-year-old childless WI
+resident at 90% FPL is shown **eligible** for BadgerCare Plus, with the "covers
+ages 0–64 only" text as an aside. `facts.ts` says these programs are meant to
+"stay in 'might qualify'" — the current encoding does not achieve that. The
+`manualReview` leaf the #72 gate now *forces* the extractor to emit would keep
+that population in `maybe`, which is more honest. The same applies wherever a
+reserved-fact gate is real and the verified record dropped it rather than
+abstaining on it.
+
+### Plain answer
+
+**0 / 16 is substantially an artefact of tree shape, not a measurement of
+comprehension.** ~6 of the 10 divergences are the reserved-fact / caveat-prose
+collapse that #72's author pre-registered as a prediction ("for programs that are
+mostly reserved-fact gated the rule collapses toward 'always manual review' —
+safe, but not informative… the benchmark should expect that rather than score it
+as a miss"). **That prediction is confirmed.** A benchmark that credited the
+defensible-variant shape would show this run at roughly **6 defensible-variant +
+0 equivalent + ~4 genuine divergent**, not a flat 0/16.
+
+This does **not** mean the extractor is good. It means the *equivalence* number
+is the wrong place to read its quality off. The real, separate problems stand
+undiminished: **6 / 16 whole-record retrieval failures**, poor descriptive
+accuracy, and — for the ~4 concrete-leaf divergences — an unquantified rate of
+genuine misreads. #72's "the bottleneck is retrieval, not comprehension" is
+consistent with everything here.
+
+### Recommendation: a distinct `defensible-variant` outcome
+
+Fold neither into `equivalent` (the candidate genuinely lost information — the
+user gets "check with the agency" instead of an answer) nor leave in `divergent`
+(it is not *wrong*, and it currently drowns the number that should mean "the
+extractor built a rule that disagrees with the source"). Add a fourth
+`EligibilityVerdict`, assigned mechanically when **all** hold:
+
+1. Not dangerous — no dangerous witnesses, no `abstention-replaced`, no
+   `threshold-tightened`.
+2. Every divergence witness has `candidate = unknown` (never `T`/`F` opposite the
+   verified value). The candidate is only ever *less* decisive, never differently
+   decisive.
+3. `countManualReview(candidate) > countManualReview(verified)` — the added
+   imprecision is attributable to abstention leaves.
+
+That is exactly "the candidate abstained where the verified record committed, and
+disagreed nowhere else." Report it on its own line — `equivalent` /
+`defensible-variant` / `divergent` / `undecided` — and **never sum it with
+`equivalent`**. The `spurious` abstention count already measures the utility lost
+this way and should keep doing so beside it. Risk: it can flatter an extractor
+that abstains on half of every rule; mitigations are the no-summing rule and
+keeping it visually distinct in the report. Implementation is a follow-up (#74 is
+analysis only).
