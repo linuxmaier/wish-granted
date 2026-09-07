@@ -42,7 +42,11 @@
     "ingest:descriptive": "node --use-system-ca --import ./scripts/ingest-descriptive/register.mjs scripts/ingest-descriptive/index.ts",
     "ingest:descriptive:self-test": "node --import ./scripts/ingest-descriptive/register.mjs scripts/ingest-descriptive/index.ts --self-test",
     "test:ingest-descriptive": "node --test scripts/ingest-descriptive/lib/__tests__/*.test.ts",
-    "typecheck:ingest-descriptive": "tsc -p scripts/ingest-descriptive/tsconfig.json --noEmit"
+    "typecheck:ingest-descriptive": "tsc -p scripts/ingest-descriptive/tsconfig.json --noEmit",
+    "render-fallback:self-test": "node scripts/render-fallback/index.ts --self-test",
+    "render-fallback:browser-check": "node scripts/render-fallback/index.ts --browser-check",
+    "test:render-fallback": "node --test \"scripts/render-fallback/lib/__tests__/*.test.ts\"",
+    "typecheck:render-fallback": "tsc -p scripts/render-fallback/tsconfig.json --noEmit"
   },
   "dependencies": {
     "react": "^19.0.0",

@@ -19,6 +19,7 @@
  *   npm run extract:agentic                      # over #66's cases; SKIPPED with no key
  *   npm run extract:agentic -- --report-file=out.txt
  *   npm run extract:agentic -- --max-steps=32    # sweep the step budget without a code change
+ *   npm run extract:agentic -- --render          # allow a headless-browser render for empty pages (#76)
  *   npm run extract:agentic -- --dump=run.json   # capture candidate + verified trees per case (read-only)
  *   npm run extract:agentic:self-test            # offline: scenarios + scorer wiring, exit 0
  *
@@ -52,15 +53,18 @@ interface Args {
   readonly reportFile: string | undefined;
   readonly maxSteps: number | undefined;
   readonly dumpFile: string | undefined;
+  readonly render: boolean;
 }
 
 function parseArgs(argv: readonly string[]): Args {
   let reportFile: string | undefined;
   let maxSteps: number | undefined;
   let dumpFile: string | undefined;
+  let render = false;
   for (const arg of argv) {
     if (arg === '--self-test') continue;
-    if (arg.startsWith('--report-file=')) reportFile = arg.slice('--report-file='.length);
+    if (arg === '--render') render = true;
+    else if (arg.startsWith('--report-file=')) reportFile = arg.slice('--report-file='.length);
     else if (arg.startsWith('--dump=')) dumpFile = arg.slice('--dump='.length);
     else if (arg.startsWith('--max-steps=')) {
       const n = Number(arg.slice('--max-steps='.length));
@@ -68,7 +72,7 @@ function parseArgs(argv: readonly string[]): Args {
       maxSteps = n;
     } else throw new Error(`Unrecognized argument: ${arg}`);
   }
-  return { reportFile, maxSteps, dumpFile };
+  return { reportFile, maxSteps, dumpFile, render };
 }
 
 /**
@@ -153,6 +157,7 @@ async function runMain(args: Args): Promise<number> {
 
   const extractor = agenticExtractor({
     maxSteps,
+    allowBrowserRender: args.render,
     onRun: (ctx: ExtractionContext, run: AgentRun) => {
       runsById.set(ctx.programId, run);
       costRows.push({ id: ctx.programId, cost: run.cost, steps: run.steps, pages: run.pagesVisited.length });
@@ -225,9 +230,9 @@ async function selfTest(): Promise<number> {
   parseArgs(['--self-test']);
 
   // --dump / --report-file / --max-steps parse; an unknown flag is rejected.
-  const parsed = parseArgs(['--dump=run.json', '--report-file=r.txt', '--max-steps=8']);
-  if (parsed.dumpFile !== 'run.json' || parsed.reportFile !== 'r.txt' || parsed.maxSteps !== 8) {
-    throw new Error('self-test: parseArgs did not round-trip --dump / --report-file / --max-steps');
+  const parsed = parseArgs(['--dump=run.json', '--report-file=r.txt', '--max-steps=8', '--render']);
+  if (parsed.dumpFile !== 'run.json' || parsed.reportFile !== 'r.txt' || parsed.maxSteps !== 8 || !parsed.render) {
+    throw new Error('self-test: parseArgs did not round-trip --dump / --report-file / --max-steps / --render');
   }
   let rejectedUnknown = false;
   try {

@@ -41,6 +41,7 @@ import { resolve as resolvePath } from 'node:path';
 
 import { PROGRAMS } from '@/data/programs';
 import { normalize } from '../check-sources/lib/normalize.ts';
+import { recoverEmptyPage } from '../render-fallback/lib/recover.ts';
 import { liveFetcher, fetchDistinct, type Fetcher } from './lib/fetch.ts';
 import { classify, isActionable, type RecordFinding, type RecordInput } from './lib/classify.ts';
 import {
@@ -59,6 +60,7 @@ interface Args {
   ids: string[];
   reportFile: string | undefined;
   minText: number | undefined;
+  render: boolean;
 }
 
 function parseArgs(argv: readonly string[]): Args {
@@ -66,8 +68,10 @@ function parseArgs(argv: readonly string[]): Args {
   const ids: string[] = [];
   let reportFile: string | undefined;
   let minText: number | undefined;
+  let render = false;
   for (const arg of argv) {
     if (arg === '--dry-run') dryRun = true;
+    else if (arg === '--render') render = true;
     else if (arg.startsWith('--id=')) ids.push(arg.slice('--id='.length));
     else if (arg.startsWith('--report-file=')) reportFile = arg.slice('--report-file='.length);
     else if (arg.startsWith('--min-text=')) minText = Number(arg.slice('--min-text='.length));
@@ -76,7 +80,7 @@ function parseArgs(argv: readonly string[]): Args {
   if (minText !== undefined && (!Number.isFinite(minText) || minText < 0)) {
     throw new Error('--min-text must be a non-negative number');
   }
-  return { dryRun, ids, reportFile, minText };
+  return { dryRun, ids, reportFile, minText, render };
 }
 
 function isoDate(d: Date): string {
@@ -96,11 +100,14 @@ export interface RunResult {
   exitCode: number;
   nextFile: ProposalsFile;
   wrote: boolean;
+  /** One line per source whose empty fetch was recovered via #76's fallback. */
+  recoveries: string[];
 }
 
 export async function runIngest(args: Args, fetcher: Fetcher = liveFetcher): Promise<RunResult> {
   const runInstant = new Date().toISOString();
   const today = isoDate(new Date());
+  const recoveries: string[] = [];
 
   const selected = args.ids.length > 0 ? PROGRAMS.filter((p) => args.ids.includes(p.id)) : PROGRAMS;
   if (args.ids.length > 0 && selected.length !== args.ids.length) {
@@ -109,6 +116,25 @@ export async function runIngest(args: Args, fetcher: Fetcher = liveFetcher): Pro
   }
 
   const outcomes = await fetchDistinct(selected.map((p) => p.source.url), fetcher);
+
+  // Fallback recovery (#76): a handful of sources -- notably the SharePoint
+  // energyandhousing.wi.gov pages -- fetch 200 OK but normalize to zero text
+  // because the whole page body sits inside one ASP.NET WebForms <form>, which
+  // normalize.ts strips wholesale. Only pages that came back empty are touched;
+  // the deterministic unwrap is a cheap string transform, and a headless render
+  // is attempted only under --render.
+  for (const [url, outcome] of outcomes) {
+    if (outcome.kind !== 'ok') continue;
+    if (normalize(outcome.text).length >= 200) continue;
+    const rec = await recoverEmptyPage(
+      { url, html: outcome.text },
+      { measure: (h) => normalize(h).length, allowBrowser: args.render },
+    );
+    if (rec.recovered) {
+      outcomes.set(url, { ...outcome, text: rec.html });
+      recoveries.push(`${url}: ${rec.note}`);
+    }
+  }
 
   const findings: RecordFinding[] = selected.map((p) => {
     const input: RecordInput = {
@@ -171,7 +197,7 @@ export async function runIngest(args: Args, fetcher: Fetcher = liveFetcher): Pro
   if (branchBlocked) exitCode = 1;
   else if (findings.some((f) => isActionable(f) && !acknowledged.has(f.id))) exitCode = 2;
 
-  return { report, exitCode, nextFile, wrote };
+  return { report, exitCode, nextFile, wrote, recoveries };
 }
 
 /**
@@ -181,7 +207,11 @@ export async function runIngest(args: Args, fetcher: Fetcher = liveFetcher): Pro
  * and return without I/O.
  */
 function selfTest(): number {
-  parseArgs(['--dry-run', '--min-text=400']);
+  parseArgs(['--dry-run', '--min-text=400', '--render']);
+
+  if (typeof recoverEmptyPage !== 'function') {
+    throw new Error('self-test: recoverEmptyPage cross-import (scripts/render-fallback) is not callable');
+  }
 
   if (!Array.isArray(PROGRAMS) || PROGRAMS.length === 0) {
     throw new Error('self-test: PROGRAMS did not load as a non-empty array');
@@ -219,8 +249,12 @@ async function main(): Promise<number> {
   const argv = process.argv.slice(2);
   if (argv.includes('--self-test')) return selfTest();
   const args = parseArgs(argv);
-  const { report, exitCode } = await runIngest(args);
+  const { report, exitCode, recoveries } = await runIngest(args);
   console.log(report);
+  if (recoveries.length > 0) {
+    console.log(`\nEmpty-page recovery (#76) fired for ${recoveries.length} source(s):`);
+    for (const line of recoveries) console.log(`  - ${line}`);
+  }
   if (args.reportFile) writeFileSync(args.reportFile, report, 'utf8');
   return exitCode;
 }

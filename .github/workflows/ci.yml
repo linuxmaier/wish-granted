@@ -75,6 +75,8 @@ jobs:
         run: npm run typecheck:check-sources
       - name: Typecheck (scripts/ingest-descriptive)
         run: npm run typecheck:ingest-descriptive
+      - name: Typecheck (scripts/render-fallback)
+        run: npm run typecheck:render-fallback
 
       # Typechecking the scripts (above) is necessary but not sufficient, and
       # issue #55 is the post-mortem of the gap it leaves. #8 made
@@ -120,6 +122,15 @@ jobs:
         run: npm run extract:agentic:self-test
       - name: 'Smoke test: scripts/refresh-income-tables starts (issue #55)'
         run: npm run refresh:income-tables:self-test
+      # render-fallback's self-test does more than "does it start": it runs the
+      # ASP.NET/SharePoint form-shell unwrap over synthetic shells AND the two
+      # real energyandhousing.wi.gov fixtures (tests/fixtures/js-pages), asserts
+      # plain normalize/renderStructured come back empty and recovery makes them
+      # rich with table + heading structure intact, and checks the headless-browser
+      # step is reached only under --allow-browser and degrades cleanly. No
+      # network, no browser, no model. See scripts/render-fallback/index.ts.
+      - name: 'Smoke test: scripts/render-fallback recovers empty pages offline (issue #76)'
+        run: npm run render-fallback:self-test
       - name: 'Smoke test: scripts/build-snapshot starts (issue #55)'
         run: npm run build:snapshot:check
 
@@ -159,6 +170,14 @@ jobs:
       - name: Unit tests (Node test runner -- scripts/agentic-extract)
         run: npm run test:agentic-extract
 
+      # scripts/render-fallback (#76): the form-shell unwrap (depth-balanced tag
+      # scan, wrapper heuristic, structure survival), the recovery ladder with an
+      # injected renderer, and the browser module's robots/hard-deny gate. Also
+      # Node's test runner, also network-free and browser-free (an unavailable
+      # Chromium is a returned value, not a throw).
+      - name: Unit tests (Node test runner -- scripts/render-fallback)
+        run: npm run test:render-fallback
+
       - name: Build
         run: npm run build
 
@@ -172,6 +191,14 @@ jobs:
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
+
+      # With Chromium actually present, exercise scripts/render-fallback's real
+      # headless-render path end to end (setContent -> content() -> recovery
+      # ladder), no network. The earlier smoke step covered the deterministic
+      # unwrap; this covers the browser wiring on headless Linux. It still
+      # degrades to a clean skip if the launch fails for an environment reason.
+      - name: 'Browser check: scripts/render-fallback headless render (issue #76)'
+        run: npm run render-fallback:browser-check
 
       # playwright.config.ts sets `reuseExistingServer: !process.env.CI`. If
       # CI were ever unset here, Playwright would silently reuse a leftover
