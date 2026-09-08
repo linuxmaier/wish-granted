@@ -1,0 +1,29 @@
+{
+  // Same rationale as scripts/cross-check/tsconfig.json: index.ts imports
+  // `@/data/programs` (via the resolve hook at runtime) and the sibling
+  // tier3-extract / cross-check / check-sources / agentic-extract modules, which
+  // transitively pull in src/ files that use extensionless relative imports, so
+  // `moduleResolution` is "bundler" (like the root tsconfig), not NodeNext. Node
+  // runs it fine via ./register.mjs. Consumed only by `typecheck:triage`.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "allowJs": true,
+    "checkJs": false,
+    "resolveJsonModule": true,
+    "types": ["node"],
+    "paths": { "@/*": ["../../src/*"] }
+  },
+  "include": ["**/*.ts"]
+}

@@ -73,6 +73,8 @@ jobs:
         run: npm run typecheck:agentic-extract
       - name: Typecheck (scripts/cross-check)
         run: npm run typecheck:cross-check
+      - name: Typecheck (scripts/triage)
+        run: npm run typecheck:triage
       - name: Typecheck (scripts/check-sources)
         run: npm run typecheck:check-sources
       - name: Typecheck (scripts/ingest-descriptive)
@@ -133,6 +135,15 @@ jobs:
       # scripts/cross-check/index.ts.
       - name: 'Smoke test: scripts/cross-check proves both paths offline (issue #84)'
         run: npm run extract:cross-check:self-test
+      # triage's self-test (issue #68) proves all three routes offline against
+      # saved fixtures -- the real deterministic parser against committed Tier-3
+      # captures (deterministic + agentic routes) and reconstructed Tier-4
+      # fixtures (no-rule-published route) -- plus the degenerate-outcome guard,
+      # the vocabulary-gap detection deriving from RESERVED_FACT_KEYS, and the
+      # SKIPPED wiring (the live classifier throws without a key). No network, no
+      # model. See scripts/triage/index.ts.
+      - name: 'Smoke test: scripts/triage routes offline (issue #68)'
+        run: npm run extract:triage:self-test
       - name: 'Smoke test: scripts/refresh-income-tables starts (issue #55)'
         run: npm run refresh:income-tables:self-test
       # render-fallback's self-test does more than "does it start": it runs the
@@ -192,6 +203,16 @@ jobs:
       # Also Node's test runner, also network-free and model-free.
       - name: Unit tests (Node test runner -- scripts/cross-check)
         run: npm run test:cross-check
+
+      # scripts/triage (#68): the model-free rule-presence signal scan, the
+      # three-way router (deterministic / agentic / no-rule-published) with its
+      # deliberate bias toward extraction under uncertainty, the vocabulary-gap
+      # detection, the routing-distribution report + degenerate-outcome guard,
+      # the optional live classifier's tool-call parsing, and the end-to-end
+      # offline scenarios. Also Node's test runner, also network-free and
+      # model-free.
+      - name: Unit tests (Node test runner -- scripts/triage)
+        run: npm run test:triage
 
       # scripts/render-fallback (#76): the form-shell unwrap (depth-balanced tag
       # scan, wrapper heuristic, structure survival), the recovery ladder with an
