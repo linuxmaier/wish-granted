@@ -9,10 +9,10 @@ name: CI
 #
 # Steps are ordered cheapest/fastest-fail first, so a broken PR fails in
 # seconds (typecheck) rather than minutes (a full browser matrix). Node's
-# built-in test runner (test:refresh-income-tables) gets its own step, kept
-# separate from `npm test` (vitest) on purpose -- they are two different
-# runners over two different sets of tests, and a failure should say which
-# one broke, not just "tests failed".
+# built-in test runner (test:lib-source) gets its own step, kept separate from
+# `npm test` (vitest) on purpose -- they are two different runners over two
+# different sets of tests, and a failure should say which one broke, not just
+# "tests failed".
 on:
   pull_request:
   push:
@@ -26,15 +26,12 @@ jobs:
       - uses: actions/checkout@v4
 
       # Pinned to the 24.x line the app was actually developed and verified
-      # against, not the current LTS -- two npm scripts
-      # (refresh:income-tables, test:refresh-income-tables) run .ts files
-      # directly via Node's native TypeScript type-stripping rather than a
-      # transpile step, deliberately, so scripts/refresh-income-tables (#6)
-      # needs zero new dependencies (no tsx, no build step). That behaviour
-      # is absent or flag-gated on Node 22, so pinning to LTS would fail
-      # test:refresh-income-tables below for a version reason, not a code
-      # reason. Verified locally: 19/19 pass on the .nvmrc version. Keep
-      # .nvmrc, this step, and Cloudflare Pages' NODE_VERSION build variable
+      # against, not the current LTS. scripts/lib-source runs .ts files directly
+      # via Node's native TypeScript type-stripping rather than a transpile step,
+      # deliberately, so it needs zero new dependencies (no tsx, no build step).
+      # That behaviour is absent or flag-gated on Node 22, so pinning to LTS
+      # would fail test:lib-source below for a version reason, not a code reason.
+      # Keep .nvmrc, this step, and Cloudflare Pages' NODE_VERSION build variable
       # (docs/deploy.md) all in agreement -- see docs/deploy.md for the full
       # explanation of why this isn't just "use LTS".
       - uses: actions/setup-node@v4
@@ -59,168 +56,45 @@ jobs:
       # One step per directory rather than an aggregate `typecheck:scripts`, for
       # the same reason the two test runners below are split: a red X should name
       # the directory that broke, not just report "scripts don't typecheck".
-      # They are pure static analysis over a handful of files each -- cheap, and
-      # placed here so a type error fails the PR in seconds.
       - name: Typecheck (scripts/build-snapshot)
         run: npm run typecheck:build-snapshot
-      - name: Typecheck (scripts/refresh-income-tables)
-        run: npm run typecheck:refresh-income-tables
-      - name: Typecheck (scripts/llm-extraction)
-        run: npm run typecheck:llm-extraction
-      - name: Typecheck (scripts/program-benchmark)
-        run: npm run typecheck:program-benchmark
-      - name: Typecheck (scripts/agentic-extract)
-        run: npm run typecheck:agentic-extract
-      - name: Typecheck (scripts/cross-check)
-        run: npm run typecheck:cross-check
-      - name: Typecheck (scripts/triage)
-        run: npm run typecheck:triage
-      - name: Typecheck (scripts/check-sources)
-        run: npm run typecheck:check-sources
-      - name: Typecheck (scripts/ingest-descriptive)
-        run: npm run typecheck:ingest-descriptive
-      - name: Typecheck (scripts/render-fallback)
-        run: npm run typecheck:render-fallback
+      - name: Typecheck (scripts/lib-source)
+        run: npm run typecheck:lib-source
 
       # Typechecking the scripts (above) is necessary but not sufficient, and
       # issue #55 is the post-mortem of the gap it leaves. #8 made
       # src/data/programs/index.ts do a bare `import rawSnapshot from
       # './snapshot.json'`. That is valid TypeScript, and Vite loads it fine --
       # so every typecheck, every vitest suite, and `npm run build` stayed
-      # green. But scripts/check-sources and scripts/ingest-descriptive reach
-      # PROGRAMS through Node's raw ESM loader (scripts/check-sources/resolve-hook.mjs),
-      # and Node requires a `with { type: 'json' }` import attribute that Vite
-      # does not. Both scripts broke at startup the moment #8 merged and stayed
-      # broken -- green everywhere -- for roughly 26 days, because the only thing
-      # that runs them (check-sources.yml) is monthly and deliberately not a PR
-      # gate.
+      # green. But a script reaching PROGRAMS through Node's raw ESM loader
+      # needs a `with { type: 'json' }` import attribute that Vite does not, so
+      # the scripts broke at startup the moment #8 merged and stayed broken --
+      # green everywhere -- for roughly 26 days.
       #
-      # Fix: actually START every scripts/ entrypoint on every PR. Each has a
-      # no-network mode that evaluates its whole module graph, parses argv, and
-      # exits 0 -- `--self-test` for the three fetching scripts, and `--check`
-      # for build-snapshot, which already loaded its source modules through Vite
-      # and validated the committed snapshot without a network. No live source
-      # is fetched here, on purpose: a PR gate that hit 17 government sites on
-      # every push is the exact noise check-links.yml exists to keep out of CI.
-      # These are smoke tests -- "does it start?" -- not a second test suite.
+      # Fix: actually START every scripts/ entrypoint on every PR. build-snapshot
+      # has a `--check` mode that loads its source modules through Vite and
+      # validates the committed snapshot without a network. No live source is
+      # fetched here, on purpose: a PR gate that hit 17 government sites on every
+      # push is the exact noise check-links.yml exists to keep out of CI.
       # (build:snapshot:check runs again inside the Build step below; the few
       # seconds here buy a fast, clearly-named failure near the front.)
-      - name: 'Smoke test: scripts/check-sources starts (issue #55)'
-        run: npm run check:sources:self-test
-      - name: 'Smoke test: scripts/ingest-descriptive starts (issue #55)'
-        run: npm run ingest:descriptive:self-test
-      # program-benchmark's self-test does more than "does it start": it runs
-      # the scorer over the real dataset with the verified-echo and abstain-all
-      # diagnostic extractors (no model, no network) and asserts the scoring
-      # invariants. See scripts/program-benchmark/index.ts.
-      - name: 'Smoke test: scripts/program-benchmark scores offline (issue #66)'
-        run: npm run eval:program-extraction:self-test
-      # agentic-extract's self-test drives the full agent loop with a scripted
-      # model transcript + fixture fetcher (no network, no model): 404 recovery,
-      # table-structure preservation, the eCFR versioner cross-reference with its
-      # Accept-Encoding header, verbatim provenance (incl. the cross-ref URL),
-      # step-budget abstention, issue #77's linked PDF income table read as a
-      # table (against a committed Federal Register fixture, zero network) plus a
-      # dead PDF link abstaining cleanly, and -- issue #75 -- the site-scoped
-      # search tool locating a page unreachable from the entry URL (against
-      # committed dhs.wisconsin.gov captures) and that page flowing through the
-      # provenance gate unchanged. See scripts/agentic-extract/index.ts.
-      - name: 'Smoke test: scripts/agentic-extract runs offline (issue #67)'
-        run: npm run extract:agentic:self-test
-      # cross-check's self-test (issue #84) runs both routing paths offline: the
-      # deterministic parser against committed Tier-3 fixtures cross-checked via
-      # criterionEquivalence, a parser abstention falling through to the exclusion
-      # probe, and the probe's mechanical span check -- plus the SKIPPED wiring
-      # (the live probe throws without a key). No network, no model. See
-      # scripts/cross-check/index.ts.
-      - name: 'Smoke test: scripts/cross-check proves both paths offline (issue #84)'
-        run: npm run extract:cross-check:self-test
-      # triage's self-test (issue #68) proves all three routes offline against
-      # saved fixtures -- the real deterministic parser against committed Tier-3
-      # captures (deterministic + agentic routes) and reconstructed Tier-4
-      # fixtures (no-rule-published route) -- plus the degenerate-outcome guard,
-      # the vocabulary-gap detection deriving from RESERVED_FACT_KEYS, and the
-      # SKIPPED wiring (the live classifier throws without a key). No network, no
-      # model. See scripts/triage/index.ts.
-      - name: 'Smoke test: scripts/triage routes offline (issue #68)'
-        run: npm run extract:triage:self-test
-      - name: 'Smoke test: scripts/refresh-income-tables starts (issue #55)'
-        run: npm run refresh:income-tables:self-test
-      # render-fallback's self-test does more than "does it start": it runs the
-      # ASP.NET/SharePoint form-shell unwrap over synthetic shells AND the two
-      # real energyandhousing.wi.gov fixtures (tests/fixtures/js-pages), asserts
-      # plain normalize/renderStructured come back empty and recovery makes them
-      # rich with table + heading structure intact, and checks the headless-browser
-      # step is reached only under --allow-browser and degrades cleanly. No
-      # network, no browser, no model. See scripts/render-fallback/index.ts.
-      - name: 'Smoke test: scripts/render-fallback recovers empty pages offline (issue #76)'
-        run: npm run render-fallback:self-test
       - name: 'Smoke test: scripts/build-snapshot starts (issue #55)'
         run: npm run build:snapshot:check
 
       - name: Unit tests (vitest)
         run: npm test
 
-      - name: Unit tests (Node test runner -- scripts/refresh-income-tables)
-        run: npm run test:refresh-income-tables
-
-      # Also Node's test runner, also deterministic and network-free (the
-      # fetcher is injected). This is where scripts/check-sources's
-      # normalization -- the run-to-run stability guarantee from issue #7 --
-      # is regression-tested.
-      - name: Unit tests (Node test runner -- scripts/check-sources)
-        run: npm run test:check-sources
-
-      # scripts/ingest-descriptive (#14): robots.txt matching, phone/status
-      # extraction, and the new/changed/moved/gone classification. Also Node's
-      # test runner, also network-free (the fetcher is injected).
-      - name: Unit tests (Node test runner -- scripts/ingest-descriptive)
-        run: npm run test:ingest-descriptive
-
-      # scripts/program-benchmark (#66): the Criterion equivalence check, the
-      # dangerous-wrongness detectors, abstention and descriptive scoring, and
-      # the runner/report -- all against hand-written fixture pairs, no model.
-      # Also Node's test runner, also network-free.
-      - name: Unit tests (Node test runner -- scripts/program-benchmark)
-        run: npm run test:program-benchmark
-
-      # scripts/agentic-extract (#67, #77, #75): the structure-preserving HTML
-      # tokeniser, the zero-dependency PDF reader (glyph-coordinate text + ruled
-      # table extraction, against a committed Federal Register fixture),
-      # dead-URL recovery, eCFR cross-reference resolution, the site-scoped
-      # search tool (sitemap + link crawl over committed dhs.wisconsin.gov
-      # captures), provenance verification, cost instrumentation, and the whole
-      # agent loop end to end against saved fixtures. Also Node's test runner,
-      # also network-free and model-free (both the fetcher and the model client
-      # are injected).
-      - name: Unit tests (Node test runner -- scripts/agentic-extract)
-        run: npm run test:agentic-extract
-
-      # scripts/cross-check (#84): the both-directions dangerous check over the
-      # criterionEquivalence referee, the routing table (Path A + Path B), the
-      # exclusion probe's mechanical span verification and tool-call parsing, the
-      # program<->Tier-3 corpus mapping, and the end-to-end offline scenarios.
-      # Also Node's test runner, also network-free and model-free.
-      - name: Unit tests (Node test runner -- scripts/cross-check)
-        run: npm run test:cross-check
-
-      # scripts/triage (#68): the model-free rule-presence signal scan, the
-      # three-way router (deterministic / agentic / no-rule-published) with its
-      # deliberate bias toward extraction under uncertainty, the vocabulary-gap
-      # detection, the routing-distribution report + degenerate-outcome guard,
-      # the optional live classifier's tool-call parsing, and the end-to-end
-      # offline scenarios. Also Node's test runner, also network-free and
-      # model-free.
-      - name: Unit tests (Node test runner -- scripts/triage)
-        run: npm run test:triage
-
-      # scripts/render-fallback (#76): the form-shell unwrap (depth-balanced tag
-      # scan, wrapper heuristic, structure survival), the recovery ladder with an
-      # injected renderer, and the browser module's robots/hard-deny gate. Also
-      # Node's test runner, also network-free and browser-free (an unavailable
-      # Chromium is a returned value, not a throw).
-      - name: Unit tests (Node test runner -- scripts/render-fallback)
-        run: npm run test:render-fallback
+      # scripts/lib-source: the source-access tools kept through the 2026-09-08
+      # unwind (#97) -- structure-preserving HTML tokeniser, the zero-dependency
+      # PDF reader (glyph-coordinate text + ruled table extraction, against a
+      # committed Federal Register fixture), dead-URL recovery, the site-scoped
+      # search tool over committed dhs.wisconsin.gov captures, the ASP.NET /
+      # SharePoint form-shell unwrap and recovery ladder, page normalisation with
+      # its run-to-run stability guarantee, and cost instrumentation. Node's test
+      # runner, network-free and model-free (both the fetcher and the model
+      # client are injected).
+      - name: Unit tests (Node test runner -- scripts/lib-source)
+        run: npm run test:lib-source
 
       - name: Build
         run: npm run build
@@ -235,14 +109,6 @@ jobs:
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
-
-      # With Chromium actually present, exercise scripts/render-fallback's real
-      # headless-render path end to end (setContent -> content() -> recovery
-      # ladder), no network. The earlier smoke step covered the deterministic
-      # unwrap; this covers the browser wiring on headless Linux. It still
-      # degrades to a clean skip if the launch fails for an environment reason.
-      - name: 'Browser check: scripts/render-fallback headless render (issue #76)'
-        run: npm run render-fallback:browser-check
 
       # playwright.config.ts sets `reuseExistingServer: !process.env.CI`. If
       # CI were ever unset here, Playwright would silently reuse a leftover
