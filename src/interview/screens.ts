@@ -307,6 +307,37 @@ export const SCREENS: readonly Screen[] = [
   },
 
   {
+    // A dedicated screen for one question, on purpose. Age resolves exactly
+    // one shipped program today (badgercare-plus's 0-64 adult scope), so on
+    // its own screen the impact sort parks it last and the relevance filter
+    // drops it entirely the moment badgercare-plus settles some other way --
+    // a household with children clears the pregnant/child branch regardless
+    // of the applicant's age, and a household over ~306% FPL with no children
+    // is ruled out on income. So most people never see this screen. Folded
+    // into an earlier screen it would show for every Wisconsin resident
+    // before those facts were known. The coverage case for asking at all
+    // rests on the senior programs the Tier 3 corpus queued up, not on the
+    // one program it changes today -- see issue #88 and docs/data-authoring.md.
+    id: 'about-you',
+    title: 'About you',
+    questions: [
+      {
+        id: 'age',
+        prompt: 'How old are you?',
+        help: 'A range is all we need. A few programs — Medicaid and some senior benefits — set different rules around ages 60 and 65. Skip this if you would rather not say; nothing gets ruled out for a blank answer.',
+        input: {
+          type: 'choice',
+          choices: [
+            { value: 'under-60', label: 'Under 60', implies: { age: 'under-60' } },
+            { value: '60-64', label: '60 to 64', implies: { age: '60-64' } },
+            { value: '65-plus', label: '65 or older', implies: { age: '65-plus' } },
+          ],
+        },
+      },
+    ],
+  },
+
+  {
     // A dedicated screen, not folded into `situation` -- that was tried
     // first and broke two different ways (issue #9), worth recording so
     // nobody repeats the attempt:

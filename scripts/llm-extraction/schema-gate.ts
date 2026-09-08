@@ -21,16 +21,19 @@ import { walk, type Criterion } from '../../src/domain/criteria.ts';
  *
  * RESERVED FACTS. `compare` / `set` nodes may only reference facts the
  * interview actually asks. A rule that tests a `RESERVED_FACT_KEY`
- * (`age`, `citizenshipStatus`, ...) can never be satisfied -- the fact is
- * declared in the vocabulary but no question supplies it -- so the node
- * evaluates to `unknown` forever and, inside an `allOf`, silently rules
- * everyone out. That is the worst failure direction this project has, and
- * `tests/data/vocabulary.test.ts` already forbids a hand-authored rule from
- * doing it; the gate holds an extracted rule to the same bar. The honest
+ * (`citizenshipStatus`, `employmentStatus`, ...) can never be satisfied --
+ * the fact is declared in the vocabulary but no question supplies it -- so
+ * the node evaluates to `unknown` forever and, inside an `allOf`, silently
+ * rules everyone out. That is the worst failure direction this project has,
+ * and `tests/data/vocabulary.test.ts` already forbids a hand-authored rule
+ * from doing it; the gate holds an extracted rule to the same bar. The honest
  * home for such a condition is a `manualReview` note (whose free text may of
  * course mention the reserved fact -- only structural `compare` / `set`
  * references are rejected). This mirrors the live-run finding on PR #72
  * (`[age lte 64]` and `[citizenshipStatus includesAny ...]`, both dangerous).
+ * `age` is no longer reserved -- issue #88 added the question, so an
+ * extracted age band is now allowed exactly as the engine now enforces one
+ * (`badgercare-plus`) -- but the gate mechanism is unchanged.
  */
 export type GateResult = { readonly ok: true } | { readonly ok: false; readonly problems: readonly string[] };
 

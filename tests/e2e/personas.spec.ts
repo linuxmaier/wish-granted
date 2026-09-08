@@ -63,6 +63,21 @@ const LAYOFF_MADISON: Persona = {
   'income dropped significantly': { radio: 'Yes' },
 };
 
+// A low-income Madison senior living alone, no children in the household. The
+// age question (issue #88) is the only thing that decides BadgerCare Plus for
+// this persona: at 65+ they are outside its adult scope and a different
+// Medicaid pathway applies. FoodShare has no age gate and should still match.
+const SENIOR_ALONE: Persona = {
+  'Where do you live': { radio: 'City of Madison' },
+  'How many people': { num: 1 },
+  'household income': { num: 12_000 },
+  'Does your household include': { none: true },
+  'best describes your housing': { radio: 'Renting' },
+  'Is any of this happening': { none: true },
+  'already receive any of these': { none: true },
+  'How old are you': { radio: '65 or older' },
+};
+
 /** Answers whatever question is on screen, then advances. Returns when done. */
 async function runInterview(page: Page, persona: Persona, maxScreens = 12) {
   for (let i = 0; i < maxScreens; i += 1) {
@@ -170,6 +185,48 @@ test.describe('the interview end to end', () => {
 
     const eligible = await bucket(page, /likely a match/i);
     expect(eligible).toContain('FoodShare Wisconsin (SNAP)');
+  });
+
+  /** Program names in the (collapsed-by-default) ruled-out group. */
+  async function ruledOutNames(page: Page): Promise<string[]> {
+    const toggle = page.getByRole('button', { name: /show \d+ ruled out/i });
+    if (!(await toggle.count())) return [];
+    await toggle.click();
+    const group = page.locator('.results__group', {
+      has: page.getByRole('button', { name: /ruled out/i }),
+    });
+    return group.locator('.program__name').allTextContents();
+  }
+
+  test('a 65-or-older applicant is not shown as eligible for BadgerCare Plus, but still matches FoodShare', async ({
+    page,
+  }) => {
+    // Issue #79 / #88: the age bound used to live only in caveat prose the
+    // engine never evaluates, so this persona saw a confident BadgerCare Plus
+    // match alongside a caveat saying they were out of range. Now the age
+    // question settles it in the rule.
+    await runInterview(page, SENIOR_ALONE);
+
+    const eligible = await bucket(page, /likely a match/i);
+    expect(eligible).not.toContain('BadgerCare Plus');
+    expect(eligible).toContain('FoodShare Wisconsin (SNAP)');
+
+    expect(await ruledOutNames(page)).toContain('BadgerCare Plus');
+  });
+
+  test('declining the age question leaves BadgerCare Plus at "might qualify", never ruled out', async ({
+    page,
+  }) => {
+    // Same household, but the age question is skipped (no answer, just
+    // Continue). An unanswered age must not rule anyone out.
+    const seniorSkipsAge: Persona = { ...SENIOR_ALONE };
+    delete seniorSkipsAge['How old are you'];
+    await runInterview(page, seniorSkipsAge);
+
+    const maybe = await bucket(page, /might qualify/i);
+    expect(maybe).toContain('BadgerCare Plus');
+    expect(await bucket(page, /likely a match/i)).not.toContain('BadgerCare Plus');
+    expect(await ruledOutNames(page)).not.toContain('BadgerCare Plus');
   });
 
   test('the interview is shorter out of state', async ({ page }) => {

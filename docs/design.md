@@ -330,17 +330,27 @@ Screens are coherent groups asked in impact order, with visited screens keeping 
 in history so the back button stays trustworthy. Screen *contents* are fixed; which screens
 appear, and in what order, adapts.
 
-### What v1 does not ask
+### What the interview does not ask
 
-`citizenshipStatus`, `employmentStatus`, and `age` are declared in the fact vocabulary but
-no v1 rule consults them, so asking would be pure friction — and `flow.ts` would score them
+`citizenshipStatus` and `employmentStatus` are declared in the fact vocabulary but no rule
+consults them, so asking would be friction with no payoff — and `flow.ts` would score them
 zero and never show them anyway.
 
 Immigration status is the pointed case. It genuinely affects federal food benefits, but the
 rules are full of exceptions — children frequently qualify when adults do not — and an
 engine that got them slightly wrong would tell a family they are ineligible when they are
-not. That is the worst error this app can make. v1 declines to encode it; affected programs
-carry a plain-language caveat and stay in "might qualify".
+not. That is the worst error this app can make. The interview declines to encode it;
+affected programs carry a plain-language caveat and stay in "might qualify".
+
+`age` used to sit in that list on the same "no rule needs it" reasoning. Issue #88 replaced
+that rule — a fact earns a question when it *unlocks programs worth including*, not when a
+rule already references it (see [data-authoring.md](data-authoring.md), "When a fact earns
+a question"). Age is now asked, as a band (`under 60` / `60 to 64` / `65 or older`) on its
+own `about-you` screen: `badgercare-plus` covers ages 0–64 and had been carrying that bound
+as caveat prose the engine never evaluated (issue #79), and the Tier 3 corpus has a whole
+cluster of senior programs queued behind it. The band, not an exact number, because every
+age-gated rule needs a boundary and a range asks for less. It is skippable, and a blank
+answer leaves the affected programs at "might qualify" — never ruled out.
 
 ### Frequency alone doesn't decide whether a fact earns a question (issue #9)
 
@@ -352,7 +362,9 @@ designed around. Raw counts: `state` gates 14/15 programs, `annualHouseholdIncom
 `paysHeatingCost`, `isPregnantOrPostpartum`, `hasChildUnder5` — each gate exactly 1/15. The
 five deferred facts above (`age`, `citizenshipStatus`, `employmentStatus`, `isVeteran`,
 `hasDisability`) gate 0/15, confirming they stay deferred; nothing in the corpus contradicts
-that decision.
+that decision. (`age` moved out of that set in issue #88 — not on frequency grounds, which
+had not changed, but on coverage: the senior programs it would unlock. See "What the
+interview does not ask" above.)
 
 The naive reading of "gates 1/15 programs" is "demote it to an `eligibilityCaveat`." That
 reading is wrong, and worth recording so nobody re-derives and re-applies it: every one of

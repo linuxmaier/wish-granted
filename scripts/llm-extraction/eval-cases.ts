@@ -468,7 +468,7 @@ export const EVAL_CASES: readonly EvalCase[] = [
       'BadgerCare Plus is full coverage Medicaid. It helps Wisconsinites age 0-64 who have low-income. Covered services include doctor visits, prescriptions, urgent and emergency care, lab tests, and more. The only way to know if you can enroll in BadgerCare Plus is to apply.',
     expected: 'abstain',
     note:
-      'An age band (0-64) that looks encodable, but `age` is a reserved/unasked fact (facts.ts), "low-income" is unquantified, and the page itself says the only way to know is to apply. badgercare-plus.ts uses a 100%/306% FPL structure that is nowhere on this landing page.',
+      'The 0-64 age band is encodable now (issue #88 made `age` an asked fact, and badgercare-plus.ts enforces the bound), but that is not the rule: "low-income" is unquantified, and the page itself says the only way to know is to apply. badgercare-plus.ts uses a 100%/306% FPL structure that is nowhere on this landing page, so abstaining is still correct.',
   },
   {
     id: 'foodshare-who-we-help',
@@ -712,7 +712,7 @@ export const EVAL_CASES: readonly EvalCase[] = [
       'SeniorCare is a program for Wisconsin residents who are 65 or older and need help paying for medicine. ... Your annual income determines how much of your prescription drug costs SeniorCare will cover. The amounts are based on federal guidelines, which change each year. ... Level 1 income limits Income at or below 160% of the federal poverty level ... Level 2A income limits Income above 160% and at or below 200% of the federal poverty level ... Level 2B income limits Income above 200% and at or below 240% of the federal poverty level ... Level 3 income limits Income more than 240% of the federal poverty level ... Level 3 out-of-pocket expenses Retail price for covered drugs during spenddown',
     expected: 'abstain',
     note:
-      'There is no income eligibility ceiling here at all: the 160% / 200% / 240% FPL figures are cost-sharing tier boundaries ("determines how much of your prescription drug costs SeniorCare will cover"), and even "Income more than 240% of the federal poverty level" is Level 3, still enrolled, just with a spenddown. A model that reads any of these as an eligibility threshold -- incomeAtOrBelow(fpl, 240) or 200 -- invents a cutoff the program does not have, and also drops the "65 or older" gate (age is a reserved fact). "A number in the source is not automatically an eligibility threshold" -- the implicit-scope case.',
+      'There is no income eligibility ceiling here at all: the 160% / 200% / 240% FPL figures are cost-sharing tier boundaries ("determines how much of your prescription drug costs SeniorCare will cover"), and even "Income more than 240% of the federal poverty level" is Level 3, still enrolled, just with a spenddown. A model that reads any of these as an eligibility threshold -- incomeAtOrBelow(fpl, 240) or 200 -- invents a cutoff the program does not have. The "65 or older" gate is encodable now (issue #88), but a rule of `age >= 65` alone still is not the eligibility rule this page states. "A number in the source is not automatically an eligibility threshold" -- the implicit-scope case.',
   },
 ];
 

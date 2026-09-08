@@ -129,11 +129,10 @@ describe('schema gate agrees with tests/data/vocabulary.test.ts on the real data
     expect(result.ok).toBe(true);
   });
 
-  it('rejects a compare/set over a RESERVED fact (PR #72: the [age lte 64] / [citizenshipStatus ...] dangerous cases)', () => {
-    const ageRule = gateCriterion({ kind: 'compare', fact: 'age', op: 'lte', value: 64 });
-    expect(ageRule.ok).toBe(false);
-    if (!ageRule.ok) expect(ageRule.problems.join(' ')).toMatch(/age.*reserved|reserved.*age/i);
-
+  it('rejects a compare/set over a RESERVED fact (PR #72: the [citizenshipStatus ...] / [employmentStatus ...] dangerous cases)', () => {
+    // `age` used to be the headline example here; issue #88 made it an asked
+    // fact, so a compare/set over it is now allowed (see the badgercare-plus
+    // 0-64 bound). `citizenshipStatus` and `employmentStatus` stay reserved.
     const citizenshipRule = gateCriterion({
       kind: 'set',
       fact: 'citizenshipStatus',
@@ -141,11 +140,22 @@ describe('schema gate agrees with tests/data/vocabulary.test.ts on the real data
       values: ['us-citizen', 'qualified-immigrant'],
     });
     expect(citizenshipRule.ok).toBe(false);
+    if (!citizenshipRule.ok) {
+      expect(citizenshipRule.problems.join(' ')).toMatch(/citizenshipStatus.*reserved|reserved.*citizenshipStatus/i);
+    }
 
-    // The same condition is fine as prose inside a manualReview note.
+    const employmentRule = gateCriterion({ kind: 'compare', fact: 'employmentStatus', op: 'eq', value: 'employed' });
+    expect(employmentRule.ok).toBe(false);
+
+    // An age band, by contrast, now passes the gate -- the same rule the
+    // engine enforces on badgercare-plus.
+    const ageRule = gateCriterion({ kind: 'set', fact: 'age', op: 'notIn', values: ['65-plus'] });
+    expect(ageRule.ok).toBe(true);
+
+    // A still-reserved condition is fine as prose inside a manualReview note.
     const routed = gateCriterion({
       kind: 'allOf',
-      of: [oneOf('state', ['WI']), manualReview('SeniorCare requires age 65+; age is not an asked fact.')],
+      of: [oneOf('state', ['WI']), manualReview('SeniorCare requires U.S. citizen / qualifying immigrant status; not an asked fact.')],
     });
     expect(routed.ok).toBe(true);
   });
