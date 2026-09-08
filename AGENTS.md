@@ -35,10 +35,10 @@ looks: the app has a third bucket, and "might qualify" is not a wrong answer in
 either direction. Read [`docs/standing-decisions.md`](docs/standing-decisions.md),
 "The two harms", before invoking either of these in an argument.
 
-Where the corpus stands: **21 records, 16 verified, maintained by ~22,000 lines of
-pipeline code.** If you are choosing between hardening the pipeline and adding
-ten verified program records, the records usually win. "We should add programs" is
-always in scope.
+Where the corpus stands: **21 records, 16 verified, all hand-authored.** There is
+no extraction pipeline — the one built through 2026 was unwound on 2026-09-08
+(#97), and widening the corpus by hand is the current route to reach. "We should
+add programs" is always in scope; it is presently the main job.
 
 ## Where principles live, and where new ones go
 
@@ -48,9 +48,10 @@ One rule: **a principle is stated once, and everywhere else links to it.**
 |---|---|---|
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | The product's promises, plus how to work here | Anything with a revisit condition |
 | [`docs/standing-decisions.md`](docs/standing-decisions.md) | **Every design principle and judgment**: the statement, the reason, the reopen condition, the glossary, and what has changed | Mechanism |
-| `docs/design.md`, `docs/data-authoring.md`, `docs/program-benchmark.md`, `docs/triage.md`, … | How a thing works, and how to use it | The *argument* for a principle |
+| `docs/design.md`, `docs/data-authoring.md`, `docs/pipeline-principles.md`, … | How a thing works, and how to use it | The *argument* for a principle |
 | Code and tests | The rule, in one line, with a link | Justification, history, or a retelling of why |
 | Git history and GitHub issues | The full argument at the time | — |
+| Issues labelled `superseded`, and `docs/archive/` | A dated record of retired work | **Anything current.** Not a source of reasoning — see below |
 
 **Writing a new principle?** It goes in `docs/standing-decisions.md`, in the
 standing-decisions table, **with a named condition under which it should be
@@ -58,6 +59,14 @@ reopened.** A judgment with no reopen condition is not finished being written.
 
 **About to explain in a code comment *why* a rule exists?** The explanation
 belongs in `standing-decisions.md`; the comment belongs at one line with a link.
+
+**Reading an issue labelled `superseded`, or a document under `docs/archive/`?**
+Those are the record of the eligibility-extraction programme, unwound on
+2026-09-08. They are history, **not a source of current reasoning**: nothing in
+them is a constraint, a requirement, or an established fact about what is
+possible. Measurements that survived are hoisted into this file's routing targets
+— `standing-decisions.md` and `docs/pipeline-principles.md`. Start there. #97 has
+the verdict and the findings that stand.
 
 ## How work goes wrong here
 

@@ -2,7 +2,7 @@
 
 The single home for design principles: what is settled fact, what is a judgment,
 and when a judgment should be reopened. Read this before proposing — or refusing
-to propose — a change to how program data is found, extracted, or shipped.
+to propose — a change to how program data is found, authored, or shipped.
 
 ## Where authority lives
 
@@ -19,13 +19,22 @@ One rule fixes it:
 | [`AGENTS.md`](../AGENTS.md) (aliased `CLAUDE.md`) | The entry point: the two grounding principles, and this routing table. | Detail of any kind. |
 | [`CONTRIBUTING.md`](../CONTRIBUTING.md) | The product's promises, and how to work here. | Anything with a revisit condition. |
 | **This file** | Every design principle and judgment: the statement, the reason, the reopen condition, and the record of what changed. | Mechanism. How something is implemented. |
-| Mechanism docs (`design.md`, `program-benchmark.md`, `data-authoring.md`, `triage.md`, …) | How a thing works, and how to use it. | The *argument* for a principle. State it in a line and link here. |
+| Mechanism docs (`design.md`, `data-authoring.md`, `pipeline-principles.md`, …) | How a thing works, and how to use it. | The *argument* for a principle. State it in a line and link here. |
 | Code and tests | The rule, in one line, with a link here. | Justification, history, or a retelling of why the rule exists. |
 | Git history and issues | What changed, when, and the full argument at the time. | — |
+| Issues labelled `superseded`, and `docs/archive/` | A dated record of the retired extraction programme. | **Anything current.** See below. |
 
 **A principle is stated once, here. Everywhere else links.** If you find
 yourself explaining *why* a rule exists in a code comment, the explanation
 belongs in this file and the comment belongs at one line.
+
+**On `superseded` issues and `docs/archive/`.** The eligibility-extraction
+programme was unwound on 2026-09-08 (#97). Its issues and research documents are
+kept because they contain real measurements, and are marked because they also
+contain four architectures' worth of reasoning that no longer applies. They are
+history. Nothing in them is a constraint or an established fact about what is
+possible; everything from them that survived is in this file or in
+[`pipeline-principles.md`](pipeline-principles.md).
 
 ---
 
@@ -45,7 +54,7 @@ fallbacks the app ships.
 
 **"Worse" is not "infinitely worse."** The ranking breaks ties in a genuine
 trade-off. It is not a licence to drive over-claim to zero by refusing to state
-any rule — a pipeline that abstains on everything has zero over-claims and is
+any rule — a corpus that abstains on everything has zero over-claims and is
 worth nothing to anybody.
 
 **Most of the apparent dilemma is not real.** The app has a third bucket. "Might
@@ -56,25 +65,15 @@ whether a program belongs in the corpus at all: a record that abstains cannot
 tell anyone they qualify, so caution about *including* a program buys no safety
 and costs reach.
 
-Measured by `scripts/program-benchmark/` — see
-[`program-benchmark.md`](program-benchmark.md) for how.
+**Say the direction in the sentence.** Write *"tells someone they qualify when
+they do not"* rather than a bare "over-claim"; it costs six words and removes the
+ambiguity that kept this confused for months. Issues labelled `superseded` use
+the word in the opposite sense — there, `dangerous` and "over-claim" mean a rule
+*narrower* than reality. That is one more reason not to read them.
 
-### The words, because they have meant three different things
-
-"Over-claim" and "under-claim" are used in this repo with three distinct senses,
-which is most of why the harm ranking stayed confused for so long. **The
-definitions above are the ones that govern.** The others are legacy and appear
-in text that should not be rewritten:
-
-| Where | "Over-claim" there means | Note |
-|---|---|---|
-| **Here, and `scripts/program-benchmark/`** | The rule says "eligible" where the truth is not | **Authoritative.** |
-| #51, #61, #63, #92, and the extraction docs | The extractor claimed a rule it could not support — which usually, but not always, produced a rule *narrower* than reality | Dated measurement records. Read `dangerous` there as **under-claim**; do not rewrite them. |
-| The eval system prompt (`scripts/llm-extraction/run-eval.ts`) | Asserting any rule rather than abstaining | Coherent on its own terms and consistent with the position above. **Frozen** — changing it would invalidate the #43/#51 baselines. |
-
-When writing something new, say which direction you mean in the same sentence:
-*"tells someone they qualify when they do not"* is unambiguous and costs six
-extra words.
+Nothing measures these automatically today. Both directions are checked by the
+person authoring or reviewing a record; see
+[`data-authoring.md`](data-authoring.md).
 
 ## Abstain per condition, never per record
 
@@ -88,19 +87,16 @@ still rule people in and out on income. Collapsing it to "geography, plus a
 shrug" throws away information we have and pushes a program into "might qualify"
 for everyone — which is the under-claim harm, arrived at by way of caution.
 
-Two consequences:
+The engine already works this way: `manualReview` always evaluates `unknown`, so
+a partial rule can `fail` on a mapped criterion (ruled out, correctly) or sit at
+`unknown` (might qualify), but can never `pass` while an abstention is live.
+`madison-housing-choice-voucher.ts` and `wisconsin-shares-child-care.ts` are the
+worked examples, and this is a hand-authoring rule today — nothing generates
+records.
 
-- The engine already works this way: `manualReview` always evaluates `unknown`,
-  so a partial rule can `fail` on a mapped criterion (ruled out, correctly) or
-  sit at `unknown` (might qualify), but can never `pass` while an abstention is
-  live. `madison-housing-choice-voucher.ts` and `wisconsin-shares-child-care.ts`
-  are the worked examples.
-- **The reason for the remaining uncertainty must be shown prominently** where
-  the program appears, not buried in a disclosure. A person looking at "might
-  qualify" needs to know what would settle it.
-
-Neither is built yet: the `Extractor` seam cannot express a partial result
-(#94), and the note is currently buried in a disclosure (#95).
+**The reason for the remaining uncertainty must be shown prominently** where the
+program appears, not buried in a disclosure. A person looking at "might qualify"
+needs to know what would settle it. Not built yet: #95.
 
 ## When a fact earns a question
 
@@ -141,20 +137,24 @@ Mechanically, adding a fact is a three-step change enforced by
 ## Facts — settled, do not re-derive
 
 Measurements, or hard properties of an API or a data source. Cite them; do not
-re-run them without a specific reason to think they have changed.
+re-run them without a specific reason to think they have changed. These survived
+the unwind because they are facts about the world, not about the retired design.
 
 | Fact | Source |
 |---|---|
-| `strict: true` cannot be used for `Criterion` extraction — a recursive expression language exceeds the grammar-compilation limits. Dropping it is required, not preferred. | #5 §4.5 |
 | Grants.gov indexes discretionary grants **to organizations**, not benefits to individuals. Wrong corpus. | #4 |
 | Open Referral / HSDS has no eligibility entity — its core objects are `organization`, `service`, `location`, `service_at_location`. It is directory data. | #4 |
+| No government or directory source surveyed publishes eligibility as structured data. PolicyEngine US is the one adjacent exception, and covers federal programs only. | #4 |
 | WI state sites return 403 to naive fetchers while their `robots.txt` is permissive. Use a normal browser user-agent; a 403 is not a crawl prohibition. | #5 §1 |
+| `strict: true` cannot be used for `Criterion` extraction — a recursive expression language exceeds the grammar-compilation limits. Dropping it is required, not preferred. | #5 §4.5 |
+| A schema gate catches malformed output. It cannot catch a well-formed, semantically wrong rule. | #51 |
 | Token cost is negligible against reviewer time — 27 cases at $0.25, a 152-call agentic run at $8.39. **Cost is not the constraint on any design in this repo.** | #5 §6, #64, #67 |
 | Three change-detection signals were measured and rejected. | #5 §5 |
-| The schema gate catches malformed output. It cannot catch a well-formed, semantically wrong rule. | #51 |
-| Of the surveyed corpus: ~43% Tier 1+2 (script-coverable), ~33% Tier 3 prose, ~24% Tier 4 (no rule published). | #5 §2 |
-| No government or directory source surveyed publishes eligibility as structured data. PolicyEngine US is the one adjacent exception, and covers federal programs only. | #4 |
-| Routing at the excerpt level is all-or-nothing: any scope signal sends the *whole* excerpt to `manualReview`, so the current pipeline structurally cannot produce the partial `allOf(cleanRule, manualReview(rest))` shape that real records need. | #62 spike, "The ceiling, characterised" |
+
+Deliberately **not** kept: the Tier 1/2/3/4 percentages of the surveyed corpus.
+They were derived by reading hand-picked excerpts rather than pages, and three
+sources were later reclassified once that error was found. Any future tiering
+must be re-measured against a wider corpus.
 
 ---
 
@@ -162,18 +162,19 @@ re-run them without a specific reason to think they have changed.
 
 | Decision | Why | **Reopen when** |
 |---|---|---|
-| **Never auto-merge an eligibility change.** A pipeline proposes; a human disposes. | A wrong threshold reaches a person in crisis as a stated fact. | Not on current evidence. Revisit only after ≥3 independent held-out runs show zero over-claims *at a yield above the floor* — never on a run that bought its safety by abstaining. |
-| **Both harm directions block, and over-claim ranks worse.** See "The two harms". | Stated above. | The ranking is the product owner's and is stable. What should move is the yield floor (`MIN_USABLE_RULE_RATE`) — raise it as the pipeline improves. Never lower it to make a run pass. |
-| **Abstention is per condition, not per record.** See "Abstain per condition". | Stated above. | Stable as a principle. The support is open work: #94 (seam cannot express a partial result), #95 (the reason is not shown), and excerpt-level routing cannot produce one (see Facts). |
-| **`eligibility` extraction is worth automating.** | Epic #65. | Supersedes the older "should stay hand-authored for the foreseeable future" position. If #92/#93 conclude the automated path cannot clear the yield floor without over-claiming, this flips back and the epic closes — say so plainly rather than iterating a fifth architecture. |
+| **There is no extraction pipeline. Program records are hand-authored.** | The programme built through 2026 was unwound on 2026-09-08 (#97): four architectures were designed against a corpus of 17 records and a scoreboard that could not see over-claims. This supersedes the earlier "`eligibility` extraction is worth automating" position. | After the corpus is materially wider and its real variety of rule shapes is known. Any new attempt starts from [`pipeline-principles.md`](pipeline-principles.md), not from the retired design. Do not propose a fifth architecture against the current 21 records. |
+| **Never auto-merge an eligibility change.** A pipeline proposes; a human disposes. | A wrong threshold reaches a person in crisis as a stated fact. | Not on current evidence, and not while there is no pipeline. Any future proposal must clear a frozen held-out run showing zero over-claims **and** zero under-claims **and** a usable yield — all three, never two of three bought by abstaining. |
+| **Both harm directions block, and over-claim ranks worse.** See "The two harms". | Stated above. | The ranking is the product owner's and is stable. |
+| **A measure of correctness must count decidable answers, not the presence of a field.** A run, or a corpus, that abstains its way to zero harms has not been measured — it has declined to answer. | This is the generalised form of the yield floor the retired benchmark carried, and of the degenerate-outcome guards its stages carried. It is the trap any replacement will fall into on day one. | Stable. Applies to any future metric, not just an extraction one. |
+| **Abstention is per condition, not per record.** See "Abstain per condition". | Stated above. | Stable as a principle. Its one piece of open support is #95 — the reason for the uncertainty is not shown to the user. |
+| **`src/data/reference/income-tables.ts` is hand-maintained.** Its generator was deleted in the unwind. | The FPL/SMI tables are the scales every income rule evaluates against. The committed values remain correct until they expire; the current FPL table is effective to **30 September 2026**. | **Before that date.** Someone must refresh the tables by hand, or a replacement refresher must exist. This is a dated correctness obligation, not a nice-to-have. |
+| **Source change detection is a known gap.** Nothing notices when a source page moves or rewrites its rules. | Its implementation was deleted in the unwind (#7, #82 — both `superseded`). | When the corpus is wide enough that manual re-verification stops being feasible. The three rejected signals in the Facts table stay rejected; a replacement needs a different approach. |
 | **`citizenshipStatus` stays unasked**, and immigration status is never encoded as a rule. Affected programs carry a plain-language caveat and stay in "might qualify". | It genuinely affects federal food benefits, but the rules are dense with exceptions — children frequently qualify when adults do not — and a rules engine that got them slightly wrong would tell a family they are ineligible when they are not. This is the "coverage argument can lose" case: applied honestly per fact, here it loses. | This argues against **exclusionary** rules on that fact, not against the fact itself. Reopen the moment a program is found that the fact would let us *include* someone in — refugee- and immigrant-specific assistance is exactly the under-served case. Asking it and only ever using it to widen a match has never been evaluated. |
 | **`employmentStatus` stays unasked.** | The friction of asking is not yet bought back by the coverage it would unlock. | Same test as any other fact — see "When a fact earns a question". Nobody has re-run it since #9. |
-| **`isVeteran` and `hasDisability` stay reserved.** | Their categories were deferred in the original brief. | Now. The deferral was circular in the way #88 rejected. Run the #88 coverage test: does asking unlock programs worth including? Health/disability is plausibly the largest under-served category for this audience. |
+| **`isVeteran` and `hasDisability` stay reserved.** | Their categories were deferred in the original brief. | Now. The deferral was circular in the way #88 rejected. Run the #88 coverage test: does asking unlock programs worth including? Health/disability is plausibly the largest under-served category for this audience, and the corpus expansion is the moment to settle it. |
 | **211 Wisconsin and findhelp.org are not fetched.** | robots.txt (findhelp); no confirmed access path (211). | The robots.txt finding stands. The reasoning about 211 partly rested on HSDS carrying no eligibility data — no longer disqualifying, since a directory entry still yields a real record. Reopen the access-path question on those terms. |
-| **PolicyEngine US is a future cross-check, not a dependency.** | Open questions: AGPL implications, and whether it scores partial inputs. | Now. Both are answerable in an afternoon and neither has been attempted. [`eligibility-extraction.md`](eligibility-extraction.md) §7 already notes that consulting parameter values at build time differs materially from redistributing or embedding. |
-| **`claude-sonnet-5` is the extraction model.** | Continuity with the eval baseline that priced the cost model. | Now. The characterised failure class is *misunderstanding what a number governs* — reasoning, not retrieval — and cost is not the constraint (see Facts). No stronger model has been measured. Do that before designing a fifth architecture around this one's limits. |
-| **The excerpt benchmark is retired as the primary measure.** | It measures a task nobody wants performed. | Stable. Kept as a narrow-skill regression check. |
-| **Ship the whole corpus to every client.** | The privacy property: what the client requests must not depend on the user's answers. | At roughly 1,000 programs (~460 KB gzipped). Split by content type first, by state second; never by county, never by an answer. See #1. |
+| **PolicyEngine US is a future cross-check, not a dependency.** | Open questions: AGPL implications, and whether it scores partial inputs. | Now. Both are answerable in an afternoon and neither has been attempted. Consulting parameter values at build time differs materially from redistributing or embedding. |
+| **Ship the whole corpus to every client.** | The privacy property: what the client requests must not depend on the user's answers. | At roughly 1,000 programs (~460 KB gzipped). Split by content type first, by state second; never by county, never by an answer. |
 
 ---
 
@@ -181,15 +182,23 @@ re-run them without a specific reason to think they have changed.
 
 Kept short and here, so no other file has to carry it.
 
+- **2026-09-08 — the eligibility-extraction programme was unwound.** Ten script
+  suites, their tests, CI jobs and research docs were deleted or archived, and
+  26 issues were marked `superseded`. Not because one component failed: the
+  corpus was too small to generalise (17 records, 4 of them reconstructed), the
+  scoreboard could not see over-claims until the day it closed, the extractor
+  seam could not express the partial rule that most hard cases actually need,
+  the stages were never composed and their contracts contradicted each other,
+  and the benchmark's ground truth was the entire corpus. The route to reach is
+  now a wider hand-authored corpus first. Findings that stand: #97. Constraints
+  any future attempt inherits: [`pipeline-principles.md`](pipeline-principles.md).
 - **2026-09-08 — the harm ranking was inverted, and half of it was unmeasured.**
   `dangerous.ts` defined "dangerous" as a rule *narrower* than reality and stated
   that a looser rule was "not dangerous by definition", so the benchmark could
   not see an over-claim at all. `CONTRIBUTING.md` asserted both orderings in
   adjacent constraints. Four extraction architectures were designed against that
-  scoreboard. Now: both directions measured, both blocking, over-claim ranked
-  worse, plus a yield floor so a run cannot pass by abstaining. The `dangerous`
-  identifier is retained in code for continuity with #51/#61/#63/#92 and means
-  **under-claim** wherever it appears.
+  scoreboard. The governing definitions are now the ones under "The two harms";
+  the legacy sense survives only in `superseded` issues.
 - **2026-09-08 — `V1_CATEGORIES` deleted.** It named housing and food as the only
   in-scope categories, was read by no code, and was the stated reason
   `isVeteran` / `hasDisability` stayed unaskable — a category deferred because
