@@ -13,9 +13,9 @@
  * This entrypoint does NOT call a model. It:
  *   - enumerates the verified records as cases,
  *   - runs a supplied `Extractor` over them (default: `not-wired`),
- *   - scores five dimensions SEPARATELY -- eligibility correctness, dangerous
- *     wrongness, correct abstention, descriptive accuracy, coverage -- never
- *     blended,
+ *   - scores six dimensions SEPARATELY -- eligibility correctness, over-claim,
+ *     under-claim, correct abstention, descriptive accuracy, coverage+yield --
+ *     never blended,
  *   - reports SKIPPED per case when no ANTHROPIC_API_KEY is present, never a
  *     fabricated result.
  *
@@ -30,8 +30,9 @@
  *   npm run eval:program-extraction -- --report-file=out.txt
  *   npm run eval:program-extraction -- --self-test           # load graph, run scorer offline, exit 0
  *
- * Exit codes: 0 normal / SKIPPED / nothing-wired; 1 a live run produced a
- * dangerous finding (BLOCKING) or the self-test failed.
+ * Exit codes: 0 normal / SKIPPED / nothing-wired; 1 a live run hit a blocking
+ * condition (over-claim, under-claim, or degenerate yield) or the self-test
+ * failed.
  */
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -165,7 +166,7 @@ async function selfTest(): Promise<number> {
     }
   }
 
-  // --- abstain-all: never dangerous, always covered, always candidate-abstained.
+  // --- abstain-all: no harm findings in either direction, always covered...
   const abstain = await runBenchmark({
     extractor: abstainAllExtractor,
     programs: PROGRAMS,
@@ -173,8 +174,21 @@ async function selfTest(): Promise<number> {
     extractorLabel: 'self-test abstain-all',
   });
   for (const s of abstain.scores) {
-    if (s.dangerous.length > 0) throw new Error(`self-test: abstain-all flagged dangerous for ${s.programId}`);
+    if (s.dangerous.length > 0) throw new Error(`self-test: abstain-all flagged under-claim for ${s.programId}`);
+    if (s.overClaim.length > 0) throw new Error(`self-test: abstain-all flagged over-claim for ${s.programId}`);
     if (!s.coverage) throw new Error(`self-test: abstain-all missed coverage for ${s.programId}`);
+  }
+
+  // ...and is BLOCKED anyway, on a live run, by the yield guard.
+  const abstainLive = await runBenchmark({
+    extractor: abstainAllExtractor,
+    programs: PROGRAMS,
+    hasApiKey: true,
+    extractorLabel: 'self-test abstain-all (live)',
+  });
+  const abstainReport = renderReport(abstainLive);
+  if (!abstainReport.blocking || !abstainReport.blockingReasons.some((r) => r.includes('DEGENERATE YIELD'))) {
+    throw new Error('self-test: abstain-all on a live run must be BLOCKED by the yield guard');
   }
 
   // --- renderReport handles the all-skipped case honestly.
@@ -207,7 +221,8 @@ async function selfTest(): Promise<number> {
   console.log(
     `program-benchmark self-test OK: module graph loaded (${PROGRAMS.length} programs via the @/ resolve + JSON load hook), ` +
       `${partition.scored.length} scored / ${partition.abstentionOnly.length} abstention-only / ${partition.excluded.length} excluded, ` +
-      `verified-echo is a perfect run, abstain-all is never dangerous, all-SKIPPED measures nothing. No network, no model.`,
+      `verified-echo is a perfect run, abstain-all produces no harm findings but is BLOCKED by the yield guard, ` +
+      `all-SKIPPED measures nothing. No network, no model.`,
   );
   return 0;
 }

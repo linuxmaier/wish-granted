@@ -136,22 +136,42 @@ test('runBenchmark + renderReport: verified-echo over fixtures is a clean, non-b
   assert.ok(scored.every((s) => s.dangerous.length === 0));
 });
 
-test('runBenchmark + renderReport: a dangerous candidate on a live run is BLOCKING', async () => {
+test('runBenchmark + renderReport: an UNDER-claiming candidate on a live run is BLOCKING', async () => {
   const run = await runBenchmark({
     extractor: fixtureExtractor({
       'foodshare-like': { eligibility: c.allOf(c.is('state', 'WI'), c.income('fpl', 130)) },
     }),
     programs: [foodshareLike],
     hasApiKey: true,
-    extractorLabel: 'dangerous-fixture',
+    extractorLabel: 'under-claim-fixture',
   });
   const r = renderReport(run);
   assert.equal(r.blocking, true);
   assert.match(r.text, /BLOCKING/);
-  assert.match(r.text, /DANGEROUS WRONGNESS/);
+  assert.match(r.text, /UNDER-CLAIM/);
+  assert.ok(r.blockingReasons.some((x) => x.includes('UNDER-CLAIM')));
 });
 
-test('runBenchmark: abstain-all is never dangerous and always covered', async () => {
+test('runBenchmark + renderReport: an OVER-claiming candidate on a live run is BLOCKING', async () => {
+  // The candidate keeps the geography gate but drops the income test, so the
+  // app tells a household well over 200% FPL that they qualify.
+  const run = await runBenchmark({
+    extractor: fixtureExtractor({
+      'foodshare-like': { eligibility: c.is('state', 'WI') },
+    }),
+    programs: [foodshareLike],
+    hasApiKey: true,
+    extractorLabel: 'over-claim-fixture',
+  });
+  const r = renderReport(run);
+  assert.equal(r.blocking, true);
+  assert.match(r.text, /OVER-CLAIM/);
+  assert.ok(r.blockingReasons.some((x) => x.includes('OVER-CLAIM')));
+});
+
+test('runBenchmark: abstain-all produces no harm findings -- and is BLOCKING anyway', async () => {
+  // An extractor that refuses to answer must not score clean. See
+  // docs/standing-decisions.md, "The two harms".
   const run = await runBenchmark({
     extractor: abstainAllExtractor,
     programs: [foodshareLike, daneLike],
@@ -159,5 +179,11 @@ test('runBenchmark: abstain-all is never dangerous and always covered', async ()
     extractorLabel: 'abstain-all',
   });
   assert.ok(run.scores.every((s) => s.dangerous.length === 0));
+  assert.ok(run.scores.every((s) => s.overClaim.length === 0));
   assert.ok(run.scores.every((s) => s.coverage));
+
+  const r = renderReport(run);
+  assert.equal(r.blocking, true, 'abstaining on everything must not pass the benchmark');
+  assert.match(r.text, /DEGENERATE YIELD/);
+  assert.ok(r.blockingReasons.some((x) => x.includes('DEGENERATE YIELD')));
 });

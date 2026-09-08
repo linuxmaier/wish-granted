@@ -2,6 +2,7 @@ import type { Program } from '../../../src/domain/program.ts';
 import { gateCriterion } from '../../llm-extraction/schema-gate.ts';
 import { criterionEquivalence, type EquivalenceResult } from './criterion-equivalence.ts';
 import { dangerousWrongness, type DangerFinding } from './dangerous.ts';
+import { overClaimWrongness, type OverClaimFinding } from './over-claim.ts';
 import { scoreAbstention, type AbstentionScore } from './abstention.ts';
 import {
   comparePhone,
@@ -17,19 +18,23 @@ import type { BenchmarkCase } from './cases.ts';
 /**
  * Scoring one case. Every dimension is reported SEPARATELY and never blended
  * into a single figure -- the fields of a Program record have wildly different
- * stakes (docs/program-benchmark.md, "Five scores, never one").
+ * stakes (docs/program-benchmark.md, "Six scores, never one").
  *
- * The five dimensions:
+ * The six dimensions:
  *   1. eligibility     -- does the candidate Criterion MEAN the same rule?
- *   2. dangerous       -- did the candidate rule out someone the verified
- *                         record includes, or assert an unsupported threshold?
- *                         Reported on its own; NEVER averaged into anything.
- *   3. abstention      -- did the candidate emit manualReview where the
+ *   2. overClaim       -- did the candidate tell someone they are eligible when
+ *                         the verified record rules them out or cannot say?
+ *   3. dangerous       -- the mirror: did the candidate rule out someone the
+ *                         verified record includes?
+ *   4. abstention      -- did the candidate emit manualReview where the
  *                         verified record does?
- *   4. descriptive     -- name / administeredBy / phone / url / summary /
+ *   5. descriptive     -- name / administeredBy / phone / url / summary /
  *                         benefit / requiredDocuments accuracy.
- *   5. coverage        -- did the extractor produce any usable output at all
+ *   6. coverage        -- did the extractor produce any usable output at all
  *                         (a gate-valid record, or an honest abstention)?
+ *
+ * Dimensions 2 and 3 are a PAIR and must be read together; both are blocking.
+ * Ranking and rationale: docs/standing-decisions.md, "The two harms".
  */
 
 export type CaseOutcome =
@@ -50,7 +55,7 @@ export interface CaseScore {
   /** Detail for non-`scored` outcomes (error message, gate problems, ...). */
   readonly outcomeDetail?: string;
 
-  /** Dimension 5. True when the extractor produced usable output. */
+  /** Dimension 6. True when the extractor produced usable output. */
   readonly coverage: boolean;
 
   /** Dimension 1. */
@@ -58,13 +63,19 @@ export interface CaseScore {
   readonly eligibilityDetail?: string;
   readonly equivalence?: EquivalenceResult;
 
-  /** Dimension 2. Empty array === none detected (not "provably safe"). */
+  /**
+   * Dimension 2. Empty array === none detected (not "provably safe"). Read as a
+   * pair with `dangerous`, never on its own.
+   */
+  readonly overClaim: readonly OverClaimFinding[];
+
+  /** Dimension 3. Empty array === none detected (not "provably safe"). */
   readonly dangerous: readonly DangerFinding[];
 
-  /** Dimension 3. */
+  /** Dimension 4. */
   readonly abstention?: AbstentionScore;
 
-  /** Dimension 4. */
+  /** Dimension 5. */
   readonly descriptive: readonly DescriptiveFieldResult[];
 }
 
@@ -101,6 +112,7 @@ export function scoreCase(input: ScoreCaseInput): CaseScore {
       outcomeDetail: result.message,
       coverage: false,
       eligibility: 'not-scored',
+      overClaim: [],
       dangerous: [],
       descriptive: EMPTY_DESCRIPTIVE,
     };
@@ -123,6 +135,8 @@ export function scoreCase(input: ScoreCaseInput): CaseScore {
       // A whole-record abstention is still an honest, usable output.
       coverage: true,
       eligibility: 'candidate-abstained',
+      // An abstention promises nothing, so it cannot over-claim.
+      overClaim: [],
       dangerous: [],
       abstention,
       descriptive: EMPTY_DESCRIPTIVE,
@@ -141,6 +155,7 @@ export function scoreCase(input: ScoreCaseInput): CaseScore {
       outcomeDetail: gate.problems.join('; '),
       coverage: false,
       eligibility: 'not-scored',
+      overClaim: [],
       dangerous: [],
       descriptive: EMPTY_DESCRIPTIVE,
     };
@@ -157,6 +172,7 @@ export function scoreCase(input: ScoreCaseInput): CaseScore {
       coverage: true,
       eligibility: 'not-scored',
       eligibilityDetail: 'record is unverified (#45); scored only for correct abstention',
+      overClaim: [],
       dangerous: [],
       abstention: scoreAbstention(verified.eligibility, candidate.eligibility),
       descriptive,
@@ -164,6 +180,7 @@ export function scoreCase(input: ScoreCaseInput): CaseScore {
   }
 
   const equivalence = criterionEquivalence(verified.eligibility, candidate.eligibility);
+  const overClaim = overClaimWrongness(verified.eligibility, candidate.eligibility);
   const dangerous = dangerousWrongness(verified.eligibility, candidate.eligibility);
   const abstention = scoreAbstention(verified.eligibility, candidate.eligibility);
 
@@ -181,6 +198,7 @@ export function scoreCase(input: ScoreCaseInput): CaseScore {
     eligibility,
     eligibilityDetail: equivalence.detail,
     equivalence,
+    overClaim,
     dangerous,
     abstention,
     descriptive,

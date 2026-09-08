@@ -122,16 +122,43 @@ Stated plainly, because discovering these later is worse:
 
 ---
 
-## Five scores, never one
+## What is measured, and against which principle
+
+The benchmark scores a candidate `Program` record against a hand-verified one.
+The principle it enforces — **both harm directions block, and over-claim ranks
+worse** — is stated once, in
+[`standing-decisions.md`](standing-decisions.md), "The two harms". This document
+describes only *how* that is measured.
+
+One historical note that matters when reading old issues: the identifier
+`dangerous` (in `lib/dangerous.ts`, `CaseScore.dangerous`, and throughout
+#51/#61/#63/#92) means **under-claim** specifically. It is kept for continuity
+with those issues.
+
+---
+
+## Six scores, never one
 
 A `Program` record's fields have wildly different stakes, so the benchmark
-**never emits a single blended score.** `lib/score.ts` produces five, separately:
+**never emits a single blended score.** `lib/score.ts` produces six, separately:
 
-### 1. Coverage
+### 1. Coverage and yield
 
-What fraction of programs produced any usable output at all -- a schema-gate-valid
-record, or an honest whole-record abstention (which is a correct answer, not a
-failure). Gate failures and extractor errors do not count.
+Two numbers, reported first because they frame every number below them.
+
+**Coverage**: what fraction of programs produced any usable output at all -- a
+schema-gate-valid record, or an honest whole-record abstention (which is a
+correct answer, not a failure). Gate failures and extractor errors do not count.
+
+**Yield**: what fraction of *scored* records came back with an actual rule
+rather than a whole-record abstention. On a live run, a yield below
+`MIN_USABLE_RULE_RATE` (`lib/report.ts`, currently 25%) is **BLOCKING** as a
+`DEGENERATE YIELD` result.
+
+`scripts/triage` and `scripts/cross-check` carry the equivalent guard; this is
+the same check in the referee itself. The floor is deliberately low — not a
+quality target, but the line below which the harm counts stop meaning anything.
+**Raise it as the pipeline improves. Do not lower it to make a run pass.**
 
 ### 2. Eligibility correctness
 
@@ -139,13 +166,33 @@ failure). Gate failures and extractor errors do not count.
 count of how the verdict was reached (`canonical-form` vs `model-check`) so a
 reader can see how much work the semantic layer is doing.
 
-### 3. Dangerous wrongness -- reported on its own, never averaged into anything
+### 3. Over-claim -- reported on its own, never averaged
 
-A candidate rule is **dangerous** when it is *narrower than reality*: it rules
-out an applicant the verified record accepts or leaves open. The asymmetry that
-governs this whole project (#5 §4.4): wrongly excluding someone is far worse than
-wrongly including them, because an over-inclusive result sends a person to check
-with the agency, while an under-inclusive one silently tells them not to bother.
+A candidate rule **over-claims** when it is *looser than reality*: it tells
+someone they are eligible where the verified record rules them out or cannot
+say. The worked example is `lifeline-survivor-extended` — 200% FPL lifted out of
+a survivor-only branch when the general rule is 135%, so a household at 170% is
+told to go and apply.
+
+Three detectors (`lib/over-claim.ts`), each reported with its source:
+
+- **`model-check`** -- Layer 2 found a concrete applicant profile the candidate
+  calls eligible (`T`) and the verified rule rules out (`F`) or flags for review
+  (`U`). A verified `U` counts: the record says a human has to look, and the
+  candidate said "you qualify".
+- **`abstention-dropped`** -- the verified record carries `manualReview` leaves
+  and the candidate carries fewer. A condition the source leaves open has become
+  a machine-decidable pass.
+- **`threshold-loosened`** -- structural fallback when the model check is
+  `undecided`: the candidate's most generous income ceiling for a scale is
+  looser than the verified record's.
+
+On a **live** run, a single over-claim finding is **BLOCKING**.
+
+### 4. Under-claim (`dangerous`) -- reported on its own, never averaged
+
+The mirror. A candidate rule under-claims when it is *narrower than reality*: it
+rules out an applicant the verified record accepts or leaves open.
 
 Three detectors (`lib/dangerous.ts`), each reported with its source:
 
@@ -162,22 +209,23 @@ Three detectors (`lib/dangerous.ts`), each reported with its source:
   `undecided`: the candidate's most generous income ceiling for a scale is
   stricter than the verified record's.
 
-What it does **not** catch: a threshold that is wrong but *looser* than reality
-(over-inclusive -- still a data error, but not dangerous); a dangerous narrowing
-hidden behind distribution when a leaf is un-modellable; anything requiring
-knowledge of the source page the harness cannot see.
+What it does **not** catch: an under-claim hidden behind distribution when a leaf
+is un-modellable; anything requiring knowledge of the source page the harness
+cannot see. (A rule that is *looser* than reality is no longer invisible here --
+it is dimension 3.)
 
-On a **live** run, a single dangerous finding is **BLOCKING** -- a result, not a
+On a **live** run, a single under-claim finding is **BLOCKING** -- a result, not a
 percentage -- exactly as in `run-eval.ts`.
 
-### 4. Correct abstention
+### 5. Correct abstention
 
 Did the candidate emit `manualReview` where the verified record does?
 `madison-housing-choice-voucher.ts` and `wisconsin-shares-child-care.ts` carry a
 `manualReview` as one leaf inside a larger `allOf`; partial abstention is correct
 and common, so this is scored by **count**, not all-or-nothing:
 `correct` / `partial` / `missing` / `spurious` (abstained where a rule was
-decidable -- over-cautious, not dangerous) / `not-applicable`. Counts are taken
+decidable -- over-cautious; at scale this is what produces the degenerate yield
+dimension 1 blocks) / `not-applicable`. Counts are taken
 on the raw tree, because canonicalisation de-dupes two `manualReview` conjuncts
 into one.
 
@@ -186,7 +234,7 @@ abstention sits beside the *same* sibling criteria. Doing that well without
 over-fitting to one encoding is hard, and a miscounted position is a much
 smaller error than a missed abstention.
 
-### 5. Descriptive accuracy
+### 6. Descriptive accuracy
 
 `name`, `administeredBy`, `howToApply.phone` / `.url`, `summary`, `benefit`,
 `requiredDocuments`. Lower stakes and genuinely automatable (#14). Per field

@@ -87,6 +87,8 @@ interface DumpEntry {
   readonly eligibility: CaseScore['eligibility'];
   readonly eligibilityDetail: string | undefined;
   readonly equivalence: CaseScore['equivalence'];
+  /** The two harm directions, dumped separately. Never collapse them. */
+  readonly overClaim: CaseScore['overClaim'];
   readonly dangerous: CaseScore['dangerous'];
   readonly abstention: CaseScore['abstention'];
   /** The hand-verified ground-truth rule. */
@@ -186,6 +188,7 @@ async function runMain(args: Args): Promise<number> {
             eligibility: score.eligibility,
             eligibilityDetail: score.eligibilityDetail,
             equivalence: score.equivalence,
+            overClaim: score.overClaim,
             dangerous: score.dangerous,
             abstention: score.abstention,
             verifiedEligibility: verifiedById.get(score.programId)?.eligibility ?? null,
