@@ -1,12 +1,12 @@
 /**
  * The live `ModelClient` -- raw `fetch` against the Messages API, no
  * `@anthropic-ai/sdk` dependency (same call as
- * scripts/llm-extraction/run-eval.ts, for the same reason: zero new deps,
+ * the retired eval harness, for the same reason: zero new deps,
  * matching the rest of scripts/; a production ingestion pipeline should use the
  * SDK).
  *
  * Model id, API version string and prompt-caching semantics are taken from
- * scripts/llm-extraction/run-eval.ts and the `claude-api` skill, NOT from
+ * the `claude-api` skill, NOT from
  * memory:
  *   - `claude-sonnet-5` -- the same model run-eval.ts measures and the one
  *     docs/archive/eligibility-extraction.md Section 6.1 prices (cost.ts::PRICE). The

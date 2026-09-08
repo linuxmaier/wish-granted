@@ -7,7 +7,7 @@ fixtures exist so `npm test` does not depend on a government host staying up.
 
 ---
 
-## PDF fixture (`scripts/agentic-extract/lib/pdf.ts`, issue #77)
+## PDF fixture (`scripts/lib-source/pdf.ts`, issue #77)
 
 Pinned `binary` in `.gitattributes`.
 
@@ -48,7 +48,7 @@ The next year's notice is a new document ID under the same path shape (e.g.
 ## Site-search fixtures (`scripts/agentic-extract/lib/site-search.ts`, issue #75)
 
 All fetched **2026-09-07** with the repo's desktop-Chrome UA
-(`scripts/refresh-income-tables/lib/http.ts`). Plain UTF-8; not pinned binary.
+(`./http.ts`). Plain UTF-8; not pinned binary.
 
 | File | Source URL | SHA-256 | Role in the proof |
 |---|---|---|---|

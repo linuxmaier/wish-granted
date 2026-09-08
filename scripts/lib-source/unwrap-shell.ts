@@ -16,8 +16,8 @@
  * the same bytes.
  *
  * The reason both pipelines saw "zero readable text" is one line in each
- * reducer: `scripts/check-sources/lib/normalize.ts` and
- * `scripts/agentic-extract/lib/html-structure.ts` both strip `<form> ... </form>`
+ * reducer: `./normalize.ts` and
+ * `./html-structure.ts` both strip `<form> ... </form>`
  * wholesale, to drop CSRF / nonce / session `<input>`s. But ASP.NET WebForms --
  * which SharePoint is built on -- wraps the **entire** page body in a single
  * `<form id="aspnetForm" method="post">`. Stripping that form deletes the whole

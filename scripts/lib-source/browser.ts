@@ -23,10 +23,10 @@
  *   and on a machine with no browser this must be a clean "skipped", not a red
  *   suite (the issue is explicit about this).
  * - **Respects robots and the hard-deny list**, reusing
- *   `scripts/ingest-descriptive/lib/robots.ts` -- the same parser and
+ *   `./robots.ts` -- the same parser and
  *   `HARD_DENY_HOSTS` the plain fetchers use. A browser render is still a fetch.
  * - **Desktop-Chrome User-Agent**, the shared one from
- *   `scripts/refresh-income-tables/lib/http.ts`.
+ *   `./http.ts`.
  */
 import { USER_AGENT } from './http.ts';
 import {

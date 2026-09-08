@@ -1,7 +1,7 @@
 /**
  * Structure-preserving HTML (and light XML) tokenisation, zero dependencies.
  *
- * The epic's contributor brief points at `scripts/tier3-extract/html-structure.mjs`
+ * The retired Tier-3 parser had a sibling of this module
  * (PR #69) to reuse here. That file is NOT in the tree at the base commit this
  * branch was cut from (451a438) -- so this is a fresh, minimal implementation of
  * the same idea rather than a third copy. If #69 lands, collapse the two.
@@ -10,7 +10,7 @@
  * prose-flattening a source page -- dropping table headers, dropping the
  * heading a paragraph sits under -- was *causing* the BadgerCare failure class
  * (a flat "306% FPL" with no "Pregnant people and children" column header
- * attached reads as a blanket ceiling). scripts/check-sources/lib/normalize.ts
+ * attached reads as a blanket ceiling). ./normalize.ts
  * flattens on purpose (it wants a stable hash); this is the opposite tool.
  *
  * What it preserves:

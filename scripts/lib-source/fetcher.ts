@@ -8,13 +8,13 @@
  * zero network.
  *
  * The live fetcher reuses, rather than re-implements:
- *   - the desktop-Chrome User-Agent from scripts/refresh-income-tables/lib/http.ts
+ *   - the desktop-Chrome User-Agent from ./http.ts
  *     (WI state sites 403 naive fetchers -- docs/archive/data-sources.md, issue #4),
  *   - the robots.txt parser + hard-deny list from
- *     scripts/ingest-descriptive/lib/robots.ts (findhelp.org, auntbertha.com,
+ *     ./robots.ts (findhelp.org, auntbertha.com,
  *     211 Wisconsin are never fetched, per the issue).
  *
- * It adds three things scripts/ingest-descriptive/lib/fetch.ts does not need but
+ * It adds three things the deleted ingestion fetcher does not need but
  * this pipeline does: per-request extra headers (the eCFR versioner API needs
  * `Accept-Encoding`), a `moved` outcome distinct from `ok` when the final URL's
  * host changed (#7's gone/moved distinction, which the issue calls "the natural
@@ -109,7 +109,7 @@ export function createLiveFetcher(): Fetcher {
     }
 
     if (isHardDenied(parsed.hostname)) {
-      return { kind: 'blocked', requestedUrl: url, reason: `${parsed.hostname} is on the hard-deny list (scripts/ingest-descriptive/lib/robots.ts)` };
+      return { kind: 'blocked', requestedUrl: url, reason: `${parsed.hostname} is on the hard-deny list (./robots.ts)` };
     }
 
     const robots = await robotsFor(parsed.origin);

@@ -5,7 +5,7 @@
  *
  * The shapes are a deliberately small subset of the Messages API -- only what
  * the loop uses. They are not the SDK's types (this repo has no SDK dependency,
- * matching the rest of scripts/ -- see scripts/llm-extraction/run-eval.ts).
+ * matching the rest of scripts/).
  */
 import type { ModelUsage } from './cost.ts';
 

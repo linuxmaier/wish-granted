@@ -42,7 +42,7 @@
  *
  * robots.txt / hard-deny: every fetch below goes through the injected `Fetcher`,
  * whose live implementation already gates every request on
- * `scripts/ingest-descriptive/lib/robots.ts` (hard-deny hosts + robots.txt).
+ * `./robots.ts` (hard-deny hosts + robots.txt).
  * This module adds no second robots implementation and never bypasses it -- a
  * `blocked` outcome is simply skipped.
  */

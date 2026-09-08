@@ -176,3 +176,6 @@ above — not a pipeline.
 
 A judgment recorded here without a named condition for reopening it is not
 finished being written; that rule applies to this document too.
+
+**This document has not been ratified.** It is a first pass, and #98 is the
+review that settles it. Treat anything here as provisional until that closes.

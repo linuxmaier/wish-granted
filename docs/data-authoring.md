@@ -220,7 +220,7 @@ honest bucket. Two consequences for authoring:
 
 The extractor pipeline follows the same rule: `RESERVED_FACT_KEYS` (facts.ts) is the single
 source of truth for both the engine's vocabulary test and the extraction schema gate
-(`scripts/llm-extraction/schema-gate.ts`). A fact moving out of that list makes it encodable
+(the schema gate, deleted in the unwind). A fact moving out of that list makes it encodable
 on both sides at once.
 
 The snapshot's `factVocabulary` (see [design.md](design.md), "The shippable snapshot") is

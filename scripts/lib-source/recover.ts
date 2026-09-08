@@ -1,6 +1,7 @@
 /**
  * Shared "the page came back empty" recovery, used by BOTH
- * `scripts/ingest-descriptive/` and `scripts/agentic-extract/` (issue #76).
+ * the ingestion and extraction suites deleted in the unwind (issue #76); it is
+ * kept because recovering an unreadable page is a capability, not a design bet.
  *
  * ## The contract
  *

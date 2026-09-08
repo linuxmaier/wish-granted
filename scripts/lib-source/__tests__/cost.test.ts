@@ -24,7 +24,7 @@ test('the no-caching counterfactual is always at least the actual cost', () => {
   assert.ok(s.usdNoCaching > s.usd);
 });
 
-test('price table matches scripts/llm-extraction/run-eval.ts (Sonnet 5)', () => {
+test('price table matches the published Sonnet 5 rates', () => {
   assert.equal(PRICE.inputPerMTok, 2.0);
   assert.equal(PRICE.outputPerMTok, 10.0);
 });

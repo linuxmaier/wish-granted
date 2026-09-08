@@ -8,7 +8,7 @@
  * per source, and the run report prints calls / tokens / cache hits / dollars
  * per source and in total.
  *
- * Price table copied from scripts/llm-extraction/run-eval.ts (Sonnet 5, the
+ * Price table carried over from the retired eval harness (Sonnet 5, the
  * model this pipeline calls -- see anthropic-client.ts), which cites
  * docs/archive/eligibility-extraction.md Section 6.1. If that file's rates move, move
  * these with them.
