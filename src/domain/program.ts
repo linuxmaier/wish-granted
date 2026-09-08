@@ -15,8 +15,7 @@ export type Jurisdiction = 'city' | 'county' | 'state' | 'federal';
 export type Provider = 'government' | 'nonprofit';
 
 /**
- * v1 ships the first two. The rest are declared now so adding them later is a
- * data change, not a schema change -- the brief calls for exactly this.
+ * All six are shippable; adding a program in any of them is a data change.
  */
 export const CATEGORIES = [
   'housing-utilities',
@@ -28,8 +27,6 @@ export const CATEGORIES = [
 ] as const;
 
 export type Category = (typeof CATEGORIES)[number];
-
-export const V1_CATEGORIES: readonly Category[] = ['housing-utilities', 'food-basic-needs'];
 
 export type ProgramStatus =
   | 'open'

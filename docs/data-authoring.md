@@ -484,35 +484,20 @@ will silently overwrite each other, and the vocabulary test rejects it.
 
 ### When a fact earns a question
 
-**A fact is worth asking when it unlocks programs worth including.** The test is coverage,
-not whether a rule already in the dataset happens to reference it.
+**A fact is worth asking when it unlocks programs worth including** — coverage, not whether
+a rule already in the dataset happens to reference it. The rule, the circular one it
+replaced (#88), and the per-fact reopen conditions live in
+[standing-decisions.md](standing-decisions.md), "When a fact earns a question". Do not
+re-derive them here; this section is the procedure only.
 
-The old rule was the opposite — "no current rule needs this, so asking is pure friction" —
-and it is circular: a fact stays unasked because no rule needs it, and no rule can need a
-fact the interview never supplies. Held that way the vocabulary can never grow, and the
-dataset quietly caps itself at whatever facts it started with. `age` sat unasked under that
-reasoning until issue #88: the Tier 3 corpus
-([eligibility-extraction-tier3.md](eligibility-extraction-tier3.md)) showed a whole class of
-programs — SeniorCare, the Medicare Savings Programs (QMB/SLMB/SLMB+/QDWI), Homestead
-Credit, and more — that could not be added at all while age was unaskable, and
-`badgercare-plus` was already carrying its 0–64 bound as caveat prose the engine never
-evaluates.
+In practice, before adding a fact:
 
-Friction is still a real cost, weighed honestly against what the question buys:
-
-- **A question is expensive.** It is a screen for someone who may be in a crisis. Prefer
-  extending an existing question, and keep the new one on its own screen so `flow.ts` can
-  drop it the moment nothing undecided needs it (see the `about-you` screen — most people
-  never see it).
-- **Ask for the least that the rules need.** Age is asked as a band, not a number: every
-  age-gated rule needs a boundary (0–64, 60+, 62+, 65+), never a precise age, and a band
-  reads as a life-stage question rather than an ID check.
-- **The coverage argument can still lose.** `citizenshipStatus` stays reserved: immigration
-  rules are full of exceptions (children often qualify when adults do not), and a rule that
-  gets them slightly wrong tells a family they are ineligible when they are not — the worst
-  error this app makes. The affected programs carry a caveat and stay in "might qualify".
-  The new rule does not mean asking everything; it means the coverage question gets asked
-  honestly, per fact.
+1. Name the programs it would unlock. If you cannot, it has not earned a question yet.
+2. Check whether an existing question can carry it — a checkbox on a `multi` question that
+   already renders costs nothing extra to ask.
+3. Ask for the least the rules need. A boundary, not a precise value.
+4. Give a new question its own screen, so `flow.ts` can drop it when nothing undecided
+   depends on it (see the `about-you` screen — most people never see it).
 
 ### An unasked fact must never bucket a program `eligible` or `ruledOut` on its own (issue #79)
 
@@ -526,9 +511,9 @@ honest bucket. Two consequences for authoring:
   someone the caveat plainly excludes (this is exactly what `badgercare-plus` did to a
   66-year-old before #88). If the condition is decidable from an asked fact, encode it in
   the tree. If it is not, use `manualReview` so the verdict is capped at "might qualify".
-- **Encoding a bound narrows the rule — do it carefully.** #5 §4.4's asymmetry stands:
-  wrongly excluding someone is worse than wrongly including them. Gate only the branch that
-  genuinely requires the condition. `badgercare-plus`'s age bound sits on the childless-adult
+- **Encoding a bound narrows the rule — do it carefully.** Gate only the branch that
+  genuinely requires the condition, so the bound cannot rule out someone it was never
+  about. `badgercare-plus`'s age bound sits on the childless-adult
   income branch, not the top-level `allOf`, so a 66-year-old raising a grandchild still
   matches through the household branch. And because `noneOf('age', ['65-plus'])` returns
   `unknown` for a blank answer, a declined age leaves the record at "might qualify" — never
@@ -551,9 +536,9 @@ Encode as `eligibilityCaveats` prose, not as rules:
 
 - Asset and resource tests with many exclusions.
 - Work requirements with layered exemptions.
-- Anything depending on immigration status. See [design.md](design.md) — the exceptions are
-  intricate enough that getting them slightly wrong causes the worst error this app can
-  make.
+- Anything depending on immigration status. See
+  [standing-decisions.md](standing-decisions.md) — the exceptions are intricate enough that
+  a slightly wrong rule would tell a family they are ineligible when they are not.
 - Documentation requirements. These belong in `requiredDocuments`.
 
 Use `manualReview` instead of `always` when the blocker is real but undecidable — an open
@@ -586,11 +571,12 @@ produces noise, and rewriting it well needs the same judgement `eligibility` doe
 Tier-1 directory ingestion of *new* programs (where cross-source deduplication actually
 bites) has no confirmed access path per `docs/data-sources.md`.
 
-`eligibility` is the hard part and should stay hand-authored for the foreseeable future.
-Eligibility rules are written for humans in prose, and the failure mode of getting them
-subtly wrong at scale is severe — issue #51 is a concrete example: an LLM extractor lifted a
-real threshold out of a conditional branch and dropped the conditions, producing a
-schema-valid rule that would tell people they qualify when they do not.
+`eligibility` is the hard part, and it is hand-authored *today*. Whether it stays that way
+is a standing decision, not a fact about the world — see
+[standing-decisions.md](standing-decisions.md). Do not re-argue it here.
+
+Whatever the pipeline eventually does, the write gate does not move: a human reviews every
+eligibility change before it lands.
 
 The curation "database" is the git repo itself: history is the change log, PR review is the
 write gate — see [design.md](design.md), "The shippable snapshot" (issue #8). The first

@@ -35,7 +35,11 @@ and `lib/report.ts` raises a **degenerate-outcome warning** when
 Tier 4 (§2); anything near 50% means the router is dropping sources that publish
 a rule.
 
-## The asymmetry that drives the design
+## The routing bias, and why
+
+A routing decision is not a claim about a person, so the harm ranking in
+[`standing-decisions.md`](standing-decisions.md) does not apply here. What drives
+this stage is a different asymmetry, local to it:
 
 **A false `no-rule-published` is a silent loss** — the program is never
 extracted, no human sees it, nothing signals the miss. **A false `agentic`
@@ -82,9 +86,8 @@ module load, never hardcoded (this is what let #89 move `age` out cleanly: a
 source gated only on age is now extractable, not a gap). A reserved-fact gate is
 recorded as a `vocabularyGap` naming the fact. The source still routes to
 `agentic` (extract the income branch, `manualReview` the reserved gate), but per
-[`data-authoring.md`](data-authoring.md) ("When a fact earns a question") this is
-a **candidate question**, not a dead end: a fact earns a question when it unlocks
-programs worth including.
+[`standing-decisions.md`](standing-decisions.md) ("When a fact earns a question")
+this is a **candidate question**, not a dead end.
 
 The offline corpus currently produces **no** vocabulary gaps — no source is
 blocked purely by a fact the interview cannot ask.
