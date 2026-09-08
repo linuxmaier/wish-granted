@@ -36,15 +36,18 @@ import { normalizeCriterion, comparisonKey } from './criterion-normalize.ts';
  *     bound -- we do not build an interval solver). `undecided` is reported
  *     honestly; it is never silently treated as a match or a mismatch.
  *
- * ## The asymmetry this encodes
+ * ## The two directions this separates
  *
- * Wrongly excluding someone is far worse than wrongly including them (an
- * over-inclusive result sends a person to ask the agency; an under-inclusive
- * one tells them not to bother -- docs/eligibility-extraction.md Section 4.4).
- * So when the model check finds the two trees disagree, it separates the
- * directions: an assignment where the verified rule says "eligible" or "needs
- * review" but the candidate says "ruled out" is a DANGEROUS witness. The
- * reverse is divergence but not dangerous.
+ * When the trees disagree, the disagreement is split by direction and the two
+ * are never blended:
+ *
+ *  - **Over-claim** -- verified says `F` or `U`, candidate says `T`.
+ *    Collected in `overClaimWitnesses`, scored by `over-claim.ts`.
+ *  - **Under-claim** -- verified says `T` or `U`, candidate says `F`.
+ *    Collected in `dangerousWitnesses`, scored by `dangerous.ts`.
+ *
+ * Both are blocking; over-claim ranks worse. The reasoning, the ranking and its
+ * revisit condition live in docs/standing-decisions.md, "The two harms".
  *
  * ## Where this is still wrong
  *
@@ -67,6 +70,11 @@ import { normalizeCriterion, comparisonKey } from './criterion-normalize.ts';
 
 export type EquivalenceVerdict = 'equivalent' | 'divergent' | 'undecided';
 
+/**
+ * The under-claim direction: the candidate rules out someone verified accepts.
+ * Named `Dangerous` for continuity with #51/#61/#63/#92, which use that word for
+ * this direction specifically.
+ */
 export interface DangerousWitness {
   /** Human-readable description of the applicant profile that is wrongly excluded. */
   readonly profile: string;
@@ -74,6 +82,22 @@ export interface DangerousWitness {
   readonly verified: 'eligible' | 'needs-review';
   /** Always 'ruled-out' -- that is what makes it a witness. */
   readonly candidate: 'ruled-out';
+}
+
+/**
+ * The over-claim direction: the candidate asserts eligibility where the
+ * verified rule rules the person out, or cannot decide.
+ *
+ * `verified: 'needs-review'` counts: the record says a human has to look, and
+ * the candidate said "you qualify".
+ */
+export interface OverClaimWitness {
+  /** Human-readable description of the applicant profile wrongly told they qualify. */
+  readonly profile: string;
+  /** What the verified rule returns for that profile. */
+  readonly verified: 'ruled-out' | 'needs-review';
+  /** Always 'eligible' -- that is what makes it a witness. */
+  readonly candidate: 'eligible';
 }
 
 export interface EquivalenceResult {
@@ -85,6 +109,12 @@ export interface EquivalenceResult {
    * someone the verified rule includes. Never populated for `undecided`.
    */
   readonly dangerousWitnesses: readonly DangerousWitness[];
+  /**
+   * Non-empty only when the model check ran and found the candidate admits
+   * someone the verified rule rules out or cannot decide. Never populated for
+   * `undecided`.
+   */
+  readonly overClaimWitnesses: readonly OverClaimWitness[];
   /** All disagreeing profiles (both directions), for debugging. Capped. */
   readonly divergenceWitnesses: readonly string[];
 }
@@ -279,6 +309,7 @@ export function criterionEquivalence(verified: Criterion, candidate: Criterion):
       method: 'canonical-form',
       detail: 'Both rules canonicalise to the same structure.',
       dangerousWitnesses: [],
+      overClaimWitnesses: [],
       divergenceWitnesses: [],
     };
   }
@@ -290,6 +321,7 @@ export function criterionEquivalence(verified: Criterion, candidate: Criterion):
       method: 'canonical-form-only',
       detail: `Canonical forms differ and the model check cannot run: ${abs.unmodellable}. Scored as divergent, but a faithful re-encoding cannot be ruled out -- see docs/program-benchmark.md.`,
       dangerousWitnesses: [],
+      overClaimWitnesses: [],
       divergenceWitnesses: [],
     };
   }
@@ -301,11 +333,13 @@ export function criterionEquivalence(verified: Criterion, candidate: Criterion):
       method: 'canonical-form-only',
       detail: `Canonical forms differ and the model check state space (${size}) exceeds ${MAX_STATES}. Scored as divergent; equivalence not decided.`,
       dangerousWitnesses: [],
+      overClaimWitnesses: [],
       divergenceWitnesses: [],
     };
   }
 
   const dangerous: DangerousWitness[] = [];
+  const overClaims: OverClaimWitness[] = [];
   const divergences: string[] = [];
   let agree = true;
 
@@ -322,6 +356,15 @@ export function criterionEquivalence(verified: Criterion, candidate: Criterion):
         candidate: 'ruled-out',
       });
     }
+    // The mirror direction, and the worse of the two: the candidate promises
+    // eligibility where the verified rule rules the person out or cannot say.
+    if ((rv === 'F' || rv === 'U') && rc === 'T' && overClaims.length < MAX_WITNESSES) {
+      overClaims.push({
+        profile: describeState(state, abs),
+        verified: rv === 'F' ? 'ruled-out' : 'needs-review',
+        candidate: 'eligible',
+      });
+    }
   }
 
   if (agree) {
@@ -330,18 +373,33 @@ export function criterionEquivalence(verified: Criterion, candidate: Criterion):
       method: 'model-check',
       detail: `Canonical forms differ, but the two rules agree on all ${size} truth assignments under three-valued logic.`,
       dangerousWitnesses: [],
+      overClaimWitnesses: [],
       divergenceWitnesses: [],
     };
+  }
+
+  const cap = (n: number): string => (n === MAX_WITNESSES ? `${MAX_WITNESSES}+` : String(n));
+  const parts: string[] = [];
+  if (overClaims.length > 0) {
+    parts.push(
+      `The candidate tells ${cap(overClaims.length)} applicant profile(s) they are eligible when the verified rule rules them out or flags them for review (OVER-CLAIM).`,
+    );
+  }
+  if (dangerous.length > 0) {
+    parts.push(
+      `The candidate rules out ${cap(dangerous.length)} applicant profile(s) the verified rule accepts or flags for review (UNDER-CLAIM).`,
+    );
   }
 
   return {
     verdict: 'divergent',
     method: 'model-check',
     detail:
-      dangerous.length > 0
-        ? `The candidate rules out ${dangerous.length === MAX_WITNESSES ? MAX_WITNESSES + '+' : dangerous.length} applicant profile(s) the verified rule accepts or flags for review.`
-        : 'The rules disagree, but only in the over-inclusive (not dangerous) direction.',
+      parts.length > 0
+        ? parts.join(' ')
+        : 'The rules disagree, but not in a direction that reaches a person as a wrong verdict.',
     dangerousWitnesses: dangerous,
+    overClaimWitnesses: overClaims,
     divergenceWitnesses: divergences,
   };
 }
