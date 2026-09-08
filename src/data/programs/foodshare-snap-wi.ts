@@ -69,7 +69,7 @@ export const foodshareSnapWi: Program = {
     // turns on the 100% FPL *net*-income test after a deduction stack this
     // engine does not model. The 60+ separate-household test additionally
     // measures the income of the *other* residents, excluding the applicant,
-    // and no fact isolates a household subset (docs/eligibility-extraction.md).
+    // and no fact isolates a household subset (docs/archive/eligibility-extraction.md).
     // So the whole provision stays prose.
     'If your household includes someone who is elderly, blind, or disabled, you may still qualify even with gross income above 200% of the poverty line — a different rule based on income after deductions applies. Check with your county agency or ACCESS Wisconsin.',
   ],

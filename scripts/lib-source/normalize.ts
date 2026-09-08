@@ -1,7 +1,7 @@
 /**
  * Turn a fetched source page into the "meaningful text" #7 asks to hash.
  *
- * The whole point of this module is stability. docs/eligibility-extraction.md
+ * The whole point of this module is stability. docs/archive/eligibility-extraction.md
  * Section 5 measured three byte-level change signals and threw all three out:
  * a government page's raw bytes churn constantly (render timestamps, CSRF
  * tokens, rotating banners, analytics params, session ids) while its actual

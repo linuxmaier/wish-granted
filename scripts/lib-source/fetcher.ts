@@ -9,7 +9,7 @@
  *
  * The live fetcher reuses, rather than re-implements:
  *   - the desktop-Chrome User-Agent from scripts/refresh-income-tables/lib/http.ts
- *     (WI state sites 403 naive fetchers -- docs/data-sources.md, issue #4),
+ *     (WI state sites 403 naive fetchers -- docs/archive/data-sources.md, issue #4),
  *   - the robots.txt parser + hard-deny list from
  *     scripts/ingest-descriptive/lib/robots.ts (findhelp.org, auntbertha.com,
  *     211 Wisconsin are never fetched, per the issue).

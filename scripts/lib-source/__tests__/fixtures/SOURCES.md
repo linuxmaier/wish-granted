@@ -21,7 +21,7 @@ Pinned `binary` in `.gitattributes`.
 "Nutshell" PDFs 404 and the numeric 130% / 185% FPL thresholds "would not be
 backed by a verbatim quote from a fetched page". This is the federal notice those
 thresholds come from — the annual Federal Register publication that
-`docs/eligibility-extraction.md` §3 names as a Tier-1 source "identified but never
+`docs/archive/eligibility-extraction.md` §3 names as a Tier-1 source "identified but never
 attempted" because it is "published as an annual PDF… different tooling, out of
 scope for this script". It is:
 

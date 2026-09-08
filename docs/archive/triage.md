@@ -1,3 +1,20 @@
+> **ARCHIVED — research record, 2026-09-08.**
+>
+> The eligibility-extraction programme this document belongs to was unwound on
+> 2026-09-08 (#97). **Its measurements stand; its architecture does not.** Nothing
+> here is a constraint, a requirement, or an established fact about what is
+> possible. It is kept because re-deriving the measurements would be expensive,
+> and marked because four designs' worth of reasoning around them no longer
+> applies.
+>
+> The words are used in the older sense throughout: **`dangerous` and
+> "over-claim" here usually mean a rule *narrower* than reality**, which current
+> documents call an *under-claim*. Read directions carefully, and do not rewrite
+> them here.
+>
+> Current reasoning lives in [`../standing-decisions.md`](../standing-decisions.md)
+> and [`../pipeline-principles.md`](../pipeline-principles.md).
+
 # Triage (issue #68)
 
 The routing step between deterministic parsing and the agentic extractor. It

@@ -22,14 +22,15 @@ opening.** A tool that is impeccably accurate about twenty-one programs has
 failed most of the people who open it — and failed them invisibly, because
 nobody files a bug for a program they were never shown.
 
-Where the corpus stands today: **21 records** (16 verified), maintained by
-roughly **22,000 lines of pipeline code**. A Dane County resident in crisis could
-plausibly qualify for several times what we list.
+Where the corpus stands today: **21 records** (16 verified), all hand-authored.
+A Dane County resident in crisis could plausibly qualify for several times what
+we list.
 
-So **"we should add programs" is always an in-scope proposal**, and it does not
-wait on the extraction pipeline. A record is about ninety lines and the procedure
-is written down ([docs/data-authoring.md](docs/data-authoring.md)). A program
-whose eligibility nobody publishes is still worth adding — see
+So **"we should add programs" is always an in-scope proposal** — and since the
+extraction programme was unwound on 2026-09-08 (#97), it is the main job rather
+than an alternative to one. A record is about ninety lines and the procedure is
+written down ([docs/data-authoring.md](docs/data-authoring.md)). A program whose
+eligibility nobody publishes is still worth adding — see
 `the-river-food-pantry.ts` and `wi-211.ts`.
 
 ## Hard constraints
@@ -38,9 +39,8 @@ Do not violate these without agreement first. These are the product's promises;
 they do not move.
 
 Everything *else* that reads like a rule around here — which facts we ask, which
-categories are in scope, which sources we fetch, which model extracts, how the
-two failure directions are ranked — is a standing decision with a revisit
-condition, recorded in
+categories are in scope, which sources we fetch, how the two failure directions
+are ranked — is a standing decision with a revisit condition, recorded in
 [`docs/standing-decisions.md`](docs/standing-decisions.md). **That file is the
 only place design principles are argued.** Read it before concluding something is
 out of bounds; code comments and mechanism docs state rules and link there, and
@@ -155,8 +155,12 @@ If a port is unexpectedly busy, find out what is on it rather than moving along.
 - **No shebangs in `scripts/`.** Vite does not strip `#!` when a test imports a module,
   so it becomes an invalid token — and only on a cold transform cache, so it passes
   locally and breaks elsewhere. A guard test enforces this.
-- **A recursive schema cannot be enforced by strict structured output.** See
-  `scripts/llm-extraction/criterion-schema.ts`.
+- **A recursive schema cannot be enforced by strict structured output.** A
+  `Criterion` is a recursive expression language, which exceeds the API's
+  grammar-compilation limits, so `strict: true` cannot be used for it. Measured
+  in #5 §4.5 and recorded in the Facts table of
+  [`docs/standing-decisions.md`](docs/standing-decisions.md); the code that
+  demonstrated it was deleted in the unwind.
 - **Search snippets lie.** A snippet gave Wisconsin Shares' income threshold as 185%
   FPL; the real page says 200%. Fetch the primary source.
 - **Redirects:** record the destination, never the redirector.

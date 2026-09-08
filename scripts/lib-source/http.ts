@@ -1,7 +1,7 @@
 /**
  * A normal-looking browser User-Agent. Several sources this refresher depends on (WI state
  * sites, and historically huduser.gov) block requests carrying an obviously-automated UA
- * even though their robots.txt permits crawling -- see docs/data-sources.md. Using the same
+ * even though their robots.txt permits crawling -- see docs/archive/data-sources.md. Using the same
  * header for every fetch keeps that workaround in one place.
  */
 export const USER_AGENT =
@@ -15,7 +15,7 @@ export interface FetchTextResult {
    * The URL the response actually came from after any redirects (`Response.url`).
    * Equal to the requested URL when nothing redirected. scripts/ingest-descriptive
    * (#14) uses a host change here to tell "the source domain moved" apart from
-   * both "changed" and "gone" -- the FNS->FNA case from docs/data-sources.md.
+   * both "changed" and "gone" -- the FNS->FNA case from docs/archive/data-sources.md.
    */
   finalUrl: string;
 }

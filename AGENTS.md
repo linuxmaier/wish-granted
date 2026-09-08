@@ -114,7 +114,8 @@ src/engine/     three-valued (Kleene) evaluation; criteria are data, not functio
 src/interview/  screens + adaptive flow; exactly one question writes each fact
 src/data/       hand-authored program records, compiled to snapshot.json
 src/ui/         React 19; useInterview.ts is the only place answers are held
-scripts/        build-time tools, never shipped
+scripts/        two directories only: build-snapshot (ships the app) and
+                lib-source (source-access tools, no consumer — see its README)
 ```
 
 Read `docs/design.md` for the architecture and its rationale. It is expected to
@@ -138,15 +139,17 @@ same PR.
 ## Commands
 
 ```
-npm test                     # 153 unit tests (vitest)
+npm test                     # 120 unit tests (vitest)
 npm run typecheck
 npm run build                # regenerates + checks snapshot, then tsc + vite
 npm run test:e2e             # Playwright, 3 viewports
 npm run build:snapshot       # after editing any program record — commit both
+npm run test:lib-source      # 73 tests (Node's runner, not vitest)
 ```
 
-Script suites and their self-tests are per-directory: `npm run test:<name>` and
-`npm run <name>:self-test`. See `package.json`.
+Two runners, deliberately separate: `npm test` is vitest over the app;
+`test:lib-source` is Node's built-in runner over `scripts/lib-source`. A failure
+should say which one broke. `npm run test:all` runs vitest plus Playwright.
 
 **Windows:** the Bash tool's PATH lacks node and gh —
 `export PATH="$PATH:/c/Program Files/nodejs:/c/Program Files/GitHub CLI"`.

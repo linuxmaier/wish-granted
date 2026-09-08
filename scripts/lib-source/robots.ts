@@ -1,7 +1,7 @@
 /**
  * A small, dependency-free robots.txt parser and matcher.
  *
- * The spike (docs/data-sources.md) is emphatic on two points this module exists
+ * The spike (docs/archive/data-sources.md) is emphatic on two points this module exists
  * to honour:
  *
  *   1. "check robots.txt and ToS directly for any host you fetch; do not treat a

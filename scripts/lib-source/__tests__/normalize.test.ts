@@ -18,7 +18,7 @@ import {
  *
  * `PAGE_RUN_A` and `PAGE_RUN_B` are the *same* government page as it might be
  * served on two different requests: the eligibility content is byte-identical,
- * but everything Section 5 of docs/eligibility-extraction.md identified as
+ * but everything Section 5 of docs/archive/eligibility-extraction.md identified as
  * incidental churn differs -- CSRF token, session id in a link, a rotating
  * announcement banner, the "page last reviewed" date, an analytics blob, a
  * nonce, the copyright year, a "N views" counter, whitespace, and an HTML

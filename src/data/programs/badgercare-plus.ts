@@ -7,7 +7,7 @@ import { allOf, anyOf, incomeAtOrBelow, isTrue, livesIn, noneOf } from '@/domain
  * here. Confirmed directly from DHS's own income table
  * (dhs.wisconsin.gov/badgercareplus/fpl.htm, effective 2/1/2026-1/31/2027),
  * fetched via curl with a standard browser user agent (dhs.wisconsin.gov
- * 403s the WebFetch tool specifically, not curl -- see docs/data-sources.md):
+ * 403s the WebFetch tool specifically, not curl -- see docs/archive/data-sources.md):
  * three tiers, shown here by monthly dollar figure at household size 4 --
  *   Adult (parents/caretaker relatives AND childless adults, one shared
  *     column): $2,750.00/mo = 100% FPL

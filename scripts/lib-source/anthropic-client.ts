@@ -9,7 +9,7 @@
  * scripts/llm-extraction/run-eval.ts and the `claude-api` skill, NOT from
  * memory:
  *   - `claude-sonnet-5` -- the same model run-eval.ts measures and the one
- *     docs/eligibility-extraction.md Section 6.1 prices (cost.ts::PRICE). The
+ *     docs/archive/eligibility-extraction.md Section 6.1 prices (cost.ts::PRICE). The
  *     coordinator can override with AGENTIC_EXTRACT_MODEL.
  *   - `anthropic-version: 2023-06-01`.
  *   - `cache_control: { type: 'ephemeral' }` breakpoints are set by the caller

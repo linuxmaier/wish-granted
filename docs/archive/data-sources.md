@@ -1,3 +1,20 @@
+> **ARCHIVED — source survey, 2026-09-08.**
+>
+> Filed under the extraction programme that was unwound on 2026-09-08 (#97), but
+> most of this is a survey of **where benefit data lives**, not a pipeline design:
+> which sources were checked, their robots.txt status, what WI DHS and WI DOA
+> actually publish, why Grants.gov and Open Referral / HSDS are the wrong corpus,
+> and what PolicyEngine covers. **That part stands and is worth mining** when
+> widening the corpus — deliberately, rather than by re-fetching what was already
+> fetched.
+>
+> What does not stand: the tiering percentages and anything framed as a handoff
+> to the retired pipeline (the closing "What to hand #5 / #14" sections). The
+> tiering was derived by reading hand-picked excerpts rather than whole pages,
+> and three sources were later reclassified once that error was found.
+>
+> Current reasoning lives in [`../standing-decisions.md`](../standing-decisions.md).
+
 # Data sources — spike findings (issue #4)
 
 Investigated live in August 2026: fetched pages and robots.txt files, ran searches, read
