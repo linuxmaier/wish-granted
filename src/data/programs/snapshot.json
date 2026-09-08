@@ -1,5 +1,6 @@
 {
   "factVocabulary": [
+    "age",
     "annualHouseholdIncome",
     "city",
     "county",
@@ -15,7 +16,7 @@
     "state",
     "utilityShutoffRisk"
   ],
-  "generatedAt": "2026-09-05T21:21:40.204Z",
+  "generatedAt": "2026-09-08T01:11:30.694Z",
   "generator": "scripts/build-snapshot",
   "recordCount": 17,
   "records": [
@@ -957,9 +958,22 @@
             "kind": "anyOf",
             "of": [
               {
-                "kind": "incomeAtOrBelow",
-                "percent": 100,
-                "scale": "fpl"
+                "kind": "allOf",
+                "of": [
+                  {
+                    "fact": "age",
+                    "kind": "set",
+                    "op": "notIn",
+                    "values": [
+                      "65-plus"
+                    ]
+                  },
+                  {
+                    "kind": "incomeAtOrBelow",
+                    "percent": 100,
+                    "scale": "fpl"
+                  }
+                ]
               },
               {
                 "kind": "allOf",
@@ -1001,7 +1015,7 @@
       "eligibilityCaveats": [
         "Adults — both parents/caretaker relatives and adults without children — are capped at 100% of the federal poverty level regardless of household composition. Only pregnant people and children under 19 qualify up to 306% FPL, so at some income levels only your children may qualify, not you. Apply anyway.",
         "Children ages 1–18 with family income over 201% FPL are charged a monthly premium (no more than 5% of counted income). Coverage does not end for not paying it.",
-        "Covers ages 0–64 only. If everyone in the household is 65 or older, or needs disability- or long-term-care-related Medicaid, a different pathway applies — contact your agency.",
+        "Covers ages 0–64. If you are 65 or older, or need disability- or long-term-care-related Medicaid, a different Medicaid pathway applies — contact your agency. A younger spouse or child in your household may still qualify here.",
         "A new federal work requirement (from the One Big Beautiful Bill Act) starts affecting some members ages 19–64 beginning January 2027. Pregnant people, parents/caretakers of a child under 19, people with disabilities, and several other groups are exempt.",
         "Immigration status affects eligibility for some household members. Children are often eligible even when adults are not."
       ],

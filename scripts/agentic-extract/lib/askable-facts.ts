@@ -6,9 +6,11 @@
  * can never drift from the real vocabulary.
  *
  * Why this exists: PR #72's live run emitted `[age lte 64]` and
- * `[citizenshipStatus includesAny ...]` rules. Both facts are reserved; a rule
- * testing one can never be satisfied and silently rules everyone out -- the two
- * dangerous cases in that run. The wizard-of-oz agents avoided it precisely
+ * `[citizenshipStatus includesAny ...]` rules against facts no question
+ * supplied; a rule testing an unasked fact can never be satisfied and silently
+ * rules everyone out. (`age` is asked now -- issue #88 -- so only the
+ * citizenship case still applies, but the convention is unchanged.) The
+ * wizard-of-oz agents avoided it precisely
  * because they read `facts.ts` and reasoned about which facts were answerable,
  * then routed those conditions to `manualReview`. The production prompt did not
  * convey the convention; this closes that gap. The schema gate
@@ -24,7 +26,7 @@ export function askableFactKeys(): FactKey[] {
 
 export function describeAskableFacts(): string {
   const lines: string[] = [
-    'ASKABLE vs RESERVED FACTS. A `compare` or `set` node may ONLY reference a fact the interview actually asks. The facts below marked RESERVED are declared in the vocabulary but no question ever supplies them, so a rule that tests one can never be satisfied -- inside an allOf it silently rules everyone out, which is the worst error this system can make. If the source makes eligibility turn on a reserved fact (an age band, immigration/citizenship status, employment status, veteran or disability status), that condition belongs in a manualReview note (which may name the fact in prose), never in a compare/set node. The schema gate rejects any rule that violates this.',
+    'ASKABLE vs RESERVED FACTS. A `compare` or `set` node may ONLY reference a fact the interview actually asks. The facts below marked RESERVED are declared in the vocabulary but no question ever supplies them, so a rule that tests one can never be satisfied -- inside an allOf it silently rules everyone out, which is the worst error this system can make. If the source makes eligibility turn on a reserved fact (immigration/citizenship status, employment status, veteran or disability status), that condition belongs in a manualReview note (which may name the fact in prose), never in a compare/set node. Age IS askable -- it is asked as a band (under-60 / 60-64 / 65-plus), so an age boundary belongs in the rule. The schema gate rejects any rule that violates this.',
     '',
     'Askable (a rule may test these):',
   ];

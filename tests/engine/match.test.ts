@@ -57,6 +57,47 @@ describe('bucketing', () => {
     expect(eligible).toContain('badgercare-plus');
   });
 
+  describe('BadgerCare Plus and the age bound (issues #79, #88)', () => {
+    // A low-income Wisconsin adult with no children in the household. Which
+    // bucket badgercare-plus lands in is entirely a question of age.
+    const soloAdult: Answers = {
+      state: 'WI',
+      county: 'dane',
+      city: 'madison',
+      householdSize: 1,
+      annualHouseholdIncome: 12_000,
+      hasChildUnder5: false,
+      isPregnantOrPostpartum: false,
+      hasSchoolAgeChild: false,
+      currentBenefits: [],
+    };
+    const bucketOf = (answers: Answers) =>
+      matchAll(PROGRAMS, answers).all.find((m) => m.program.id === 'badgercare-plus')?.bucket;
+
+    it('rules out an over-65 childless adult, rather than showing them eligible (the #79 bug)', () => {
+      expect(bucketOf({ ...soloAdult, age: '65-plus' })).toBe('ruledOut');
+    });
+
+    it('confirms an under-65 childless adult at or below 100% FPL', () => {
+      expect(bucketOf({ ...soloAdult, age: 'under-60' })).toBe('eligible');
+      expect(bucketOf({ ...soloAdult, age: '60-64' })).toBe('eligible');
+    });
+
+    it('leaves the program at "might qualify" when age is unanswered -- never ruled out', () => {
+      const match = matchAll(PROGRAMS, soloAdult).all.find((m) => m.program.id === 'badgercare-plus');
+      expect(match?.bucket).toBe('maybe');
+      // ...and the interview knows age is the fact that would settle it.
+      expect(match?.missingFacts).toContain('age');
+    });
+
+    it('does not rule out an over-65 applicant with a child in the household -- the asymmetry (#5 §4.4)', () => {
+      // A 66-year-old raising a young grandchild: the grandchild qualifies
+      // through the household branch, which is not age-gated.
+      const grandparent: Answers = { ...soloAdult, age: '65-plus', hasChildUnder5: true, householdSize: 2, annualHouseholdIncome: 30_000 };
+      expect(bucketOf(grandparent)).toBe('eligible');
+    });
+  });
+
   it('keeps Wisconsin Shares at "might qualify" even when income and children clear, because the approved-activity requirement is never encoded as a pass', () => {
     // This is the manualReview cap's safety property: wisconsin-shares-child-
     // care.ts can never resolve to `pass` because it has no fact to confirm

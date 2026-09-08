@@ -1,5 +1,5 @@
 import type { Program } from '@/domain/program';
-import { allOf, anyOf, incomeAtOrBelow, isTrue, livesIn } from '@/domain/criteria';
+import { allOf, anyOf, incomeAtOrBelow, isTrue, livesIn, noneOf } from '@/domain/criteria';
 
 /**
  * Wisconsin never expanded Medicaid under the ACA, so the "childless adult"
@@ -40,6 +40,17 @@ import { allOf, anyOf, incomeAtOrBelow, isTrue, livesIn } from '@/domain/criteri
  * the threshold math above is exact and fully sourced, and manualReview
  * would under-claim a common, valuable case just to avoid a caveat doing its
  * job.
+ *
+ * The 0-64 adult scope moved from caveat prose into the rule (issue #88). It
+ * had been in eligibilityCaveats[2] only, so the engine -- which never reads
+ * caveats -- bucketed a 66-year-old at 80% FPL as `eligible` for a program
+ * that does not cover them (issue #79). `age` became an asked fact for this
+ * change, so the bound is now `noneOf('age', ['65-plus'])` on the adult
+ * branch. It is deliberately not at the top-level allOf: see the rule comment
+ * for why the household/pregnancy branch stays open regardless of age. The
+ * source claim itself is unchanged from the last verification -- the DHS
+ * index page's "ages 0 through 64" line, cited below -- so lastVerified is not
+ * moved; only the representation changed.
  *
  * Premium mechanics (201% FPL trigger, capped at 5% of income, coverage
  * never ends for nonpayment) confirmed verbatim from
@@ -83,7 +94,16 @@ export const badgercarePlus: Program = {
   eligibility: allOf(
     livesIn.wisconsin,
     anyOf(
-      incomeAtOrBelow('fpl', 100),
+      // The adult pathway (parents/caretakers and childless adults, 19-64, at
+      // or below 100% FPL). The age bound gates only this branch, not the
+      // household anyOf: a 66-year-old raising a grandchild has a grandchild
+      // who qualifies through the branch below, and ruling the whole record
+      // out on the applicant's age would be exactly the wrong-exclusion error
+      // #5 §4.4 warns against. An unanswered age leaves `noneOf` at `unknown`,
+      // so this branch stays `unknown` and the record stays in "might qualify"
+      // -- it is never ruled out for a blank answer. Only an explicit "65 or
+      // older" fails it. See issue #88.
+      allOf(noneOf('age', ['65-plus']), incomeAtOrBelow('fpl', 100)),
       allOf(
         anyOf(isTrue('isPregnantOrPostpartum'), isTrue('hasChildUnder5'), isTrue('hasSchoolAgeChild')),
         incomeAtOrBelow('fpl', 306),
@@ -93,7 +113,7 @@ export const badgercarePlus: Program = {
   eligibilityCaveats: [
     'Adults — both parents/caretaker relatives and adults without children — are capped at 100% of the federal poverty level regardless of household composition. Only pregnant people and children under 19 qualify up to 306% FPL, so at some income levels only your children may qualify, not you. Apply anyway.',
     'Children ages 1–18 with family income over 201% FPL are charged a monthly premium (no more than 5% of counted income). Coverage does not end for not paying it.',
-    'Covers ages 0–64 only. If everyone in the household is 65 or older, or needs disability- or long-term-care-related Medicaid, a different pathway applies — contact your agency.',
+    'Covers ages 0–64. If you are 65 or older, or need disability- or long-term-care-related Medicaid, a different Medicaid pathway applies — contact your agency. A younger spouse or child in your household may still qualify here.',
     'A new federal work requirement (from the One Big Beautiful Bill Act) starts affecting some members ages 19–64 beginning January 2027. Pregnant people, parents/caretakers of a child under 19, people with disabilities, and several other groups are exempt.',
     'Immigration status affects eligibility for some household members. Children are often eligible even when adults are not.',
   ],

@@ -11,6 +11,10 @@
  * Adding a new fact is deliberately a three-step change: declare it here, have
  * some program reference it, and add a question that supplies it. The test in
  * tests/data/vocabulary.test.ts fails if those get out of sync.
+ *
+ * When a fact is worth asking is a coverage question, not a "does an existing
+ * rule already need it" question -- see RESERVED_FACT_KEYS below and
+ * docs/data-authoring.md, "When a fact earns a question".
  */
 
 export const FACT_KEYS = [
@@ -42,11 +46,11 @@ export const FACT_KEYS = [
   // See the FactSpec below for why this is a boolean, not a dollar figure.
   'recentIncomeDrop',
 
-  // --- Declared but not asked in v1 ---------------------------------------
+  // --- Declared but not asked ------------------------------------------------
   // Reserved so the schema can carry the deferred categories (veterans,
-  // health/disability) without a migration. No v1 program references these,
-  // and no v1 question supplies them; the vocabulary test allows exactly the
-  // keys listed in RESERVED_FACT_KEYS to be unused.
+  // health/disability) without a migration. No program references these, and
+  // no question supplies them; the vocabulary test allows exactly the keys
+  // listed in RESERVED_FACT_KEYS to be unused.
   'isVeteran',
   'hasDisability',
 ] as const;
@@ -59,15 +63,28 @@ export type FactKey = (typeof FACT_KEYS)[number];
  * Two reasons a fact sits here. Some belong to deferred categories (veterans,
  * health/disability) and are declared so adding those categories is a data
  * change rather than a schema change. The others -- `citizenshipStatus`,
- * `employmentStatus`, `age` -- are cases where the vocabulary is ready but no
- * v1 program rule actually depends on them, so asking would be pure friction.
+ * `employmentStatus` -- are cases where the friction of asking is not yet
+ * bought back by the coverage it would unlock.
  *
- * Immigration status is the pointed example. It genuinely affects federal food
- * benefits, but the rules are full of exceptions (children frequently qualify
- * when adults do not), and a rules engine that got them slightly wrong would
- * tell a family they are ineligible when they are not. That is the worst error
- * this app can make, so v1 declines to encode it: the affected programs carry a
- * plain-language caveat instead, and stay in "might qualify".
+ * The test for whether a fact earns a question is coverage: does asking it
+ * unlock programs worth including? Not "does an existing rule already need
+ * it" -- held that way the vocabulary can never grow, because a fact stays
+ * unasked until a rule needs it and no rule can need an unasked fact. `age`
+ * used to sit here on that circular reasoning; it moved out when the Tier 3
+ * corpus (docs/eligibility-extraction-tier3.md) showed a whole class of
+ * age-gated programs -- SeniorCare, the Medicare Savings Programs, Homestead
+ * Credit -- blocked behind it, and `badgercare-plus` was already carrying its
+ * 0-64 bound as unenforced caveat prose. See docs/data-authoring.md, "When a
+ * fact earns a question".
+ *
+ * Immigration status is the case that stays. It genuinely affects federal
+ * food benefits, but the rules are full of exceptions (children frequently
+ * qualify when adults do not), and a rules engine that got them slightly
+ * wrong would tell a family they are ineligible when they are not. That is
+ * the worst error this app can make, so it declines to encode it: the
+ * affected programs carry a plain-language caveat instead, and stay in "might
+ * qualify". The coverage argument does not override that -- it is applied
+ * honestly per fact, and here it loses.
  *
  * tests/data/vocabulary.test.ts allows exactly these keys to be unused, and
  * fails on any other unused or unaskable fact.
@@ -77,7 +94,6 @@ export const RESERVED_FACT_KEYS: readonly FactKey[] = [
   'hasDisability',
   'citizenshipStatus',
   'employmentStatus',
-  'age',
 ];
 
 export type FactType = 'number' | 'boolean' | 'enum' | 'enumSet';
@@ -105,6 +121,19 @@ export interface FactSpec {
   /** How a value is rendered inside an explanation. */
   readonly format?: 'currency' | 'plain';
 }
+
+/**
+ * Age is asked as a band, not an exact number. Every rule that turns on age --
+ * BadgerCare Plus's 0-64 adult scope, and the senior programs the Tier 3
+ * corpus queued up (SeniorCare and the Medicare Savings Programs at 65+,
+ * Homestead Credit at 62+, FoodShare's elderly provisions at 60+) -- needs a
+ * boundary, never a precise age. A band asks for less, reads as a life-stage
+ * question rather than an ID check, and is easier to answer. The cut points
+ * are 60 and 65: 62 (Homestead) approximates to the 60-64 band, which
+ * over-includes 60-61-year-olds rather than excluding anyone -- the safe
+ * direction under #5 §4.4 (under-claiming is the worse error).
+ */
+export const AGE_BANDS = ['under-60', '60-64', '65-plus'] as const;
 
 export const CITIZENSHIP_STATUSES = [
   'us-citizen',
@@ -180,7 +209,17 @@ export const FACTS: Readonly<Record<FactKey, FactSpec>> = {
     label: 'annual household income',
     format: 'currency',
   },
-  age: { key: 'age', type: 'number', label: 'age' },
+  age: {
+    key: 'age',
+    type: 'enum',
+    label: 'age',
+    options: AGE_BANDS,
+    optionLabels: {
+      'under-60': 'under 60',
+      '60-64': '60 to 64',
+      '65-plus': '65 or older',
+    },
+  },
   citizenshipStatus: {
     key: 'citizenshipStatus',
     type: 'enum',

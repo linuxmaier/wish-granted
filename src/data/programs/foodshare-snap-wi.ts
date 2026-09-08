@@ -59,6 +59,18 @@ export const foodshareSnapWi: Program = {
     // qualify even though the gross-income check above would say no. We do
     // not have facts for disability status or the deduction stack needed to
     // evaluate this, so it stays a caveat rather than a rule.
+    //
+    // Issue #88 added an `age` fact, so the "elderly" (60+) half of the
+    // trigger is now askable -- checked, and it is still not encodable. The
+    // provision is "elderly, blind, OR disabled": age is one disjunct of
+    // three and `hasDisability` stays reserved, so an age-only gate would
+    // wrongly rule out the blind/disabled cases. It is any household member,
+    // not necessarily the applicant whose age we ask. And qualifying still
+    // turns on the 100% FPL *net*-income test after a deduction stack this
+    // engine does not model. The 60+ separate-household test additionally
+    // measures the income of the *other* residents, excluding the applicant,
+    // and no fact isolates a household subset (docs/eligibility-extraction.md).
+    // So the whole provision stays prose.
     'If your household includes someone who is elderly, blind, or disabled, you may still qualify even with gross income above 200% of the poverty line — a different rule based on income after deductions applies. Check with your county agency or ACCESS Wisconsin.',
   ],
 

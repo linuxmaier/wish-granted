@@ -482,6 +482,63 @@ until all three are done:
 Every fact must be written by exactly **one** question. Two questions writing the same fact
 will silently overwrite each other, and the vocabulary test rejects it.
 
+### When a fact earns a question
+
+**A fact is worth asking when it unlocks programs worth including.** The test is coverage,
+not whether a rule already in the dataset happens to reference it.
+
+The old rule was the opposite — "no current rule needs this, so asking is pure friction" —
+and it is circular: a fact stays unasked because no rule needs it, and no rule can need a
+fact the interview never supplies. Held that way the vocabulary can never grow, and the
+dataset quietly caps itself at whatever facts it started with. `age` sat unasked under that
+reasoning until issue #88: the Tier 3 corpus
+([eligibility-extraction-tier3.md](eligibility-extraction-tier3.md)) showed a whole class of
+programs — SeniorCare, the Medicare Savings Programs (QMB/SLMB/SLMB+/QDWI), Homestead
+Credit, and more — that could not be added at all while age was unaskable, and
+`badgercare-plus` was already carrying its 0–64 bound as caveat prose the engine never
+evaluates.
+
+Friction is still a real cost, weighed honestly against what the question buys:
+
+- **A question is expensive.** It is a screen for someone who may be in a crisis. Prefer
+  extending an existing question, and keep the new one on its own screen so `flow.ts` can
+  drop it the moment nothing undecided needs it (see the `about-you` screen — most people
+  never see it).
+- **Ask for the least that the rules need.** Age is asked as a band, not a number: every
+  age-gated rule needs a boundary (0–64, 60+, 62+, 65+), never a precise age, and a band
+  reads as a life-stage question rather than an ID check.
+- **The coverage argument can still lose.** `citizenshipStatus` stays reserved: immigration
+  rules are full of exceptions (children often qualify when adults do not), and a rule that
+  gets them slightly wrong tells a family they are ineligible when they are not — the worst
+  error this app makes. The affected programs carry a caveat and stay in "might qualify".
+  The new rule does not mean asking everything; it means the coverage question gets asked
+  honestly, per fact.
+
+### An unasked fact must never bucket a program `eligible` or `ruledOut` on its own (issue #79)
+
+If a program's eligibility turns on a fact and that fact is unanswered, the program stays
+in **"might qualify"** — `unknown` is a first-class value in the engine, and that is the
+honest bucket. Two consequences for authoring:
+
+- **Never leave a real eligibility condition in `eligibilityCaveats` prose alone.**
+  `match.ts` evaluates the `Criterion` tree only; it never reads caveats. A condition that
+  lives only in prose is invisible to the engine, so a program can bucket `eligible` for
+  someone the caveat plainly excludes (this is exactly what `badgercare-plus` did to a
+  66-year-old before #88). If the condition is decidable from an asked fact, encode it in
+  the tree. If it is not, use `manualReview` so the verdict is capped at "might qualify".
+- **Encoding a bound narrows the rule — do it carefully.** #5 §4.4's asymmetry stands:
+  wrongly excluding someone is worse than wrongly including them. Gate only the branch that
+  genuinely requires the condition. `badgercare-plus`'s age bound sits on the childless-adult
+  income branch, not the top-level `allOf`, so a 66-year-old raising a grandchild still
+  matches through the household branch. And because `noneOf('age', ['65-plus'])` returns
+  `unknown` for a blank answer, a declined age leaves the record at "might qualify" — never
+  ruled out.
+
+The extractor pipeline follows the same rule: `RESERVED_FACT_KEYS` (facts.ts) is the single
+source of truth for both the engine's vocabulary test and the extraction schema gate
+(`scripts/llm-extraction/schema-gate.ts`). A fact moving out of that list makes it encodable
+on both sides at once.
+
 The snapshot's `factVocabulary` (see [design.md](design.md), "The shippable snapshot") is
 recomputed from the rules on every `npm run build:snapshot`, so a new fact appears there
 automatically once some rule references it — you do not edit it by hand. `npm run build`

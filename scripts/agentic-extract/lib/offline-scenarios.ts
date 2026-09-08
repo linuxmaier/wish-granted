@@ -23,7 +23,6 @@ import * as F from './fixtures-offline.ts';
 const DATE = '2026-09-06';
 
 const cmp = (fact: string, value: unknown) => ({ kind: 'compare', fact, op: 'eq', value });
-const cmpOp = (fact: string, op: string, value: unknown) => ({ kind: 'compare', fact, op, value });
 const income = (scale: string, percent: number) => ({ kind: 'incomeAtOrBelow', scale, percent });
 
 export interface OfflineScenario {
@@ -223,12 +222,15 @@ const stepBudget: OfflineScenario = {
 
 /**
  * 5. A rule over a RESERVED fact is rejected by the gate and sent back; the
- *    model re-routes the condition to manualReview and the corrected record is
- *    accepted with no reserved fact left in the tree. (PR #72 defect 1 --
- *    the two dangerous cases.)
+ *    model re-routes that condition to manualReview and the corrected record
+ *    is accepted with no reserved fact left in the tree. (PR #72 defect 1.)
+ *    `citizenshipStatus` is still reserved and is the rejected condition here;
+ *    `age` became askable in issue #88, so the corrected rule *keeps* the
+ *    65-or-older band as a real `set` node -- the point is that the gate
+ *    now draws the line exactly where the engine does.
  */
 const reservedFactRejected: OfflineScenario = {
-  name: 'reserved facts: a rule over age/citizenshipStatus is gate-rejected, re-routed to manualReview',
+  name: 'reserved facts: a citizenshipStatus rule is gate-rejected and re-routed; the age band survives',
   async run() {
     const context = ctx({
       programId: 'seniorcare',
@@ -239,7 +241,7 @@ const reservedFactRejected: OfflineScenario = {
       kind: 'allOf',
       of: [
         cmp('state', 'WI'),
-        cmpOp('age', 'gte', 65),
+        { kind: 'set', fact: 'age', op: 'in', values: ['65-plus'] },
         { kind: 'set', fact: 'citizenshipStatus', op: 'includesAny', values: ['us-citizen', 'qualified-immigrant'] },
       ],
     };
@@ -247,10 +249,11 @@ const reservedFactRejected: OfflineScenario = {
       kind: 'allOf',
       of: [
         cmp('state', 'WI'),
+        { kind: 'set', fact: 'age', op: 'in', values: ['65-plus'] },
         {
           kind: 'manualReview',
           note:
-            'SeniorCare requires age 65+ and U.S. citizen / qualifying immigrant status. Neither `age` nor `citizenshipStatus` is a fact the interview asks, so both conditions are routed here rather than encoded as a rule that could never be satisfied.',
+            'SeniorCare also requires U.S. citizen / qualifying immigrant status. `citizenshipStatus` is not a fact the interview asks, so that condition is routed here rather than encoded as a rule that could never be satisfied. The 65-or-older band above is an asked fact and stays in the rule.',
         },
       ],
     };
@@ -309,7 +312,7 @@ const raisedBudgetHonored: OfflineScenario = {
               kind: 'allOf',
               of: [
                 cmp('state', 'WI'),
-                { kind: 'manualReview', note: 'Age 65+ and citizenship gate SeniorCare; neither is an asked fact.' },
+                { kind: 'manualReview', note: 'Citizenship gates SeniorCare and is not an asked fact.' },
               ],
             },
             provenance: [{ quote: 'Wisconsin resident', url: F.SENIORCARE_INDEX_URL }],
