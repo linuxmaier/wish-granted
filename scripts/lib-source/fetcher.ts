@@ -23,13 +23,13 @@
  * lib/pdf.ts instead of the HTML renderer. Robots.txt and the hard-deny list
  * gate PDF URLs exactly as they gate pages -- it is the same fetch path.
  */
-import { USER_AGENT } from '../../refresh-income-tables/lib/http.ts';
+import { USER_AGENT } from './http.ts';
 import {
   parseRobots,
   isAllowed,
   isHardDenied,
   type RobotsTxt,
-} from '../../ingest-descriptive/lib/robots.ts';
+} from './robots.ts';
 
 /** `'pdf'` when the response was `application/pdf` or began with `%PDF-`. */
 export type ContentKind = 'html' | 'pdf';

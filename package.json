@@ -44,6 +44,8 @@
     "extract:triage:self-test": "node --import ./scripts/triage/register.mjs scripts/triage/index.ts --self-test",
     "test:triage": "node --test \"scripts/triage/lib/__tests__/*.test.ts\"",
     "typecheck:triage": "tsc -p scripts/triage/tsconfig.json --noEmit",
+    "test:lib-source": "node --test \"scripts/lib-source/__tests__/*.test.ts\"",
+    "typecheck:lib-source": "tsc -p scripts/lib-source/tsconfig.json --noEmit",
     "check:links": "node scripts/check-links.mjs",
     "check:sources": "node --use-system-ca --import ./scripts/check-sources/register.mjs scripts/check-sources/index.ts",
     "check:sources:self-test": "node --import ./scripts/check-sources/register.mjs scripts/check-sources/index.ts --self-test",

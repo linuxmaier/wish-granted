@@ -6,10 +6,10 @@ import { dirname, resolve } from 'node:path';
 
 import { recoverEmptyPage } from '../recover.ts';
 import type { BrowserRenderer } from '../browser.ts';
-import { normalize } from '../../../check-sources/lib/normalize.ts';
-import { renderStructured } from '../../../agentic-extract/lib/html-structure.ts';
+import { normalize } from '../normalize.ts';
+import { renderStructured } from '../html-structure.ts';
 
-const FIXTURES = resolve(dirname(fileURLToPath(import.meta.url)), '../../../../tests/fixtures/js-pages');
+const FIXTURES = resolve(dirname(fileURLToPath(import.meta.url)), '../../../tests/fixtures/js-pages');
 const measure = (h: string) => normalize(h).length;
 
 const SHELL = (body: string) =>

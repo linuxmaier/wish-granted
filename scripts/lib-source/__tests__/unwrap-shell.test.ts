@@ -2,8 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { unwrapContentShell } from '../unwrap-shell.ts';
-import { normalize } from '../../../check-sources/lib/normalize.ts';
-import { renderStructured } from '../../../agentic-extract/lib/html-structure.ts';
+import { normalize } from '../normalize.ts';
+import { renderStructured } from '../html-structure.ts';
 
 const bigBody = (inner: string) =>
   `<main><h1>Program</h1>${inner}<p>${'eligibility detail sentence. '.repeat(40)}</p></main>`;

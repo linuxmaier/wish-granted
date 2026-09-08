@@ -2,13 +2,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  sha256,
   normalize,
   normalizeToResult,
   isolateContentRegion,
   isolateContentRegionWithSource,
   looksLikeHtml,
 } from '../normalize.ts';
-import { sha256 } from '../hashes-file.ts';
+
 
 /**
  * The acceptance criterion from issue #7 that is actually hard: "stable across

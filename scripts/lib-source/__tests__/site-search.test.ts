@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { siteSearch, extractHrefs, formatSearchResult } from '../site-search.ts';
 import { createFixtureFetcher } from '../fetcher.ts';
-import { parseRobots, isAllowed } from '../../../ingest-descriptive/lib/robots.ts';
+import { parseRobots, isAllowed } from '../robots.ts';
 import * as F from '../fixtures-offline.ts';
 
 const fx = () => createFixtureFetcher(F.offlineFixtures('2026-09-06'));

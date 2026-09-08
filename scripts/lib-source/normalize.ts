@@ -38,6 +38,7 @@
  * the reviewer to ignore the job. See lib/__tests__/normalize.test.ts for the
  * run-to-run stability contract this has to hold.
  */
+import { createHash } from 'node:crypto';
 
 const STRIP_WHOLE = ['script', 'style', 'noscript', 'template', 'svg', 'head', 'iframe', 'form'];
 const STRIP_CHROME = ['nav', 'header', 'footer', 'aside'];
@@ -280,4 +281,12 @@ function collapse(text: string): string {
     .filter((line) => line.length > 0)
     .join('\n')
     .trim();
+}
+
+/**
+ * Stable digest of a normalised page, for comparing two captures of the same
+ * source. Generic; carries no change-detection state of its own.
+ */
+export function sha256(text: string): string {
+  return `sha256:${createHash('sha256').update(text, 'utf8').digest('hex')}`;
 }

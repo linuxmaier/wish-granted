@@ -17,7 +17,7 @@
 import type { Fetcher, FetchOutcome } from './fetcher.ts';
 import { renderStructured, flattenText } from './html-structure.ts';
 import { extractPdf } from './pdf.ts';
-import { recoverEmptyPage, type RecoveryMethod } from '../../render-fallback/lib/recover.ts';
+import { recoverEmptyPage, type RecoveryMethod } from './recover.ts';
 
 /** Below this many chars of structured text, a 200 page is treated as "empty"
  *  and handed to the #76 recovery ladder (form-shell unwrap, then optionally a

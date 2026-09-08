@@ -28,12 +28,12 @@
  * - **Desktop-Chrome User-Agent**, the shared one from
  *   `scripts/refresh-income-tables/lib/http.ts`.
  */
-import { USER_AGENT } from '../../refresh-income-tables/lib/http.ts';
+import { USER_AGENT } from './http.ts';
 import {
   parseRobots,
   isAllowed,
   isHardDenied,
-} from '../../ingest-descriptive/lib/robots.ts';
+} from './robots.ts';
 
 export type RenderOutcome =
   | { readonly ok: true; readonly html: string; readonly finalUrl: string }

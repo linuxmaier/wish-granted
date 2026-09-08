@@ -21,7 +21,7 @@
  * it throws `MissingApiKeyError` when `ANTHROPIC_API_KEY` is absent so the
  * harness reports SKIPPED rather than a fabricated result.
  */
-import { MissingApiKeyError } from '../../program-benchmark/lib/extractor.ts';
+import { MissingApiKeyError } from './errors.ts';
 import type { ModelClient, ModelRequest, ModelResponse, ResponseBlock } from './model-client.ts';
 
 const DEFAULT_MODEL = 'claude-sonnet-5';
