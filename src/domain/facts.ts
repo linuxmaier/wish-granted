@@ -12,9 +12,10 @@
  * some program reference it, and add a question that supplies it. The test in
  * tests/data/vocabulary.test.ts fails if those get out of sync.
  *
- * When a fact is worth asking is a coverage question, not a "does an existing
- * rule already need it" question -- see RESERVED_FACT_KEYS below and
- * docs/data-authoring.md, "When a fact earns a question".
+ * A fact is worth asking when it unlocks programs worth including -- coverage,
+ * not "does an existing rule already need it". See docs/standing-decisions.md,
+ * "When a fact earns a question", for the rule and why; docs/data-authoring.md
+ * for the procedure.
  */
 
 export const FACT_KEYS = [
@@ -60,31 +61,12 @@ export type FactKey = (typeof FACT_KEYS)[number];
 /**
  * Facts declared ahead of any question that supplies them.
  *
- * Two reasons a fact sits here. Some belong to deferred categories (veterans,
- * health/disability) and are declared so adding those categories is a data
- * change rather than a schema change. The others -- `citizenshipStatus`,
- * `employmentStatus` -- are cases where the friction of asking is not yet
- * bought back by the coverage it would unlock.
+ * `isVeteran` / `hasDisability` are declared so their categories can be added
+ * as a data change rather than a schema change. `citizenshipStatus` and
+ * `employmentStatus` are not asked today.
  *
- * The test for whether a fact earns a question is coverage: does asking it
- * unlock programs worth including? Not "does an existing rule already need
- * it" -- held that way the vocabulary can never grow, because a fact stays
- * unasked until a rule needs it and no rule can need an unasked fact. `age`
- * used to sit here on that circular reasoning; it moved out when the Tier 3
- * corpus (docs/eligibility-extraction-tier3.md) showed a whole class of
- * age-gated programs -- SeniorCare, the Medicare Savings Programs, Homestead
- * Credit -- blocked behind it, and `badgercare-plus` was already carrying its
- * 0-64 bound as unenforced caveat prose. See docs/data-authoring.md, "When a
- * fact earns a question".
- *
- * Immigration status is the case that stays. It genuinely affects federal
- * food benefits, but the rules are full of exceptions (children frequently
- * qualify when adults do not), and a rules engine that got them slightly
- * wrong would tell a family they are ineligible when they are not. That is
- * the worst error this app can make, so it declines to encode it: the
- * affected programs carry a plain-language caveat instead, and stay in "might
- * qualify". The coverage argument does not override that -- it is applied
- * honestly per fact, and here it loses.
+ * Each of these is a standing decision with a reopen condition, recorded in
+ * docs/standing-decisions.md -- do not re-derive the reasoning here.
  *
  * tests/data/vocabulary.test.ts allows exactly these keys to be unused, and
  * fails on any other unused or unaskable fact.
@@ -123,15 +105,13 @@ export interface FactSpec {
 }
 
 /**
- * Age is asked as a band, not an exact number. Every rule that turns on age --
- * BadgerCare Plus's 0-64 adult scope, and the senior programs the Tier 3
- * corpus queued up (SeniorCare and the Medicare Savings Programs at 65+,
- * Homestead Credit at 62+, FoodShare's elderly provisions at 60+) -- needs a
- * boundary, never a precise age. A band asks for less, reads as a life-stage
- * question rather than an ID check, and is easier to answer. The cut points
- * are 60 and 65: 62 (Homestead) approximates to the 60-64 band, which
- * over-includes 60-61-year-olds rather than excluding anyone -- the safe
- * direction under #5 §4.4 (under-claiming is the worse error).
+ * Age is asked as a band, not an exact number: every rule that turns on age
+ * needs a boundary (0-64, 60+, 62+, 65+), never a precise age.
+ *
+ * The cut points are 60 and 65. Homestead Credit's 62+ approximates to the
+ * 60-64 band, which over-includes 60- and 61-year-olds rather than excluding
+ * anyone -- an over-inclusion here cannot say "you qualify" on its own, it only
+ * keeps the program in "might qualify".
  */
 export const AGE_BANDS = ['under-60', '60-64', '65-plus'] as const;
 
@@ -171,11 +151,9 @@ export const BENEFIT_ENROLLMENTS = [
   'wheap-energy-assistance',
   'housing-choice-voucher',
   // Confirmed on Lifeline's own qualify page (see lifeline-phone-internet.ts's
-  // source note) as one of Lifeline's categorical-eligibility programs. Added
-  // to the shared checklist rather than a per-program caveat: this is already
-  // one `multi` question, so the marginal cost of one more checkbox is zero,
-  // and a caveat would leave someone in federal public housing wrongly ruled
-  // out instead of correctly matched. See docs/design.md, issue #9.
+  // source note). In the shared checklist rather than a per-program caveat: the
+  // marginal cost of one more checkbox on an existing `multi` question is zero.
+  // See docs/standing-decisions.md, "When a fact earns a question".
   'federal-public-housing',
 ] as const;
 

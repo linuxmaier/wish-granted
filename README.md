@@ -62,10 +62,15 @@ tests/
   ui/          jsdom smoke test
   e2e/         Whole interviews in real Chromium
 docs/
-  brief.md            Original scope
-  design.md           Architecture decisions and rationale
-  data-authoring.md   How to add and verify program records
+  brief.md                Original scope
+  design.md               Architecture decisions and rationale
+  data-authoring.md       How to add and verify program records
+  standing-decisions.md   What is settled fact, what is a judgment, and when to reopen it
 ```
+
+`AGENTS.md` (aliased as `CLAUDE.md`) is the entry point for anyone — human or agent —
+picking up work: the grounding principles, and where every other principle is written
+down.
 
 `src/domain` and `src/engine` import nothing from React and can be used independently.
 

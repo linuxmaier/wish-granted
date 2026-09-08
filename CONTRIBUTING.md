@@ -4,6 +4,9 @@ Written for anyone picking up work here — human or agent. It lives in the repo
 purpose: an earlier version sat in a scratch directory, got cleared, and a
 contributor worked a whole issue without it.
 
+Agents: read [`AGENTS.md`](AGENTS.md) first — it is shorter, and it says where
+principles live so you do not have to infer it. This file is the detail.
+
 ## The product in one paragraph
 
 An interview that helps low-income people in Madison / Dane County / Wisconsin find
@@ -12,9 +15,36 @@ audience is people in or near financial crisis, often on an old phone, on metere
 data, sometimes at a library computer, sometimes reading English as a second
 language.
 
+## The job has two halves
+
+**Be right about the programs we show, and show enough programs to be worth
+opening.** A tool that is impeccably accurate about twenty-one programs has
+failed most of the people who open it — and failed them invisibly, because
+nobody files a bug for a program they were never shown.
+
+Where the corpus stands today: **21 records** (16 verified), maintained by
+roughly **22,000 lines of pipeline code**. A Dane County resident in crisis could
+plausibly qualify for several times what we list.
+
+So **"we should add programs" is always an in-scope proposal**, and it does not
+wait on the extraction pipeline. A record is about ninety lines and the procedure
+is written down ([docs/data-authoring.md](docs/data-authoring.md)). A program
+whose eligibility nobody publishes is still worth adding — see
+`the-river-food-pantry.ts` and `wi-211.ts`.
+
 ## Hard constraints
 
-Do not violate these without agreement first.
+Do not violate these without agreement first. These are the product's promises;
+they do not move.
+
+Everything *else* that reads like a rule around here — which facts we ask, which
+categories are in scope, which sources we fetch, which model extracts, how the
+two failure directions are ranked — is a standing decision with a revisit
+condition, recorded in
+[`docs/standing-decisions.md`](docs/standing-decisions.md). **That file is the
+only place design principles are argued.** Read it before concluding something is
+out of bounds; code comments and mechanism docs state rules and link there, and
+should not be carrying the reasoning themselves.
 
 1. **No answers ever leave the browser.** No network calls at runtime, no
    `localStorage` / `sessionStorage` / cookies / IndexedDB, no answers in the URL, no
@@ -25,20 +55,31 @@ Do not violate these without agreement first.
 2. **Never invent data.** Program details, income limits, dollar figures, phone
    numbers, URLs and eligibility rules come from a source you actually fetched. If you
    cannot fetch it, say so and leave the field unverified. A plausible wrong number in
-   a benefits tool is the worst failure this project has.
+   a benefits tool does damage a missing one does not.
 3. **`lastVerified` means a person checked the source on that date**, and anything
    left unconfirmed is named in the record's comment. See `docs/data-authoring.md`.
    Never write a date you did not earn.
-4. **Telling someone they are ineligible when they are not is the worst engine
-   error.** When a rule is genuinely uncertain, leave it `unknown` — it lands in
-   "might qualify" — rather than guessing `fail`. Under-claim, always.
+4. **When a rule is genuinely uncertain, leave it `unknown`** — it lands in "might
+   qualify" — rather than guessing `fail` or `pass`.
+
+   Of the two ways to be wrong, telling someone they qualify when they do not is
+   worse: they spend a morning and a bus fare on an application that was never going
+   to work, and they stop trusting the next thing we tell them. But telling someone
+   they are ruled out when they are not is also a real harm, not a safe default — it
+   is help they never hear about. Neither is infinitely worse than the other.
+
+   **This ranking only applies when choosing between `eligible` and `ruledOut`.** It
+   does *not* apply to whether a program belongs in the dataset at all: a record that
+   abstains cannot tell anyone they qualify, so leaving programs out buys no safety
+   and costs reach. See [`docs/standing-decisions.md`](docs/standing-decisions.md),
+   "The two harms".
 5. **No new runtime dependencies** without agreement. Dev dependencies still get
    flagged. A CDN font would violate both the privacy guarantee and the CSP.
 
 ## Commands
 
 ```
-npm test                        # vitest, 134 tests
+npm test                        # vitest, 153 tests
 npm run test:refresh-income-tables   # Node's own runner, 19 tests (different runner)
 npm run test:e2e                # Playwright, 81 tests, 3 viewports
 npm run test:e2e:prod           # Playwright vs the production build + headers, 4 tests

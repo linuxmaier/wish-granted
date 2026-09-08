@@ -332,62 +332,35 @@ appear, and in what order, adapts.
 
 ### What the interview does not ask
 
-`citizenshipStatus` and `employmentStatus` are declared in the fact vocabulary but no rule
-consults them, so asking would be friction with no payoff — and `flow.ts` would score them
-zero and never show them anyway.
+`citizenshipStatus` and `employmentStatus` are declared in the fact vocabulary but not
+asked, so `flow.ts` scores them zero and never shows them. Both are standing decisions with
+reopen conditions — see [standing-decisions.md](standing-decisions.md); the reasoning is
+recorded there once and is not repeated here.
 
-Immigration status is the pointed case. It genuinely affects federal food benefits, but the
-rules are full of exceptions — children frequently qualify when adults do not — and an
-engine that got them slightly wrong would tell a family they are ineligible when they are
-not. That is the worst error this app can make. The interview declines to encode it;
-affected programs carry a plain-language caveat and stay in "might qualify".
+`age` used to sit in that list. Issue #88 replaced the rule that kept it there, and it is
+now asked as a band (`under 60` / `60 to 64` / `65 or older`) on its own `about-you` screen.
+The screen is skippable, and a blank answer leaves the affected programs at "might qualify"
+— never ruled out.
 
-`age` used to sit in that list on the same "no rule needs it" reasoning. Issue #88 replaced
-that rule — a fact earns a question when it *unlocks programs worth including*, not when a
-rule already references it (see [data-authoring.md](data-authoring.md), "When a fact earns
-a question"). Age is now asked, as a band (`under 60` / `60 to 64` / `65 or older`) on its
-own `about-you` screen: `badgercare-plus` covers ages 0–64 and had been carrying that bound
-as caveat prose the engine never evaluated (issue #79), and the Tier 3 corpus has a whole
-cluster of senior programs queued behind it. The band, not an exact number, because every
-age-gated rule needs a boundary and a range asks for less. It is skippable, and a blank
-answer leaves the affected programs at "might qualify" — never ruled out.
+### What the corpus actually gates on (issue #9)
 
-### Frequency alone doesn't decide whether a fact earns a question (issue #9)
+Issue #9 re-derived the fact vocabulary from what the verified 15-program corpus actually
+gates on, rather than from the programs the interview was originally designed around. Raw
+counts: `state` gates 14/15 programs, `annualHouseholdIncome`/`householdSize` 10/15,
+`currentBenefits` 8/15, `county` 5/15, `housingStatus` 3/15, `hasSchoolAgeChild` 2/15, and
+six facts — `city`, `facingLossOfHousing`, `utilityShutoffRisk`, `paysHeatingCost`,
+`isPregnantOrPostpartum`, `hasChildUnder5` — each gate exactly 1/15.
 
-Issue #9 re-derived the fact vocabulary from what the (by then verified, per #2/#3) 15-program
-corpus actually gates on, not from the 15 hand-picked programs the interview was originally
-designed around. Raw counts: `state` gates 14/15 programs, `annualHouseholdIncome`/
-`householdSize` 10/15, `currentBenefits` 8/15, `county` 5/15, `housingStatus` 3/15,
-`hasSchoolAgeChild` 2/15, and six facts — `city`, `facingLossOfHousing`, `utilityShutoffRisk`,
-`paysHeatingCost`, `isPregnantOrPostpartum`, `hasChildUnder5` — each gate exactly 1/15. The
-five deferred facts above (`age`, `citizenshipStatus`, `employmentStatus`, `isVeteran`,
-`hasDisability`) gate 0/15, confirming they stay deferred; nothing in the corpus contradicts
-that decision. (`age` moved out of that set in issue #88 — not on frequency grounds, which
-had not changed, but on coverage: the senior programs it would unlock. See "What the
-interview does not ask" above.)
+The numbers are recorded because they are easy to misread. "Gates 1/15 programs" looks like
+an argument for demoting a fact to an `eligibilityCaveat`, and it is not: every one of those
+six rides inside a checklist that renders anyway — the housing-trouble flags and the
+household-members flags — so demoting one would not shorten anyone's interview. It would
+only cost the engine the ability to resolve WHEAP crisis assistance or eviction prevention
+either way, pushing them into "might qualify" for everyone. That is a regression dressed as
+a simplification.
 
-The naive reading of "gates 1/15 programs" is "demote it to an `eligibilityCaveat`." That
-reading is wrong, and worth recording so nobody re-derives and re-applies it: every one of
-those six single-use facts already rides inside an existing checklist —
-`facingLossOfHousing`/`utilityShutoffRisk`/`paysHeatingCost` in the housing-trouble flags
-question, `isPregnantOrPostpartum`/`hasChildUnder5`/`hasSchoolAgeChild` in the
-household-members flags question — at **zero marginal question cost**. The checklist screen
-renders either way; demoting one of its facts to a caveat wouldn't shorten anyone's interview,
-it would only strip the engine's ability to resolve WHEAP crisis assistance or eviction
-prevention to a definite "eligible"/"ruled out", pushing them into "might qualify" for
-*everyone* instead. That is a regression dressed as a simplification. The right test for
-whether a fact earns a question is **marginal cost**, not raw frequency — and by that test all
-13 currently-asked facts already clear the bar. See `tests/data/vocabulary.test.ts`'s existing
-"asks nothing the rules never consult" check, which already enforced the corollary (nothing
-here was a dead question) without anyone having spelled out why demoting them would be wrong.
-
-The same marginal-cost logic runs the other way for `BENEFIT_ENROLLMENTS`: Lifeline's own
-verified source note (`lifeline-phone-internet.ts`) named "Federal Public Housing Assistance"
-as one of its categorical-eligibility programs, previously left out of the shared
-`currentBenefits` checklist. Since that checklist is already one `multi` question, adding the
-option costs nothing extra to ask — and the alternative (a caveat) would leave someone in
-federal public housing above the income limit *wrongly ruled out*, rather than correctly
-matched. Added to `BENEFIT_ENROLLMENTS` rather than a caveat for that reason.
+The general rule this illustrates — marginal cost, not raw frequency — is stated in
+[standing-decisions.md](standing-decisions.md), "When a fact earns a question".
 
 ### Recent income (issue #9)
 
