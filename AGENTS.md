@@ -82,15 +82,21 @@ Watch for yourself doing them.
   and no rule can need it because we don't ask it." This kept a whole class of
   senior programs unreachable for months (#88). If a constraint's justification
   depends on the constraint, say so out loud.
-- **Caution that reads as safety but costs reach.** A pipeline that abstains on
-  everything has zero wrong answers and is worth nothing. The benchmark now blocks
-  on that (`MIN_USABLE_RULE_RATE`); your reasoning should too.
+- **Caution that reads as safety but costs reach.** Anything that abstains on
+  everything has zero wrong answers and is worth nothing. A measure of correctness
+  has to count *decidable* answers, not the presence of an answer — see
+  `standing-decisions.md`. Nothing enforces this in code today; your reasoning has
+  to.
 - **Correcting a document by appending.** If the top of a doc or an issue argues
   something a later paragraph retracts, readers get the retracted version. Fix the
   claim where it is made, and record the change in one place.
-- **The same word meaning three things.** "Over-claim" does, in this repo. Say the
-  direction in the sentence: *"tells someone they qualify when they do not."* See
-  the glossary in `standing-decisions.md`.
+- **The same word meaning two things.** "Over-claim" did, for months, and it cost
+  four architectures designed against a scoreboard that measured the wrong
+  direction. Say the direction in the sentence: *"tells someone they qualify when
+  they do not."* The same trap is live for `branch`, `rule`, `source` and
+  `program`, each of which names one thing in a source and a different thing in
+  our encoding of it. **"The words" in `standing-decisions.md` defines them; add
+  to it when you coin one.**
 
 ## Non-negotiables (details in CONTRIBUTING.md)
 

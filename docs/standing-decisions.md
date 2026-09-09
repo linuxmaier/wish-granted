@@ -18,7 +18,7 @@ One rule fixes it:
 |---|---|---|
 | [`AGENTS.md`](../AGENTS.md) (aliased `CLAUDE.md`) | The entry point: the two grounding principles, and this routing table. | Detail of any kind. |
 | [`CONTRIBUTING.md`](../CONTRIBUTING.md) | The product's promises, and how to work here. | Anything with a revisit condition. |
-| **This file** | Every design principle and judgment: the statement, the reason, the reopen condition, and the record of what changed. | Mechanism. How something is implemented. |
+| **This file** | Every design principle and judgment: the statement, the reason, the reopen condition, the glossary of terms of art, and the record of what changed. | Mechanism. How something is implemented. |
 | Mechanism docs (`design.md`, `data-authoring.md`, `pipeline-principles.md`, …) | How a thing works, and how to use it. | The *argument* for a principle. State it in a line and link here. |
 | Code and tests | The rule, in one line, with a link here. | Justification, history, or a retelling of why the rule exists. |
 | Git history and issues | What changed, when, and the full argument at the time. | — |
@@ -37,6 +37,74 @@ possible; everything from them that survived is in this file or in
 [`pipeline-principles.md`](pipeline-principles.md).
 
 ---
+
+## The words
+
+Terms of art, defined once. Most of these name a thing in a **source** and a
+different thing in **our encoding of it**, and conflating the two is how the
+repo lost months to a single ambiguous word before ("over-claim", below).
+
+When you introduce a new term of art, add it here in the same change.
+
+### The chain: source → rule → branch → number
+
+| Term | Means | Not |
+|---|---|---|
+| **program** | The real-world benefit a person can apply for. FoodShare is a program. | A `Program` object |
+| **record** | *Our* encoding of a program — a `Program` in `src/data/programs/`, with its rule, descriptive fields and `source`. | The program itself. A record can be wrong about a program |
+| **source** | The published page, PDF or regulation a record cites. Also the name of the record field carrying its URL, name and `lastVerified`. | Where the *money* comes from — say "administering agency" for that |
+| **rule** | Who qualifies. Used for both what a source publishes (prose, tables) and what we encode (a `Criterion` tree). **Say which** when the difference matters: *"the published rule"* vs *"the encoded rule"* | A single condition — that is a criterion or a leaf |
+| **branch** | **One alternative path through a published rule.** A rule can often be satisfied more than one way, or a figure can apply only under stated conditions; each such path or carve-out is a branch. | A git branch. Also not an `anyOf` node — that is the *encoding* a branch usually maps to |
+| **number** / **figure** | A quantity stated in a source — a threshold, a percentage, a dollar amount. It may or may not be the rule; that is the whole problem in "branch-dropping". | A verified threshold |
+| **scope** | The conditions that decide when a number applies: a table column header, a preceding "if you are…", a population named a paragraph earlier. | The project's scope |
+| **excerpt** | A pre-cut fragment of a source, handed to something that never sees the whole page. Named because measuring against excerpts produced a ceiling that did not exist. | A quote or provenance span |
+
+**How branches actually appear in sources** — these are the measured cases, and
+they are the reason the term needs a definition at all:
+
+| Shape | Case |
+|---|---|
+| Alternative qualifying routes ("or") | `foodshare-snap-wi` — an income test **or** categorical SSI/W-2 receipt |
+| A table column or row scoping a figure to a population | `badgercare-plus-population-columns` — 201% vs 306% by column header |
+| A named tier that is not an eligibility gate at all | `seniorcare-coverage-levels` — cost-sharing levels, not an income ceiling |
+| A conditional carve-out | `lifeline-survivor-extended` — a survivor-only extended threshold |
+| A capped discretionary allowance | `headstart-cfr-over-income-allowance` |
+| A composition test rather than an income test | `snap-cfr-elderly-separate-household` |
+
+**Branch-dropping** is then sayable in one line: *taking a number as the whole
+rule and discarding the branch that governs it.* See
+[`pipeline-principles.md`](pipeline-principles.md) §3.1.
+
+### Encoding and outcome
+
+| Term | Means |
+|---|---|
+| **fact** | A key in the interview's vocabulary that exactly one question writes (`src/domain/facts.ts`) |
+| **criterion** | A node in the encoded rule — `allOf`, `anyOf`, `not`, a comparison, a set test, `manualReview`, `always` (`src/domain/criteria.ts`) |
+| **leaf** | A criterion with no children: the atoms a rule is built from |
+| **decidable** | A condition the engine can resolve to true or false from the answers given. `manualReview` is never decidable; an unanswered question is not yet decidable |
+| **abstain** | To decline to state part or all of a rule. The act |
+| **`manualReview`** | The encoding of an abstention: a leaf that always evaluates `unknown`. Sits *inside* a rule beside real criteria — see "Abstain per condition" |
+| **bucket** | Which of the three answers a person gets for a program: eligible, might qualify, ruled out |
+| **coverage** | What fraction of attempts produced usable output at all |
+| **yield** | Of those, what fraction stated an actual rule rather than abstaining. **Coverage and yield are different numbers** and a run that confuses them can look successful while answering nothing |
+
+### The harm directions
+
+**over-claim** and **under-claim** are defined under
+["The two harms"](#the-two-harms), the next section, and that definition governs.
+In short:
+over-claim tells someone they qualify when they do not; under-claim rules out
+someone who qualifies.
+
+Two traps worth knowing:
+
+- **Say the direction in the sentence.** *"Tells someone they qualify when they
+  do not"* costs six words and cannot be misread. A bare "over-claim" can.
+- **Issues labelled `superseded` and documents under `docs/archive/` use the
+  opposite sense** — there, `dangerous` and "over-claim" usually mean a rule
+  *narrower* than reality, which is an under-claim here. They are not to be
+  rewritten; they are to be read carefully, or not read.
 
 ## The two harms
 
@@ -67,9 +135,9 @@ and costs reach.
 
 **Say the direction in the sentence.** Write *"tells someone they qualify when
 they do not"* rather than a bare "over-claim"; it costs six words and removes the
-ambiguity that kept this confused for months. Issues labelled `superseded` use
-the word in the opposite sense — there, `dangerous` and "over-claim" mean a rule
-*narrower* than reality. That is one more reason not to read them.
+ambiguity that kept this confused for months. See ["The words"](#the-words) for
+the rest of the vocabulary, including why `superseded` issues use these two terms
+in the opposite sense.
 
 Nothing measures these automatically today. Both directions are checked by the
 person authoring or reviewing a record; see

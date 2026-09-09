@@ -20,13 +20,12 @@ below lives in [`standing-decisions.md`](standing-decisions.md) — see
 ## 1. What a pipeline here is for
 
 Not "automate record authoring." The goal is **reach**: a person in crisis
-opening this app should find the programs they could actually get, and 21
-records does not do that. A pipeline is one possible means to that end, and it
-competes with simply authoring more records by hand — which is cheaper than it
-looks, and which is the current approach.
+opening this app should find the programs they could actually get, and adding 
+more records makes more matches. A pipeline is one possible means to that end, and it
+competes with simply authoring more records by hand, which is the current approach.
 
 The unit of work is **a program, not an excerpt**: given a source, produce a
-record a human can review, or say honestly that you cannot. Anything that
+record that could be added to our set, or say honestly that you cannot. Anything that
 measures a narrower task measures something nobody wants performed.
 
 A pipeline earns its place when it makes a reviewer faster than they would be
@@ -60,8 +59,13 @@ them is not ready to be built.
 ### 3.1 Branch-dropping — the failure nothing solved
 
 **A number in the source is treated as the rule, and the branch that governs it
-is dropped.** The result is always a rule *narrower* than reality: it silently
+is dropped.** The result is often a rule *narrower* than reality: it silently
 tells someone not to bother applying.
+
+*number*, *source*, *rule* and *branch* are terms of art here and are defined in
+[`standing-decisions.md`](standing-decisions.md), "The words" — which also lists
+the shapes a branch actually takes in a published source, drawn from the cases
+below.
 
 | Case | Number taken | What it actually was |
 |---|---|---|
@@ -77,13 +81,6 @@ verified rule is `allOf(livesIn.wisconsin, anyOf(incomeAtOrBelow('fpl', 200),
 hasAnyOf('currentBenefits', ['ssi','w2-tanf'])))`. Every failing design emitted
 the income ceiling alone, which rules out someone on SSI above 200% FPL whom the
 program accepts.
-
-**Four designs failed at it** — baseline, self-report inventory, classify-first,
-and agentic-with-source-access. The diagnosis on record: each asked the
-extracting model to police its own reading, and that fails exactly where the
-reading is confidently incomplete. A model cannot flag a branch it never
-noticed. The obvious mitigations were tried: a schema gate cannot see it (the
-output is well-formed and coherent), and better retrieval made it *worse*.
 
 ### 3.2 Retrieval failure wears safety's clothes
 
@@ -147,8 +144,8 @@ the interview's current vocabulary — the circular reasoning #88 rejected.
 Not rhetorical. These are the things we do not know, and the reason no
 architecture is specified here.
 
-1. **What shapes do real eligibility rules actually take?** Across a corpus
-   several times the current size, how often is a rule a clean threshold, a
+1. **What shapes do real eligibility rules actually take?** Across a sufficiently 
+   broad corpus, how often is a rule a clean threshold, a
    disjunction of categorical routes, a table scoped by a column, a
    cross-reference, or prose that no engine can encode?
 2. **Does the fact vocabulary need to change?** `isVeteran` and `hasDisability`
@@ -157,9 +154,7 @@ architecture is specified here.
 3. **Is deterministic parsing worth rebuilding?** It was cheap and honest, but
    its premise was a tiering we no longer trust. If a large share of new sources
    publish clean structured tables, that answer changes.
-4. **Is there any mechanism that catches branch-dropping?** Cross-method
-   comparison was the last untested idea and was never measured. Whatever is
-   tried, it must not be the extracting model checking itself.
+4. **Is there any mechanism that catches branch-dropping?** 
 5. **What does a reviewer actually need?** Nothing ever produced a
    reviewer-facing artefact — candidate rule, provenance, the diff against the
    existing record — so the throughput assumption underneath the whole
