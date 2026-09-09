@@ -51,21 +51,31 @@ These are not pipeline decisions and are not open here. See
 - **When a rule is genuinely uncertain, leave it `unknown`.** It lands in "might
   qualify", which is the honest answer.
 
-## 3. Hazards measured at real cost
+## 3. Hazards
 
-Each of these was learned expensively. A design that does not have an answer for
-them is not ready to be built.
+Each of these cost real time or money to learn. **They are split into what was
+measured and what someone inferred from it**, because this project's most
+expensive recurring mistake is reading the two as one block — a list headed
+"not up for re-litigation" that mixes a measurement with somebody's reasonable
+call, and so stops the next reader considering an option that would have helped
+(`AGENTS.md`, "How work goes wrong here").
 
-### 3.1 Branch-dropping — the failure nothing solved
+Disagree with an inference freely: it is a reading, not a result, and the
+measurement underneath it stands on its own. Where an inference would rule a
+direction out, it carries a condition for reopening it — a judgment without one
+is not finished being written.
+
+### 3.1 Branch-dropping
 
 **A number in the source is treated as the rule, and the branch that governs it
-is dropped.** The result is often a rule *narrower* than reality: it silently
-tells someone not to bother applying.
+is dropped.**
 
 *number*, *source*, *rule* and *branch* are terms of art here and are defined in
 [`standing-decisions.md`](standing-decisions.md), "The words" — which also lists
 the shapes a branch actually takes in a published source, drawn from the cases
 below.
+
+**Measured** — six cases, across four designs:
 
 | Case | Number taken | What it actually was |
 |---|---|---|
@@ -82,48 +92,86 @@ hasAnyOf('currentBenefits', ['ssi','w2-tanf'])))`. Every failing design emitted
 the income ceiling alone, which rules out someone on SSI above 200% FPL whom the
 program accepts.
 
-### 3.2 Retrieval failure wears safety's clothes
+**Inferred** — that these six are one failure class rather than six unrelated
+bugs, and that the resulting rule tends to come out *narrower* than reality.
 
-One run measured zero dangerous results and was reported as safety solved. It
-was not: the extractor had abstained on six records it could not fetch, and
-those were the hard ones. Fixing retrieval took the honest number 0 → 3.
+*Reopen if:* a wider corpus turns up numbers lifted out of their scope in the
+looser direction about as often. The shared shape would still hold, but
+"narrower" would stop being the useful half of the description.
 
-**Therefore: never report a harm count without a yield count beside it.** A run
-that abstains is not a run that succeeded.
+**Deliberately not asserted: why it happens.** Explanations were offered at the
+time and are preserved in #97 and the archived research. None was tested against
+an alternative, so none is recorded here as a cause — and a plausible diagnosis
+written into this document would function as a prohibition on the directions it
+seems to rule out. Whatever is tried next should be judged on what it does to
+the six cases above, not on whether it resembles something that failed before.
+
+### 3.2 An abstention can look like a safe answer
+
+**Measured.** One run reported zero dangerous results. The extractor had
+abstained on six records it could not fetch. After retrieval was fixed, the same
+measurement returned three, on three of those same records.
+
+**Inferred** — that the zero was produced by the retrieval failure rather than
+by any property of the design.
+
+**The reporting rule this earns**, which holds either way: never report a harm
+count without a yield count beside it. A run that abstained has not been
+measured.
 
 ### 3.3 A coverage metric must count decidable answers
 
-The generalised form of the above, and the trap any replacement will fall into
-on day one. If "produced output" counts an abstention as a success, the metric
-rewards refusing to answer and a degenerate run scores perfectly.
+**Not a measurement — a property of the metric.** If "produced output" counts an
+abstention as a success, refusing to answer scores perfectly and the number stops
+meaning anything.
 
-Count records with **at least one decidable, non-abstaining condition.** Report
-it first, because every other number is only meaningful in proportion to it.
+Count records carrying at least one decidable, non-abstaining condition, and
+report that before any harm count, since harm counts are only meaningful in
+proportion to it. (*decidable*, *coverage* and *yield* are defined in
+[`standing-decisions.md`](standing-decisions.md), "The words".)
+
+**Judgment: where the floor sits.** The retired benchmark used 25%, picked as
+"low enough that falling below it means something is broken" rather than as a
+quality target. Any new floor is a fresh judgment — re-derive it rather than
+inheriting that number.
 
 ### 3.4 Abstain per condition, never per record
 
-The correct output for most hard cases is `allOf(cleanRule, manualReview(rest))`
-— encode what maps, abstain on what does not. The retired seam could express
-only a whole rule or nothing, so partial successes were discarded along with the
-descriptive fields that came with them. Any replacement must be able to emit a
-partial rule from the start; this is not a later refinement.
+**Measured.** Hand-authored records already take the shape
+`allOf(cleanRule, manualReview(rest))` — `madison-housing-choice-voucher.ts` and
+`wisconsin-shares-child-care.ts`. The retired seam could express only a whole
+rule or nothing, so a partial success was discarded along with the descriptive
+fields that came with it.
+
+**Inferred** — that this shape is common enough that a replacement should be
+able to emit it early rather than bolt it on later.
+
+*Reopen if:* the wider corpus shows partial rules are rarer than the current
+records suggest. Twenty-one records establish that the shape occurs, not how
+often.
 
 ### 3.5 A small corpus will mislead you
 
-The "~17% LLM ceiling" that drove three redesigns was an artefact of a
-hand-picked excerpt set. The tiering built on it was wrong too — three sources
-were classified as prose because someone read an excerpt instead of the page.
-Measure against a corpus wide enough that a handful of hard cases cannot
-dominate it, and re-derive any taxonomy rather than inheriting the retired one.
+**Measured.** The "~17% ceiling" did not reproduce when the same cases were
+worked with access to the whole page. Three sources were reclassified as
+structured once someone read the page rather than the excerpt they had been
+handed.
+
+**Inferred** — that the ceiling was an artefact of the excerpt rather than a
+limit on capability.
+
+**The practice this earns:** re-derive any taxonomy against the corpus in front
+of you. The retired tiering percentages were computed from the excerpt reading
+and are not carried forward.
 
 ### 3.6 Never report a number you did not measure
 
-A harness with no API key must report SKIPPED, never a fabricated or default
-result. An entire spike once shipped with zero measurements because `.env` was
-absent from an agent worktree and nothing said so.
+**Measured.** A spike shipped with zero measurements because `.env` is
+gitignored and therefore absent from an agent worktree, and nothing said so.
 
-Held-out discipline: build, freeze, run once, report. Fixing failures and
-re-running measures the fix, not the design.
+**The rules this earns.** A harness with no API key reports SKIPPED, never a
+fabricated or default result. Held-out discipline: build, freeze, run once,
+report — fixing failures and re-running measures the fix, not the design.
 
 ## 4. What survived, and what it does not imply
 
