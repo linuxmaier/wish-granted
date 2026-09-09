@@ -30,21 +30,33 @@
       "of": [
         { "kind": "compare", "fact": "state", "op": "eq", "value": "WI" },
         { "kind": "set", "fact": "citizenshipStatus", "op": "in", "values": ["us-citizen", "qualified-immigrant"] },
-        { "kind": "compare", "fact": "isOfReproductiveAge", "op": "eq", "value": true,
-          "_sourceText": "You are of childbearing or reproductive age." },
-        { "kind": "compare", "fact": "ownMonthlyIncome", "op": "lte", "value": 4069.80,
-          "_sourceText": "Your income is $4,069.80 or less per month. ... Only your own income is counted. (Handbook 40.1: 'income at or below 306% of the FPL'.)" },
-        { "kind": "not", "of": { "kind": "set", "fact": "currentBenefits", "op": "includesAny", "values": ["medicaid-badgercare"] },
-          "_sourceText": "You are not enrolled in Wisconsin Medicaid or BadgerCare Plus. (You can have a private health plan.)" }
+        // "You are of childbearing or reproductive age."
+        { "kind": "compare", "fact": "isOfReproductiveAge", "op": "eq", "value": true },
+        // "Your income is $4,069.80 or less per month. ... Only your own income is counted." (Handbook 40.1: "income at or below 306% of the FPL".)
+        { "kind": "compare", "fact": "ownMonthlyIncome", "op": "lte", "value": 4069.80 },
+        // "You are not enrolled in Wisconsin Medicaid or BadgerCare Plus. (You can have a private health plan.)"
+        { "kind": "not", "of": { "kind": "set", "fact": "currentBenefits", "op": "includesAny", "values": ["medicaid-badgercare"] } }
       ]
     },
     "factsNeeded": [
       { "key": "isOfReproductiveAge", "type": "boolean", "sourceText": "of childbearing or reproductive age -- deliberately vague on the page; no numeric band given" },
       { "key": "ownMonthlyIncome", "type": "number", "sourceText": "Your income is $4,069.80 or less per month. Only your own income is counted. -- this is the APPLICANT'S income, not annualHouseholdIncome / householdSize, which is what incomeAtOrBelow() consumes" }
     ],
+    "expressibility": {
+      "level": "partial",
+      "note": "Residency, citizenship, not-on-Medicaid map cleanly. The income test needs a person-scoped (not household-scoped) income fact, and its MAGI countable-income definition is cross-referenced to a separate handbook chapter. 'Reproductive age' is deliberately undefined."
+    },
+    "branchDropRisk": [
+      {
+        "figure": "$4,069.80 or less per month  /  306% of the FPL",
+        "takenNaivelyAs": "a household income test at 306% FPL: incomeAtOrBelow('fpl', 306) against annualHouseholdIncome",
+        "actuallyIs": "'Only your own income is counted' -- a person-scoped MAGI test. Encoding it against household income and size would mis-decide for anyone whose own income differs from the household aggregate.",
+        "direction": "either"
+      }
+    ],
     "unencodable": [
-      "'Only your own income is counted' under MAGI rules -- the definition of what counts toward the $4,069.80 lives in a different handbook chapter (Section 16.1.2, Income Under Modified Adjusted Gross Income Rules), not on the eligibility page.",
-      "Express Enrollment / temporary coverage can only be initiated by a provider or hospital."
+      { "kind": "incorporated-law", "text": "'Only your own income is counted' under MAGI rules -- the definition of what counts toward the $4,069.80 lives in a different handbook chapter (Section 16.1.2, Income Under Modified Adjusted Gross Income Rules), not on the eligibility page." },
+      { "kind": "other", "text": "Express Enrollment / temporary coverage can only be initiated by a provider or hospital." }
     ]
   },
 
@@ -55,7 +67,8 @@
       "dhs.wisconsin.gov/fpos/index.htm 'Who is eligible' -- citizen-facing, states income as a flat $4,069.80/month",
       "-> BadgerCare Plus Handbook 40.1 -- states the same limit as '306% of the FPL' and cross-references Section 16.1.2 for how income is counted"
     ],
-    "format": "html-prose+list (citizen page) / html-prose (handbook)",
+    "format": ["html-prose"],
+    "formatNotes": "citizen page is prose + list; handbook is prose. Rule split across a citizen page and a policy handbook.",
     "fetch": {
       "tool": "lib-source live fetcher (createLiveFetcher)",
       "status": "HTTP 200 on both; emhandbooks.wisconsin.gov served fine to the desktop UA",
@@ -64,11 +77,11 @@
       "formShellRecoveryNeeded": false,
       "robots": "allowed"
     },
-    "scopeColocated": [
+    "scopeSeparation": [
       {
-        "figure": "$4,069.80 or less per month  /  306% of the FPL",
-        "colocated": false,
-        "scopeLocation": "The number is on the page, but its two scoping conditions are not: (1) 'only your own income counts' is stated adjacent on the citizen page but the DEFINITION of countable income is cross-referenced to Handbook Section 16.1.2 (a separate chapter); (2) the citizen page and the handbook express the SAME limit two different ways ($/month vs % FPL), so a reader seeing only one has half the figure's meaning."
+        "scopeOf": "$4,069.80 or less per month  /  306% of the FPL",
+        "separation": "cross-reference",
+        "where": "The number is on the page, but its two scoping conditions are not: (1) 'only your own income counts' is stated adjacent on the citizen page but the DEFINITION of countable income is cross-referenced to Handbook Section 16.1.2 (a separate chapter); (2) the citizen page and the handbook express the SAME limit two different ways ($/month vs % FPL), so a reader seeing only one has half the figure's meaning."
       }
     ]
   },

@@ -5,9 +5,13 @@
 > `research/`, not `docs/`, on purpose: `docs/` carries mechanism expected to
 > stay true; this is a method for a job with an end date.
 >
-> It was written after doing the pilot's 20 candidates. It is concrete where the
-> pilot hit a real decision and silent where nothing came up. Concrete beats
-> complete.
+> It was written after doing the pilot's 20 candidates and updated after the
+> pilot's go/no-go report was accepted and its seven format changes (`GO-NO-GO.md`
+> §6) were applied. It is concrete where the pilot hit a real decision and silent
+> where nothing came up. Concrete beats complete.
+>
+> **The capture format is in `README.md`.** This file is the method; `README.md`
+> is the schema. Candidate files are `.json5` now (comments, nothing else).
 
 ---
 
@@ -23,6 +27,11 @@ it.**
   "call and ask", put that part in `unencodable` and name it.
 - Do not skip a program because its rule is hard, or because it publishes no
   rule. Both are findings.
+- **Reach for a "can't model this shape" note before collapsing a rule to
+  `manualReview`.** A shape you did not expect is a finding, not a thing to
+  simplify away. If the published rule does something `Criterion` has no node
+  for, say so in `surprises` and in `unencodable` (`kind: "other"` with the
+  shape described) rather than flattening it. (`GO-NO-GO.md` §6, closing note.)
 - **Never invent data.** Every figure, URL, and phone number comes from a page
   or PDF you actually fetched. If a search snippet gives a number, that is a
   lead to verify, never a source. (Real example: search said CSFP is 130% FPL;
@@ -124,49 +133,75 @@ candidate. (Did not happen in the pilot — every source was reachable.)
 
 Work in this order — it front-loads the decisions.
 
-1. **`access.fetch` and `access.format`** first, from the helper's output. You
-   now know what kind of source you have.
-2. **`access.scopeColocated`** — for **each figure that matters**, ask: *is the
-   condition that decides when this number applies right next to it?* The scope
-   might be a column header, a sentence above a table, a paragraph earlier, a
-   cross-reference to another chapter, or another document entirely. Write
-   `colocated: false` and describe where it actually is. If the source has no
-   governing figure at all, `colocated: null`.
+Field shapes and vocabularies are in `README.md`; this is the order and the
+judgment calls.
+
+1. **`access.fetch`, `access.format`, `access.formatNotes`** first, from the
+   helper's output. `format` is an array from the fixed word list
+   (`html-prose`, `html-table`, `pdf`, `ecfr`, `wi-admin-code`,
+   `none-published`); everything else the source does goes in `formatNotes` as
+   free text. You now know what kind of source you have.
+2. **`access.scopeSeparation`** — for **each figure _or term_ that matters**,
+   ask: *is the condition that decides when this applies right next to it?* Set
+   `separation` to one of `colocated` / `column-header` / `same-page-elsewhere`
+   / `cross-reference` / `other-document` / `n/a — no governing figure`, and
+   describe `where` the scope actually lives.
    - **This is the measurement the survey exists for. Do it carefully.**
-   - The `renderStructured` output keeps column headers attached — if a figure's
-     scope IS its column header and you're reading structured text, that's
-     `colocated: true`, but note that a flattened read would have lost it.
+   - `renderStructured` keeps column headers attached — if a figure's scope IS
+     its column header, that's `column-header` (a flattened read would have lost
+     it), not `colocated`.
+   - A **term** can be the trap: `wi-homestead-credit`'s "$24,680" is fine, but
+     "household income" beside it is a 7-page construction. Point `scopeOf` at
+     the noun.
 3. **`rule.eligibility`** — build the `Criterion` tree. One `allOf` of the
    top-level conditions; `anyOf` for alternative qualifying routes (this is
    where branch-drop is resisted — every "or" the source states must appear);
    `manualReview` with a `note` for any condition that is a judgment or an
-   assessment. Put verbatim source words in `_sourceText` on the node.
+   assessment. Verbatim source words go in a `//` comment on the node; a
+   reader's caveat goes in a `/* */` block comment.
    - **Before you write `incomeAtOrBelow(...)`: is the prominent % actually a
      ceiling?** In the pilot, SeniorCare's "160% FPL" and the Chronic Disease
      Program's "300% FPL" are **cost-sharing tiers, not eligibility gates** —
      there is no income ceiling. Read down the whole table/section for a "Level
      3 / above X" row that is still eligible.
-4. **`rule.factsNeeded`** — every fact the tree references that is not in
-   `FACT_KEYS`. `{key, type, sourceText}`. If the tree is fully expressible with
-   today's vocabulary, `[]` — and say in `_factsNote` whether that means the
-   case was easy or the difficulty was in the scope reading.
-5. **`rule.unencodable`** — list the parts you deliberately did not put in the
-   tree: assessments, discretion, "apply for all other aid first", incorporated
-   federal law, asset tests, background checks.
-6. **`record.*`** — descriptive fields. Plain language for a stressed reader on a
-   phone. `categories: []` + `_categoriesNote` if none of the six fit.
-7. **`cost`** — wall-clock minutes and a one-line note on what was awkward.
-8. **`surprises`** — the thing you did not expect. If nothing surprised you,
-   say that; a boring candidate is also data.
+4. **`rule.branchDropRisk`** — one entry per figure that could be mistaken for
+   the whole rule: `{ figure, takenNaivelyAs, actuallyIs, direction }`.
+   `direction` is `narrower` (the figure alone rules out people the program
+   takes — the measured failure), `looser` (the risk is inventing a limit that
+   is not there, e.g. `wi-veterans-property-tax-credit`), or `either` (a
+   term-trap that mis-decides both ways). `[]` when the source has no such trap.
+   **`direction` is the field the reopen condition in `pipeline-principles.md`
+   §3.1 is counted against — fill it honestly.**
+5. **`rule.factsNeeded`** — every fact the tree references that is not in
+   `FACT_KEYS`. `{key, type, sourceText}`. `[]` if the tree is fully expressible
+   with today's vocabulary.
+6. **`rule.expressibility`** — `{ level, note }`, `level` one of `full` /
+   `partial` / `manual-review-dominant`. This is what stops `factsNeeded: []`
+   meaning both "trivial" and "hardest in the batch": say whether the encodable
+   rule is the whole thing, a real part beside a `manualReview`, or a thin
+   shell around an assessment.
+7. **`rule.unencodable`** — `{ kind, text }` per item. `kind` from the fixed
+   list (`asset-test`, `work-requirement`, `immigration`, `documentation`,
+   `professional-assessment`, `agency-discretion`, `incorporated-law`,
+   `other`). List the parts you deliberately did not put in the tree.
+8. **`record.*`** — descriptive fields. Plain language for a stressed reader on a
+   phone. `categories: []` + a `//` comment if none of the six fit.
+9. **`sharedFrontDoor`** — only on a split file (multi-benefit org, `README.md`).
+   `{ id, url, phone }` pointing at the umbrella / common intake.
+10. **`cost`** — wall-clock minutes and a one-line note on what was awkward.
+11. **`surprises`** — the thing you did not expect. If nothing surprised you,
+    say that; a boring candidate is also data.
 
 ---
 
 ## 5. Check your work
 
-- `node -e "JSON.parse(require('fs').readFileSync('<file>','utf8'))"` — valid
-  JSON.
+- The file parses as JSON5 (comments allowed, quoted keys). The scratchpad
+  validator (`validate.mjs`, not committed) checks every `.json5` against the
+  field vocabularies in one pass — run it, expect `0 problems`.
 - Every figure in the file traces to a URL in `access` that you fetched.
 - Redirects recorded as destinations.
+- `id` matches the filename.
 - Nothing added under `src/`, `scripts/`, `tests/`. `npm test` and `npm run
   build` still pass, untouched.
 
@@ -174,6 +209,13 @@ Work in this order — it front-loads the decisions.
 
 ## 6. Batch discipline (from #100)
 
-The pilot is 20. Batch 2 (#102) is ~40 more and **does not start** until the
-pilot's go/no-go report is accepted. If #102 changes the schema, the change is
-applied back to the pilot's 20 — one survey, one schema.
+The pilot was 20 candidates; the `GO-NO-GO.md` §6 split of two multi-benefit
+orgs (ADRC, SVdP) brought it to 28. Batch 2 (#102) adds ~32 more, targeting
+**~60 total**. The pilot's go/no-go report is accepted and its format changes
+are applied; one survey, one schema. Batch 2 aims for **representativeness**
+where the pilot aimed for variety — coverage targets are in #102 (all six
+`CATEGORIES`, `health-disability` and `veterans` well represented, city/county
+not only state/federal, nonprofits, and sources publishing no rule).
+
+Where this file proves wrong or silent during batch 2, fix it here — it is a
+working document, deleted when #100 closes.

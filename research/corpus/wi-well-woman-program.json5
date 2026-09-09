@@ -29,13 +29,13 @@
       "kind": "allOf",
       "of": [
         { "kind": "compare", "fact": "state", "op": "eq", "value": "WI" },
-        { "kind": "compare", "fact": "isWoman", "op": "eq", "value": true,
-          "_sourceText": "Are a woman between ages 40 and 64" },
-        { "kind": "incomeAtOrBelow", "scale": "fpl", "percent": 250,
-          "_sourceText": "Meet income requirements (at or below 250% of the federal poverty level)" },
+        // "Are a woman between ages 40 and 64"
+        { "kind": "compare", "fact": "isWoman", "op": "eq", "value": true },
+        // "Meet income requirements (at or below 250% of the federal poverty level)"
+        { "kind": "incomeAtOrBelow", "scale": "fpl", "percent": 250 },
         {
+          /* "Don't have health insurance, or / Have insurance that doesn't include routine check-ups and screenings. / Aren't able to pay the deductible or co-payment." */
           "kind": "anyOf",
-          "_sourceText": "Don't have health insurance, or / Have insurance that doesn't include routine check-ups and screenings. / Aren't able to pay the deductible or co-payment.",
           "of": [
             { "kind": "compare", "fact": "hasHealthInsurance", "op": "eq", "value": false },
             { "kind": "compare", "fact": "insuranceCoversScreenings", "op": "eq", "value": false },
@@ -43,14 +43,15 @@
           ]
         },
         {
+          // "Are a woman between ages 40 and 64" plus "exceptions to the 40-64 age group"
           "kind": "anyOf",
-          "_sourceText": "Are a woman between ages 40 and 64 [plus] exceptions to the 40-64 age group",
           "of": [
-            { "kind": "set", "fact": "ageExact", "op": "in", "values": ["40-64"],
-              "_note": "AGE_BANDS today are under-60 / 60-64 / 65-plus. This rule needs a 40 floor and a 64 ceiling, neither of which any current band expresses." },
+            /* AGE_BANDS today are under-60 / 60-64 / 65-plus. This rule needs a 40 floor and a 64 ceiling, neither of which any current band expresses. */
+            { "kind": "set", "fact": "ageExact", "op": "in", "values": ["40-64"] },
             { "kind": "allOf", "of": [
               { "kind": "set", "fact": "age", "op": "in", "values": ["65-plus"] },
-              { "kind": "compare", "fact": "eligibleForMedicare", "op": "eq", "value": false, "_sourceText": "65 or older and not eligible for Medicare or if you can't afford Medicare Part B" }
+              // "65 or older and not eligible for Medicare or if you can't afford Medicare Part B"
+              { "kind": "compare", "fact": "eligibleForMedicare", "op": "eq", "value": false }
             ]},
             { "kind": "allOf", "of": [
               { "kind": "set", "fact": "ageExact", "op": "in", "values": ["35-39"] },
@@ -68,10 +69,22 @@
       { "key": "canAffordInsuranceCostSharing", "type": "boolean", "sourceText": "Aren't able to pay the deductible or co-payment" },
       { "key": "eligibleForMedicare", "type": "boolean", "sourceText": "65 or older and not eligible for Medicare or if you can't afford Medicare Part B" }
     ],
+    "expressibility": {
+      "level": "partial",
+      "note": "The 40-64 + income + insurance-status core is expressible IF a real-age fact and four new booleans exist. It fully breaks AGE_BANDS (needs a 40 floor and 64 ceiling). The 35-39 clinical-route branch is manualReview."
+    },
+    "branchDropRisk": [
+      {
+        "figure": "ages 40 and 64",
+        "takenNaivelyAs": "a hard 40-64 age gate, encoded against AGE_BANDS as 'under-60' or dropped",
+        "actuallyIs": "the main band, but with three stated exceptions immediately beside it (65+ without affordable Medicare; 35-39 via clinical routes). Encoding 40-64 alone drops the exception branches.",
+        "direction": "narrower"
+      }
+    ],
     "unencodable": [
-      "The 35-39 age band's three clinical entry routes (referral after an abnormal breast exam/mammogram; self-reported breast symptoms; cervical-screening-only) -- these turn on a clinical event, not a fact a person can self-report reliably in an interview.",
-      "'not every medical provider offers every service' -- provider-network availability varies by county.",
-      "The precise income figures live in a separate PDF (P-43029) refreshed annually; only the 250% FPL rate is on the page."
+      { "kind": "professional-assessment", "text": "The 35-39 age band's three clinical entry routes (referral after an abnormal breast exam/mammogram; self-reported breast symptoms; cervical-screening-only) -- these turn on a clinical event, not a fact a person can self-report reliably in an interview." },
+      { "kind": "other", "text": "'not every medical provider offers every service' -- provider-network availability varies by county." },
+      { "kind": "documentation", "text": "The precise income figures live in a separate PDF (P-43029) refreshed annually; only the 250% FPL rate is on the page." }
     ]
   },
 
@@ -79,7 +92,8 @@
     "entryUrl": "https://www.dhs.wisconsin.gov/wwwp/index.htm",
     "ruleUrl": null,
     "hops": ["wwwp/index.htm has a 'Who is eligible' section carrying the full rule inline"],
-    "format": "html-prose + html-list",
+    "format": ["html-prose"],
+    "formatNotes": "prose + list. Per-household-size dollar figures are in P-43029 (PDF), not on the page.",
     "fetch": {
       "tool": "lib-source live fetcher (createLiveFetcher)",
       "status": "HTTP 200",
@@ -88,16 +102,16 @@
       "formShellRecoveryNeeded": false,
       "robots": "allowed"
     },
-    "scopeColocated": [
+    "scopeSeparation": [
       {
-        "figure": "at or below 250% of the federal poverty level",
-        "colocated": true,
-        "scopeLocation": "Inline in the 'Who is eligible' list. The per-household-size dollar amounts are NOT on this page -- they are in P-43029 (PDF), refreshed annually."
+        "scopeOf": "at or below 250% of the federal poverty level",
+        "separation": "colocated",
+        "where": "Inline in the 'Who is eligible' list. The per-household-size dollar amounts are NOT on this page -- they are in P-43029 (PDF), refreshed annually."
       },
       {
-        "figure": "ages 40 and 64",
-        "colocated": true,
-        "scopeLocation": "Inline, but immediately followed by 'There are exceptions to the 40-64 age group if you are:' and three sub-cases -- the exceptions sit right beside the figure here."
+        "scopeOf": "ages 40 and 64",
+        "separation": "colocated",
+        "where": "Inline, but immediately followed by 'There are exceptions to the 40-64 age group if you are:' and three sub-cases -- the exceptions sit right beside the figure here."
       }
     ]
   },

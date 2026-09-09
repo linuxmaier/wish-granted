@@ -1,0 +1,83 @@
+{
+  "id": "svdp-madison-vinnys-lockers",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  // Split from svdp-madison-assistance (GO-NO-GO.md §6.6).
+  "sharedFrontDoor": { "id": "svdp-madison", "url": "https://svdpmadison.org/get-help/", "phone": "608-257-0919" },
+
+  "record": {
+    "name": "Vinny's Lockers (St. Vincent de Paul - Madison)",
+    "administeredBy": "Society of St. Vincent de Paul - Madison (nonprofit)",
+    "jurisdiction": "county",
+    "provider": "nonprofit",
+    "categories": ["housing-utilities"],
+    // A storage service for people who are homeless -- closest to housing-utilities among the six.
+    "summary": "A free storage facility in Madison where people experiencing homelessness can keep personal papers, mementos, out-of-season clothing, and work tools. Up to 45 people can use it at a time.",
+    "benefit": "Up to two storage bins and a secure file for documents, at no cost. Storage can be extended.",
+    "howToApply": {
+      "url": "https://svdpmadison.org/program/vinnys-lockers/",
+      "phone": "608-205-8276",
+      "steps": [
+        "Call (608) 257-0919 and leave a message with your contact information.",
+        "Facility is at 1312 Culmen Street, Madison, open Wednesdays 2-4pm.",
+        "Agree to check in within 60 days of storing items."
+      ]
+    },
+    "status": "waitlist",
+    "seasonalNote": null,
+    // "Up to 45 people can use this free program" -- fixed capacity, so modelled as waitlist rather than open.
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        // "a storage facility where homeless people can store their belongings"
+        { "kind": "compare", "fact": "isExperiencingHomelessness", "op": "eq", "value": true },
+        { "kind": "manualReview", "note": "'Up to 45 people can use this free program' -- fixed capacity. Whether a slot is open is not decidable from interview facts." }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "isExperiencingHomelessness", "type": "boolean", "sourceText": "homeless people can store their belongings (shared with the-beacon-dane)" }
+    ],
+    "expressibility": {
+      "level": "full",
+      "note": "The rule is just 'is experiencing homelessness' (plus capacity). One leaf, maps to the same fact the-beacon-dane needs. Capacity is manualReview."
+    },
+    "branchDropRisk": [],
+    "unencodable": [
+      { "kind": "other", "text": "Fixed capacity of 45 users; storage extendable case-by-case." },
+      { "kind": "documentation", "text": "'Participants agree to check in within 60 days of storing items' -- a use condition." },
+      { "kind": "other", "text": "'Food, weapons and drugs are not accepted' -- limits what may be stored, not who is eligible." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://svdpmadison.org/get-help/",
+    "ruleUrl": "https://svdpmadison.org/program/vinnys-lockers/",
+    "hops": ["svdpmadison.org/get-help/ -> /program/vinnys-lockers/ -- describes the facility; the only eligibility framing is 'homeless people', plus the 45-person capacity"],
+    "format": ["none-published"],
+    "formatNotes": "prose only; no 'Eligibility:' list. The one condition ('homeless people') is in the description sentence.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "(no figure; 'homeless people' is the only condition)",
+        "separation": "n/a — no governing figure",
+        "where": "No eligibility figure. The one condition is stated in the descriptive sentence, not in an eligibility section (there is none)."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 4, "workedBy": "agent", "notes": "1 fetch (batch-2 split). The thinnest of the SVdP sub-programs; kept as its own file because it is a genuinely distinct benefit (document/belongings storage) with its own rule and its own phone number." },
+  "surprises": [
+    "Unlike its sibling SVdP programs (which all got a tidy 'Eligibility:' list), this one has no eligibility section at all -- the rule is a clause inside the first descriptive sentence. Within one org, some program pages are structured and some are not."
+  ]
+}

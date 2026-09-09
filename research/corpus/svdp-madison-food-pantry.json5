@@ -1,0 +1,86 @@
+{
+  "id": "svdp-madison-food-pantry",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  /*
+    Split from the pilot's svdp-madison-assistance (GO-NO-GO.md §6.6). The pilot
+    captured only the umbrella get-help/ page and concluded "no published rule".
+    The per-program pages DO publish rules -- a pilot miss the split corrects.
+    No thin umbrella file (the org page is not itself a "call here first" rule).
+    Shared front door: the SVdP Service Center.
+  */
+  "sharedFrontDoor": { "id": "svdp-madison", "url": "https://svdpmadison.org/get-help/", "phone": "608-257-0919" },
+
+  "record": {
+    "name": "St. Vincent de Paul - Madison Food Pantry",
+    "administeredBy": "Society of St. Vincent de Paul - Madison (nonprofit)",
+    "jurisdiction": "county",
+    "provider": "nonprofit",
+    "categories": ["food-basic-needs"],
+    "summary": "A drive-through food pantry in Madison with fresh produce, bread, meat, dairy, dry goods, personal care items, pet food, and cleaning products. Online ordering (pickup or delivery) is available through Pantry2Home.",
+    "benefit": "Groceries and household basics, once every two weeks per household.",
+    "howToApply": {
+      "url": "https://svdpmadison.org/program/food-pantry/",
+      "phone": "608-257-0919",
+      "steps": [
+        "Visit the outdoor drive-through pantry at 2033 Fish Hatchery Road, Madison, during open hours (Mon/Tue/Fri 10:30am-2:30pm, Thu 2:30-6pm).",
+        "Bring a valid ID for one household member to show at check-in.",
+        "Or order online through Pantry2Home at least two days ahead for pickup or delivery."
+      ]
+    },
+    "requiredDocuments": ["Valid photo ID for one household member (shown at check-in)"],
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        // "You must live in Dane County"
+        { "kind": "compare", "fact": "county", "op": "eq", "value": "dane" },
+        { "kind": "manualReview", "note": "'Households may visit the food pantry once every two weeks' -- a visit-frequency limit, not an eligibility gate, but it caps how actionable the program is for a given household at a given time." }
+      ]
+    },
+    "factsNeeded": [],
+    "expressibility": {
+      "level": "full",
+      "note": "The rule is just 'live in Dane County' + show ID. No income test at all. One decidable leaf; the once-every-two-weeks limit is a frequency cap, noted as manualReview."
+    },
+    "branchDropRisk": [],
+    "unencodable": [
+      { "kind": "documentation", "text": "'One member of the household must show a valid ID during check-in.'" },
+      { "kind": "other", "text": "Once-every-two-weeks visit limit." },
+      { "kind": "other", "text": "'We reserve the right to refuse Pantry2Home online ordering for any disruptive behavior.'" }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://svdpmadison.org/get-help/",
+    "ruleUrl": "https://svdpmadison.org/program/food-pantry/",
+    "hops": ["svdpmadison.org/get-help/ lists programs -> /program/food-pantry/ has an 'Eligibility:' list: Dane County residency, once-every-two-weeks, valid ID"],
+    "format": ["html-prose"],
+    "formatNotes": "prose + a short bulleted 'Eligibility:' list. Clean and inline.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200. www.svdpmadison.org redirects to the bare domain svdpmadison.org (recorded the destination).",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "Dane County residency",
+        "separation": "colocated",
+        "where": "First bullet of the 'Eligibility:' list on the program page."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 6, "workedBy": "agent", "notes": "1 fetch (batch-2 split). The per-program page carried a clean eligibility list -- contradicting the pilot's 'none published' finding, which had only seen the umbrella page." },
+  "surprises": [
+    "The pilot's svdp-madison-assistance said 'no published eligibility rule'. This sub-page has a tidy three-bullet one. The 'no rule published' conclusion was an artefact of stopping at the umbrella page -- a concrete instance of the §6.6 split being necessary, not just tidy."
+  ]
+}

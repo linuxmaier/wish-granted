@@ -1,0 +1,83 @@
+{
+  "id": "svdp-madison-seton-program",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  // Split from svdp-madison-assistance (GO-NO-GO.md §6.6).
+  "sharedFrontDoor": { "id": "svdp-madison", "url": "https://svdpmadison.org/get-help/", "phone": "608-257-0919" },
+
+  "record": {
+    "name": "St. Elizabeth Ann Seton Program (St. Vincent de Paul - Madison)",
+    "administeredBy": "Society of St. Vincent de Paul - Madison (nonprofit)",
+    "jurisdiction": "county",
+    "provider": "nonprofit",
+    "categories": ["housing-utilities"],
+    "summary": "Wrap-around supportive case management for recently housed single-parent families, to build stability and prevent a return to homelessness. Staff help with childcare, mental health services, transportation, and goal-setting.",
+    "benefit": "Individualised supportive services and staff/volunteer accompaniment for a newly housed single-parent family.",
+    "howToApply": {
+      "url": "https://svdpmadison.org/program/seton-program/",
+      "phone": "608-819-1061",
+      "steps": [
+        "This program does not accept open enrollments and is not accepting new families at this time.",
+        "Check back for updates, or contact SVdP Housing Navigation Services for help finding permanent housing in the meantime."
+      ]
+    },
+    "status": "closed",
+    "seasonalNote": null,
+    // "This program does not accept open enrollments." + a "Not Accepting New Families" notice on the page.
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        // "Single custodial adults (parents, grandparents, etc) who have minor children (18 years and younger)"
+        { "kind": "compare", "fact": "isSingleCustodialAdultOfMinorChild", "op": "eq", "value": true },
+        // "Families who are currently living in permanent housing"
+        { "kind": "compare", "fact": "housingStatus", "op": "eq", "value": "renting" },
+        { "kind": "manualReview", "note": "'This program does not accept open enrollments' and 'Not Accepting New Families at this time'. Entry is by referral/selection into a fixed-capacity caseload -- not decidable from interview facts, and currently closed regardless." }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "isSingleCustodialAdultOfMinorChild", "type": "boolean", "sourceText": "Single custodial adults (parents, grandparents, etc) who have minor children (18 years and younger) -- combines household composition (single adult), a caregiving role, and a child under 19; no current fact carries it" }
+    ],
+    "expressibility": {
+      "level": "manual-review-dominant",
+      "note": "Two stated conditions (single custodial parent of a minor; currently in permanent housing) plus a closed, no-open-enrollment caseload. Even with the new composition fact, the program is manualReview-dominant because entry is selective and currently closed."
+    },
+    "branchDropRisk": [],
+    "unencodable": [
+      { "kind": "agency-discretion", "text": "'Does not accept open enrollments' -- entry is by referral/selection into a fixed caseload." },
+      { "kind": "other", "text": "'Currently living in permanent housing' -- 'renting' is the closest housingStatus value but the program's sense is 'newly/recently housed', which no fact captures." },
+      { "kind": "other", "text": "Program is not accepting new families as of the fetch (status: closed)." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://svdpmadison.org/get-help/",
+    "ruleUrl": "https://svdpmadison.org/program/seton-program/",
+    "hops": ["svdpmadison.org/get-help/ -> /program/seton-program/ -- an 'Eligibility:' list (single custodial adult with minor children; currently in permanent housing) plus a 'Not Accepting New Families' notice"],
+    "format": ["html-prose"],
+    "formatNotes": "prose + a two-bullet 'Eligibility:' list + a closed-enrollment notice.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "single custodial adult with minor children (18 and younger)",
+        "separation": "colocated",
+        "where": "First bullet of the 'Eligibility:' list on the program page."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 5, "workedBy": "agent", "notes": "1 fetch (batch-2 split). Program is closed to new families; captured for the record and because 'closed' is itself data the survey wants." },
+  "surprises": [
+    "A homelessness-PREVENTION program that requires you to already be housed -- 'Families who are currently living in permanent housing'. The eligibility condition is the opposite of what the program's name suggests, and an extractor matching 'homelessness' keywords could invert it."
+  ]
+}

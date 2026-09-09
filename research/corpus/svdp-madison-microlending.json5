@@ -1,0 +1,94 @@
+{
+  "id": "svdp-madison-microlending",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  // Split from svdp-madison-assistance (GO-NO-GO.md §6.6).
+  "sharedFrontDoor": { "id": "svdp-madison", "url": "https://svdpmadison.org/get-help/", "phone": "608-257-0919" },
+
+  "record": {
+    "name": "St. Vincent de Paul - Madison Microlending",
+    "administeredBy": "Society of St. Vincent de Paul - Madison (nonprofit), with local banks",
+    "jurisdiction": "county",
+    "provider": "nonprofit",
+    "categories": ["small-business"],
+    // A consumer debt-consolidation loan program, not a business one -- but "small-business" is the only CATEGORY touching lending/finance. Another instance of the category-set gap.
+    "summary": "Small-dollar loans ($400-$2,500) at 4-8% interest over two years, through local banks, to help Dane County residents consolidate or pay off high-interest payday and auto-title loans. Includes financial education.",
+    "benefit": "A $400-$2,500 loan at 4-8% with flexible repayment over two years, plus financial coaching. Not for rent, deposits, utilities, medical bills, or vehicles.",
+    "howToApply": {
+      "url": "https://svdpmadison.org/program/microlending/",
+      "phone": "608-257-0919",
+      "steps": [
+        "Confirm you meet the requirements (Dane County, income at or below 300% FPL, willing to open a bank account, debt-to-income under 47%).",
+        "Complete the Microloan Candidate Interest Form; a representative responds within five business days.",
+        "Candidates meeting preliminary criteria are invited to continue the application with a local bank."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        // "You must live in Dane County,"
+        { "kind": "compare", "fact": "county", "op": "eq", "value": "dane" },
+        // "have a regular monthly household income at or below 300% of the federal poverty level (FPL),"
+        { "kind": "incomeAtOrBelow", "scale": "fpl", "percent": 300 },
+        // "be willing to have a bank account, and"
+        { "kind": "compare", "fact": "willingToOpenBankAccount", "op": "eq", "value": true },
+        // "your monthly debt-to-income ratio must be under 47%."
+        { "kind": "compare", "fact": "debtToIncomeRatioUnder47", "op": "eq", "value": true },
+        { "kind": "manualReview", "note": "Purpose test: the loan must consolidate or pay off a high-interest (37%+) payday or auto-title loan, or consolidate multiple debts into one payment. Explicitly not for monthly bills, rent, deposits, mortgage, medical expenses, or vehicle costs." }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "willingToOpenBankAccount", "type": "boolean", "sourceText": "be willing to have a bank account" },
+      { "key": "debtToIncomeRatioUnder47", "type": "boolean", "sourceText": "your monthly debt-to-income ratio must be under 47% -- (housing costs + monthly debt repayments) / gross monthly income. A computed financial ratio, not a single figure a person readily knows" }
+    ],
+    "expressibility": {
+      "level": "partial",
+      "note": "Residency + income + willingness map cleanly. The DTI-under-47% test is a computed ratio the person is unlikely to know offhand; the loan-purpose test (must be paying off a 37%+ loan or consolidating debt) is a manualReview judgment on the applicant's situation."
+    },
+    "branchDropRisk": [],
+    "unencodable": [
+      { "kind": "other", "text": "The loan-purpose test -- eligible only to pay off a high-interest (37%+) payday/auto-title loan or to consolidate multiple debts; explicitly ineligible for rent, deposit, mortgage, utilities, medical, or vehicle costs." },
+      { "kind": "other", "text": "The 47% DTI test requires the applicant to compute (housing + debt payments) / gross monthly income -- an arithmetic step, not a self-known fact." },
+      { "kind": "documentation", "text": "Bank underwriting -- the loan is issued 'through local banks', which apply their own criteria after SVdP's preliminary screen." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://svdpmadison.org/get-help/",
+    "ruleUrl": "https://svdpmadison.org/program/microlending/",
+    "hops": ["svdpmadison.org/get-help/ -> /program/microlending/ -- an 'Eligibility:' list (Dane County, <=300% FPL, bank account, DTI <47%) plus an 'Eligible Loan Expenses' yes/no table"],
+    "format": ["html-prose", "html-table"],
+    "formatNotes": "prose + a four-bullet 'Eligibility:' list + a yes/no 'Eligible Loan Expenses' table. The 300% FPL figure is inline; no dollar table.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "300% of the federal poverty level",
+        "separation": "colocated",
+        "where": "Second bullet of the 'Eligibility:' list, stated inline: 'a regular monthly household income at or below 300% of the federal poverty level (FPL)'."
+      },
+      {
+        "scopeOf": "the loan (what it can be used for)",
+        "separation": "same-page-elsewhere",
+        "where": "The purpose restriction that decides real eligibility is not in the 'Eligibility:' list -- it is in a separate 'Eligible Loan Expenses' yes/no table lower on the page."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 7, "workedBy": "agent", "notes": "1 fetch (batch-2 split). The 'Eligibility:' list and the 'Eligible Loan Expenses' table together are the rule; reading only the list would miss that this is a debt-consolidation loan, not general cash help." },
+  "surprises": [
+    "The load-bearing condition (what the loan may be spent on) is in a yes/no table BELOW the section headed 'Eligibility:'. Same shape as head-start's allowances sitting subsections away from the income route -- a rule whose real gate is not under the eligibility heading."
+  ]
+}

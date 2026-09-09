@@ -1,0 +1,90 @@
+{
+  "id": "dane-county-adrc",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  /*
+    This is the THIN UMBRELLA file for the ADRC (GO-NO-GO.md §6.6). The ADRC's
+    core Information & Assistance is itself a real "call here first" resource
+    (compare the shipped wi-211 and dane-joining-forces-for-families), so it gets
+    an umbrella file. Its sub-programs, each with its own rule and distinct
+    benefit, are separate files:
+      - dane-county-adrc-disability-benefit-specialists
+      - dane-county-adrc-elder-benefit-specialist
+      - dane-county-adrc-long-term-care-functional-screen
+    All were captured from the one page daneadrc.org/What-We-Do.
+  */
+
+  "record": {
+    "name": "Aging and Disability Resource Center of Dane County (Information & Assistance)",
+    "administeredBy": "Dane County (Area Agency on Aging of Dane County / Dane County Department of Human Services)",
+    "jurisdiction": "county",
+    "provider": "government",
+    "categories": ["health-disability"],
+    // "health-disability" is closest; the ADRC is really a cross-cutting information, referral, and benefits-counselling access point (compare wi-211 and dane-jfff in the shipped set). Same category gap as wi-211.
+    "summary": "The first place to call in Dane County for unbiased information about aging or living with a disability. Staff help you understand options, apply for benefits, and connect to services, and are the access point for publicly funded long-term care.",
+    "benefit": "Information and assistance, options counselling for long-term care, and help applying for Medicaid, Medicare, Social Security, and other public and private benefits.",
+    "howToApply": {
+      "url": "https://www.daneadrc.org/",
+      "phone": "608-240-7400",
+      "steps": [
+        "Call the ADRC (Monday-Friday, 8:30 am - 4:00 pm) and speak with an Information & Assistance Specialist.",
+        "They ask about your situation and narrow down options with you.",
+        "They help with applications, referrals, or a long-term-care eligibility assessment if needed."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    /*
+      Core Information & Assistance has no eligibility rule beyond being a Dane
+      County resident (and, in practice, being an older adult, an adult with a
+      disability, or their caregiver/family -- but the site frames this as WHO
+      IT'S FOR, not a gate). This mirrors the shipped wi-211 / dane-jfff records:
+      a referral service is worth listing precisely because it abstains.
+    */
+    "eligibility": {
+      "kind": "compare", "fact": "county", "op": "eq", "value": "dane"
+      // "Services ... available to all Dane County residents regardless of income or assets."
+    },
+    "factsNeeded": [],
+    "expressibility": {
+      "level": "full",
+      "note": "The core service has essentially no rule -- 'Dane County resident, regardless of income or assets'. One decidable leaf, nothing manualReview. It is a deliberate abstention, like wi-211."
+    },
+    "branchDropRisk": [],
+    "unencodable": [
+      { "kind": "other", "text": "The audience framing (older adults, adults with disabilities, caregivers/family) is stated as who the service is for, not as a gate -- treating it as an eligibility condition would wrongly rule out, e.g., a professional calling on someone's behalf." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.daneadrc.org/",
+    "ruleUrl": "https://www.daneadrc.org/What-We-Do",
+    "hops": ["daneadrc.org -> 'What We Do' / 'ADRC Services' -- describes the service and its sub-programs; the 'free to all Dane County residents regardless of income or assets' line is stated for the core service"],
+    "format": ["none-published"],
+    "formatNotes": "html-prose page; no eligibility rule for the core service beyond residency. Sub-programs described in prose on the same page (see the split files).",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "(no figure for the core service)",
+        "separation": "n/a — no governing figure",
+        "where": "No income/asset figure -- explicitly 'regardless of income or assets'."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 7, "workedBy": "agent", "notes": "1 fetch + 1 search (pilot). Batch-2 §6 split re-fetched daneadrc.org/What-We-Do to ground the three sub-program files." },
+  "surprises": [
+    "One 'record' actually contained ~five programs with five different rules (core I&A, DBS, EBS, LTC waiver, HS transition). The pilot captured it as one thin umbrella; the §6.6 split turns the three sub-programs with real rules into their own files. The unit-of-work question from pipeline-principles.md §1 gets slippery here: is the ADRC one program or a portfolio?"
+  ]
+}

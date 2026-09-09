@@ -28,30 +28,43 @@
     "eligibility": {
       "kind": "allOf",
       "of": [
-        { "kind": "compare", "fact": "state", "op": "eq", "value": "WI",
-          "_sourceText": "Live in Wisconsin. / I certify that I am a resident of ____ county." },
+        // "Live in Wisconsin. / I certify that I am a resident of ____ county."
+        { "kind": "compare", "fact": "state", "op": "eq", "value": "WI" },
         {
+          // "Be age 60 or greater. Native Americans can join at age 55 or greater."
           "kind": "anyOf",
-          "_sourceText": "Be age 60 or greater. Native Americans can join at age 55 or greater.",
           "of": [
             { "kind": "set", "fact": "age", "op": "in", "values": ["60-64", "65-plus"] },
             { "kind": "allOf", "of": [
               { "kind": "compare", "fact": "isNativeAmerican", "op": "eq", "value": true },
-              { "kind": "compare", "fact": "ageAtLeast55", "op": "eq", "value": true, "_note": "55 is inside our 'under-60' band; not expressible with AGE_BANDS." }
+              /* 55 is inside our "under-60" band; not expressible with AGE_BANDS. */
+              { "kind": "compare", "fact": "ageAtLeast55", "op": "eq", "value": true }
             ]}
           ]
         },
-        { "kind": "incomeAtOrBelow", "scale": "fpl", "percent": 185,
-          "_sourceText": "form F-40103: 'I certify that my household income is at or below 185 percent of the federal poverty guideline.' The citizen web page says only 'Meet income guidelines' with NO number." }
+        // form F-40103: "I certify that my household income is at or below 185 percent of the federal poverty guideline." The citizen web page says only "Meet income guidelines" with NO number.
+        { "kind": "incomeAtOrBelow", "scale": "fpl", "percent": 185 }
       ]
     },
     "factsNeeded": [
       { "key": "isNativeAmerican", "type": "boolean", "sourceText": "Native Americans can join at age 55 or greater" },
       { "key": "ageAtLeast55", "type": "boolean", "sourceText": "age 55 or greater -- AGE_BANDS cannot express a 55 cut point" }
     ],
+    "expressibility": {
+      "level": "partial",
+      "note": "The 60+/WI-resident/185%-FPL core is expressible. The Native American age-55 branch needs a new fact and breaks AGE_BANDS (55 cut point). The whole income figure is only on a downstream form, not the program page."
+    },
+    "branchDropRisk": [
+      {
+        "figure": "185 percent of the federal poverty guideline",
+        "takenNaivelyAs": "no income test at all -- the public page says only 'Meet income guidelines'",
+        "actuallyIs": "a real 185% FPL self-certification, but the number is two documents downstream (the F-40103 form, then the annual Income Eligibility Table). An extractor reading only the program page authors a record with an income test it cannot fill.",
+        "direction": "narrower"
+      }
+    ],
     "unencodable": [
-      "'It is illegal to enroll in this program at more than one location' -- an anti-duplication rule, self-certified.",
-      "Supplies/vouchers are limited each season -- functionally first-come."
+      { "kind": "documentation", "text": "'It is illegal to enroll in this program at more than one location' -- an anti-duplication rule, self-certified." },
+      { "kind": "agency-discretion", "text": "Supplies/vouchers are limited each season -- functionally first-come." }
     ]
   },
 
@@ -62,7 +75,8 @@
       "wic/fmnp/senior.htm 'Who can join' -- states age and residency, but for income says only 'Meet income guidelines'",
       "-> form F-40103 (SFMNP Eligibility Agreement, PDF) -- self-certification text: 'household income is at or below 185 percent of the federal poverty guideline'; the dollar amounts are on a separate 'current year's SFMNP Income Eligibility Table'"
     ],
-    "format": "html-prose (citizen page) + pdf (eligibility agreement form)",
+    "format": ["html-prose", "pdf"],
+    "formatNotes": "citizen page is prose; the income figure is only on the F-40103 eligibility-agreement PDF, with dollar rows on yet a third document.",
     "fetch": {
       "tool": "lib-source live fetcher + pdf.ts (extractPdf)",
       "status": "HTTP 200; form PDF is 2 pages, extractPdf ok",
@@ -71,11 +85,11 @@
       "formShellRecoveryNeeded": false,
       "robots": "allowed"
     },
-    "scopeColocated": [
+    "scopeSeparation": [
       {
-        "figure": "185 percent of the federal poverty guideline",
-        "colocated": false,
-        "scopeLocation": "NOT on the program's public web page at all -- the page says only 'Meet income guidelines'. The percentage is on the self-certification FORM (F-40103), and the actual dollar thresholds are on yet a third document, the annual 'SFMNP Income Eligibility Table'. Three documents deep to get from 'there is an income test' to 'here is the number'."
+        "scopeOf": "185 percent of the federal poverty guideline",
+        "separation": "other-document",
+        "where": "NOT on the program's public web page at all -- the page says only 'Meet income guidelines'. The percentage is on the self-certification FORM (F-40103), and the actual dollar thresholds are on yet a third document, the annual 'SFMNP Income Eligibility Table'. Three documents deep to get from 'there is an income test' to 'here is the number'."
       }
     ]
   },

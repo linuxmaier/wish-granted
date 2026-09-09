@@ -25,31 +25,50 @@
   },
 
   "rule": {
+    /*
+      The load-bearing branch: the income test is against the CHILD'S OWN income
+      measured to the institutional limit -- parental household income is
+      disregarded entirely ("Their parents have too much income or assets to
+      qualify for other kinds of Medicaid" ... still qualifies). An extractor that
+      reaches for annualHouseholdIncome / incomeAtOrBelow here inverts the
+      program's whole point. See branchDropRisk.
+    */
     "eligibility": {
       "kind": "allOf",
       "of": [
         { "kind": "compare", "fact": "state", "op": "eq", "value": "WI" },
         { "kind": "set", "fact": "citizenshipStatus", "op": "in", "values": ["us-citizen", "qualified-immigrant"] },
-        { "kind": "compare", "fact": "childUnder19", "op": "eq", "value": true,
-          "_sourceText": "Be under age 19." },
-        { "kind": "compare", "fact": "childHasDisability", "op": "eq", "value": true,
-          "_sourceText": "Meet the definition of \"disabled\" under the Social Security Act." },
+        // "Be under age 19."
+        { "kind": "compare", "fact": "childUnder19", "op": "eq", "value": true },
+        // "Meet the definition of \"disabled\" under the Social Security Act."
+        { "kind": "compare", "fact": "childHasDisability", "op": "eq", "value": true },
         { "kind": "manualReview", "note": "Requires a state 'functional level of care' determination (child needs hospital or long-term-care-facility level of care), a finding that care at home is safe and appropriate, and a cost-effectiveness test (home care must not cost more than institutional care). None of these are decidable from interview facts." },
-        { "kind": "compare", "fact": "childOwnIncomeAboveInstitutionalLimit", "op": "eq", "value": false,
-          "_sourceText": "Not have income in their name that is more than the current income limit for those living in an institution." }
-      ],
-      "_note": "The load-bearing branch: the income test is against the CHILD'S OWN income measured to the institutional limit -- parental household income is disregarded entirely ('Their parents have too much income or assets to qualify for other kinds of Medicaid' ... still qualifies). An extractor that reaches for annualHouseholdIncome / incomeAtOrBelow here inverts the program's whole point."
+        // "Not have income in their name that is more than the current income limit for those living in an institution."
+        { "kind": "compare", "fact": "childOwnIncomeAboveInstitutionalLimit", "op": "eq", "value": false }
+      ]
     },
     "factsNeeded": [
       { "key": "childUnder19", "type": "boolean", "sourceText": "Be under age 19. -- our child facts are hasChildUnder5 and hasSchoolAgeChild; neither covers the full 0-18 range, and none identifies the specific child the rule is about" },
       { "key": "childHasDisability", "type": "boolean", "sourceText": "Meet the definition of \"disabled\" under the Social Security Act -- hasDisability is RESERVED, and it is 'someone in the household', not 'the child'" },
       { "key": "childOwnIncomeAboveInstitutionalLimit", "type": "boolean", "sourceText": "Not have income in their name that is more than the current income limit for those living in an institution -- a distinct concept from annualHouseholdIncome" }
     ],
+    "expressibility": {
+      "level": "manual-review-dominant",
+      "note": "Half the rule -- functional level of care, safe-care-at-home, cost-effectiveness -- is a professional assessment, not a rule. The honest encoding is mostly manualReview even though it needs no reserved-boolean magic beyond a child-scoped disability fact."
+    },
+    "branchDropRisk": [
+      {
+        "figure": "the current income limit for those living in an institution",
+        "takenNaivelyAs": "a household income test: incomeAtOrBelow / annualHouseholdIncome",
+        "actuallyIs": "a test on the CHILD'S OWN income only -- parental household income is explicitly disregarded. The program exists for families whose household income is too high for other Medicaid.",
+        "direction": "narrower"
+      }
+    ],
     "unencodable": [
-      "Functional 'level of care' determination -- requires the kind of care typically provided by a hospital or long-term care facility.",
-      "'Receive safe and appropriate care at home.'",
-      "Cost-effectiveness test: home care must not cost more than the equivalent institutional care Medicaid would cover.",
-      "'Live at home, in a foster care setting, or in another eligible community-based setting' -- a living-arrangement carve-out with named exceptions."
+      { "kind": "professional-assessment", "text": "Functional 'level of care' determination -- requires the kind of care typically provided by a hospital or long-term care facility." },
+      { "kind": "professional-assessment", "text": "'Receive safe and appropriate care at home.'" },
+      { "kind": "professional-assessment", "text": "Cost-effectiveness test: home care must not cost more than the equivalent institutional care Medicaid would cover." },
+      { "kind": "other", "text": "'Live at home, in a foster care setting, or in another eligible community-based setting' -- a living-arrangement carve-out with named exceptions." }
     ]
   },
 
@@ -57,7 +76,8 @@
     "entryUrl": "https://www.dhs.wisconsin.gov/kbp/index.htm",
     "ruleUrl": "https://www.dhs.wisconsin.gov/kbp/eligibility.htm",
     "hops": ["kbp/index.htm -> 'Who is eligible' link -> kbp/eligibility.htm carries the eight-point list"],
-    "format": "html-prose + html-list",
+    "format": ["html-prose"],
+    "formatNotes": "prose + list. Dollar figure for the institutional income limit is not on the page.",
     "fetch": {
       "tool": "lib-source live fetcher (createLiveFetcher)",
       "status": "HTTP 200",
@@ -66,11 +86,11 @@
       "formShellRecoveryNeeded": false,
       "robots": "allowed"
     },
-    "scopeColocated": [
+    "scopeSeparation": [
       {
-        "figure": "the current income limit for those living in an institution",
-        "colocated": false,
-        "scopeLocation": "The eligibility list states the test without a number; the fact that it is scoped to the CHILD'S OWN income (not the household's) is carried by a separate callout box higher on the same page ('Their parents have too much income or assets ... still qualify'). The actual dollar figure is not on the page at all."
+        "scopeOf": "the current income limit for those living in an institution",
+        "separation": "same-page-elsewhere",
+        "where": "The eligibility list states the test without a number; the fact that it is scoped to the CHILD'S OWN income (not the household's) is carried by a separate callout box higher on the same page ('Their parents have too much income or assets ... still qualify'). The actual dollar figure is not on the page at all."
       }
     ]
   },

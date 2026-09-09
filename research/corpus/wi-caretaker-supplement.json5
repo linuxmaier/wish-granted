@@ -9,7 +9,7 @@
     "jurisdiction": "state",
     "provider": "government",
     "categories": ["childcare-education", "food-basic-needs"],
-    "_categoriesNote": "A cash benefit for SSI-recipient parents raising minor children -- 'childcare-education' and 'food-basic-needs' both partly fit; neither squarely.",
+    // A cash benefit for SSI-recipient parents raising minor children -- "childcare-education" and "food-basic-needs" both partly fit; neither squarely. Same category gap as wi-earned-income-credit.
     "summary": "A monthly cash benefit for parents who receive Wisconsin SSI and are living with and caring for their own minor children.",
     "benefit": "$275 per month for the first eligible child and $165 per month for each additional eligible child, paid as part of the parent's monthly state SSI payment.",
     "howToApply": {
@@ -29,16 +29,16 @@
     "eligibility": {
       "kind": "allOf",
       "of": [
-        { "kind": "compare", "fact": "state", "op": "eq", "value": "WI",
-          "_sourceText": "Your household must meet some nonfinancial criteria, such as Wisconsin residency." },
-        { "kind": "compare", "fact": "receivesWisconsinSSIPayment", "op": "eq", "value": true,
-          "_sourceText": "You must be getting a Wisconsin SSI payment. (Handbook: if the entire SSI payment is being recouped, the parent does not qualify.)" },
-        { "kind": "compare", "fact": "livingWithAndCaringForOwnMinorChild", "op": "eq", "value": true,
-          "_sourceText": "Are living with and caring for your minor children" },
-        { "kind": "compare", "fact": "childMeetsIncomeAndAssetTest", "op": "eq", "value": true,
-          "_sourceText": "Your children must meet income and asset requirements." },
-        { "kind": "not", "of": { "kind": "compare", "fact": "childReceivesSSI", "op": "eq", "value": true },
-          "_sourceText": "You cannot get CTS benefits for any of your children who are also receiving SSI." },
+        // "Your household must meet some nonfinancial criteria, such as Wisconsin residency."
+        { "kind": "compare", "fact": "state", "op": "eq", "value": "WI" },
+        // "You must be getting a Wisconsin SSI payment." (Handbook: if the entire SSI payment is being recouped, the parent does not qualify.)
+        { "kind": "compare", "fact": "receivesWisconsinSSIPayment", "op": "eq", "value": true },
+        // "Are living with and caring for your minor children"
+        { "kind": "compare", "fact": "livingWithAndCaringForOwnMinorChild", "op": "eq", "value": true },
+        // "Your children must meet income and asset requirements."
+        { "kind": "compare", "fact": "childMeetsIncomeAndAssetTest", "op": "eq", "value": true },
+        // "You cannot get CTS benefits for any of your children who are also receiving SSI."
+        { "kind": "not", "of": { "kind": "compare", "fact": "childReceivesSSI", "op": "eq", "value": true } },
         { "kind": "manualReview", "note": "If the child has two parents in the household, BOTH parents must be receiving Wisconsin SSI. Not decidable without knowing household composition and each parent's SSI status." }
       ]
     },
@@ -48,12 +48,18 @@
       { "key": "childMeetsIncomeAndAssetTest", "type": "boolean", "sourceText": "Your children must meet income and asset requirements -- a child-level financial test, like Katie Beckett's 'income in their name'" },
       { "key": "childReceivesSSI", "type": "boolean", "sourceText": "any of your children who are also receiving SSI" }
     ],
+    "expressibility": {
+      "level": "partial",
+      "note": "Residency + SSI receipt + living-with-minor-child map cleanly given new facts. The child income/asset thresholds are unpublished on the citizen page (handbook only), and the two-parents-both-on-SSI rule needs household composition -- manualReview."
+    },
+    "branchDropRisk": [],
     "unencodable": [
-      "The two-parents-both-on-SSI rule (needs household composition + each parent's benefit status).",
-      "The child income/asset thresholds (not published on the citizen page; in the CTS Handbook).",
-      "'If the entire SSI payment is being recouped, the parent does not qualify.'",
-      "Child support cooperation requirement.",
-      "The effect on FoodShare (benefit interaction, not eligibility)."
+      { "kind": "other", "text": "The two-parents-both-on-SSI rule (needs household composition + each parent's benefit status)." },
+      { "kind": "documentation", "text": "The child income/asset thresholds (not published on the citizen page; in the CTS Handbook)." },
+      { "kind": "asset-test", "text": "The children's asset requirements -- an asset test on the child, thresholds in the handbook." },
+      { "kind": "other", "text": "'If the entire SSI payment is being recouped, the parent does not qualify.'" },
+      { "kind": "work-requirement", "text": "Child support cooperation requirement (cooperate with the child support agency regarding an absent parent)." },
+      { "kind": "other", "text": "The effect on FoodShare (benefit interaction, not eligibility)." }
     ]
   },
 
@@ -64,7 +70,8 @@
       "dhs.wisconsin.gov/ssi/caretaker.htm 'Eligibility' section -- the citizen summary",
       "-> Caretaker Supplement Handbook (emhandbooks.wisconsin.gov/cts) -- the operational detail including the child income/asset thresholds"
     ],
-    "format": "html-prose+list (citizen) / html-prose (handbook)",
+    "format": ["html-prose"],
+    "formatNotes": "citizen page is prose + list; handbook is prose. Rule split across a citizen page and a handbook.",
     "fetch": {
       "tool": "lib-source live fetcher (createLiveFetcher)",
       "status": "HTTP 200 on both",
@@ -73,16 +80,16 @@
       "formShellRecoveryNeeded": false,
       "robots": "allowed"
     },
-    "scopeColocated": [
+    "scopeSeparation": [
       {
-        "figure": "$275 / $165 per month",
-        "colocated": true,
-        "scopeLocation": "In the Benefits section: '$275 for the first eligible child and $165 for each additional eligible child'. Benefit amounts, not eligibility gates."
+        "scopeOf": "$275 / $165 per month",
+        "separation": "colocated",
+        "where": "In the Benefits section: '$275 for the first eligible child and $165 for each additional eligible child'. Benefit amounts, not eligibility gates."
       },
       {
-        "figure": "the children's income and asset requirements",
-        "colocated": false,
-        "scopeLocation": "The citizen page says only 'Your children must meet income and asset requirements' with no numbers. The thresholds are in the CTS Handbook, a separate site."
+        "scopeOf": "the children's income and asset requirements",
+        "separation": "other-document",
+        "where": "The citizen page says only 'Your children must meet income and asset requirements' with no numbers. The thresholds are in the CTS Handbook, a separate site."
       }
     ]
   },

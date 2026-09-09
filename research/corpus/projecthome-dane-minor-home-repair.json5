@@ -28,28 +28,34 @@
     "eligibility": {
       "kind": "allOf",
       "of": [
-        { "kind": "compare", "fact": "county", "op": "eq", "value": "dane",
-          "_sourceText": "Your home must be located in a participating municipality in Dane County" },
-        { "kind": "not", "of": { "kind": "compare", "fact": "city", "op": "eq", "value": "madison" },
-          "_sourceText": "Homes in the following municipalities are not eligible: City of Madison (see City of Madison Minor Home Repair Program)" },
-        { "kind": "compare", "fact": "housingStatus", "op": "eq", "value": "own-home",
-          "_sourceText": "You must own and live in your home." },
-        { "kind": "incomeAtOrBelow", "scale": "dane-ami", "percent": 80,
-          "_sourceText": "Your total gross household income cannot exceed 80% of the Dane County Median Income. [table] Household Size 1 = $74,800 ... (identical to HUD 80% AMI Low Income limits, and to the Madison CDA public-housing column)" },
-        { "kind": "compare", "fact": "homeValueWithinLimit", "op": "eq", "value": true,
-          "_sourceText": "Your home cannot exceed 95% of the Dane County Median Purchase Price ... Single family home: $397,000 Duplex: $508,000" },
-        { "kind": "compare", "fact": "homeNotForSaleOrInForeclosure", "op": "eq", "value": true,
-          "_sourceText": "The property cannot be currently on the market ... or be put on the market ... within the next twelve (12) months. The property cannot be in foreclosure ..." }
+        // "Your home must be located in a participating municipality in Dane County"
+        { "kind": "compare", "fact": "county", "op": "eq", "value": "dane" },
+        // "Homes in the following municipalities are not eligible: City of Madison (see City of Madison Minor Home Repair Program)"
+        { "kind": "not", "of": { "kind": "compare", "fact": "city", "op": "eq", "value": "madison" } },
+        // "You must own and live in your home."
+        { "kind": "compare", "fact": "housingStatus", "op": "eq", "value": "own-home" },
+        // "Your total gross household income cannot exceed 80% of the Dane County Median Income. [table] Household Size 1 = $74,800 ... (identical to HUD 80% AMI, and to the Madison CDA public-housing column)"
+        { "kind": "incomeAtOrBelow", "scale": "dane-ami", "percent": 80 },
+        // "Your home cannot exceed 95% of the Dane County Median Purchase Price ... Single family home: $397,000 Duplex: $508,000"
+        { "kind": "compare", "fact": "homeValueWithinLimit", "op": "eq", "value": true },
+        // "The property cannot be currently on the market ... within the next twelve (12) months. The property cannot be in foreclosure ..."
+        { "kind": "compare", "fact": "homeNotForSaleOrInForeclosure", "op": "eq", "value": true }
       ]
     },
     "factsNeeded": [
       { "key": "homeValueWithinLimit", "type": "boolean", "sourceText": "home cannot exceed 95% of the Dane County Median Purchase Price ($397,000 single family / $508,000 duplex) -- an asset-style test on the home's value, distinct from income" },
       { "key": "homeNotForSaleOrInForeclosure", "type": "boolean", "sourceText": "cannot be currently/soon on the market to be sold, or in/going into foreclosure within 12 months" }
     ],
+    "expressibility": {
+      "level": "partial",
+      "note": "Geography + own-occupy + income all map cleanly. The two new booleans (home-value cap, not-for-sale/not-in-foreclosure) are asset-style tests no current fact resembles. The HQS inspection outcome and the unpublished 'participating municipality' list are manualReview / documentation."
+    },
+    "branchDropRisk": [],
     "unencodable": [
-      "The HQS inspection outcome -- only items that fail Housing Quality Standards are eligible to be repaired; health/safety and code violations prioritised. Determines what work is done, not strictly who is eligible, but shapes whether applying is worthwhile.",
-      "'participating municipality' -- not every Dane County town participates; the list is not on the page.",
-      "New construction and remodeling are excluded."
+      { "kind": "professional-assessment", "text": "The HQS inspection outcome -- only items that fail Housing Quality Standards are eligible to be repaired; health/safety and code violations prioritised. Determines what work is done, not strictly who is eligible, but shapes whether applying is worthwhile." },
+      { "kind": "other", "text": "'participating municipality' -- not every Dane County town participates; the list is not on the page." },
+      { "kind": "asset-test", "text": "The $397,000 / $508,000 home-value cap is an asset test on the dwelling itself." },
+      { "kind": "other", "text": "New construction and remodeling are excluded." }
     ]
   },
 
@@ -60,7 +66,8 @@
       "minor-home-repair/ -- describes three geographically distinct programs (City of Madison, Dane County, Sun Prairie), each with an 'Eligibility Requirements & Income Chart' link",
       "-> .../dane-county-minor-eligibilty-income-chart/ -- the Dane County program's rule + the size-scoped income table"
     ],
-    "format": "html-prose + html-table",
+    "format": ["html-prose", "html-table"],
+    "formatNotes": "prose + a size-scoped income table. Note: the Dane County chart URL has a typo in the site's own slug ('eligibilty').",
     "fetch": {
       "tool": "lib-source live fetcher (createLiveFetcher)",
       "status": "HTTP 200 on both",
@@ -69,16 +76,16 @@
       "formShellRecoveryNeeded": false,
       "robots": "allowed"
     },
-    "scopeColocated": [
+    "scopeSeparation": [
       {
-        "figure": "$74,800 (household size 1) / '80% of the Dane County Median Income'",
-        "colocated": true,
-        "scopeLocation": "The income chart page states '80% of the Dane County Median Income' immediately above a 'Household Size | Maximum Annual Gross Income' table. Clean. But note the SAME figure appears on THREE pages in this pilot (here, Madison CDA public housing, and implicitly HUD's dataset) each described differently ('80% Dane County Median Income' vs 'federal income limits' vs 'Low Income'), so a reader could fail to recognise them as the same limit."
+        "scopeOf": "$74,800 (household size 1) / '80% of the Dane County Median Income'",
+        "separation": "colocated",
+        "where": "The income chart page states '80% of the Dane County Median Income' immediately above a 'Household Size | Maximum Annual Gross Income' table. Clean. But note the SAME figure appears on THREE pages in this pilot (here, Madison CDA public housing, and implicitly HUD's dataset) each described differently ('80% Dane County Median Income' vs 'federal income limits' vs 'Low Income'), so a reader could fail to recognise them as the same limit."
       },
       {
-        "figure": "$397,000 / $508,000 home-value cap",
-        "colocated": true,
-        "scopeLocation": "Stated with its scope ('95% of the Dane County Median Purchase Price', single family vs duplex) in the same bullet."
+        "scopeOf": "$397,000 / $508,000 home-value cap",
+        "separation": "colocated",
+        "where": "Stated with its scope ('95% of the Dane County Median Purchase Price', single family vs duplex) in the same bullet."
       }
     ]
   },

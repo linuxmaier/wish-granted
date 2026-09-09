@@ -9,7 +9,7 @@
     "jurisdiction": "county",
     "provider": "nonprofit",
     "categories": ["food-basic-needs", "housing-utilities"],
-    "_categoriesNote": "A daytime homeless services center -- meals, showers, laundry, mail, plus housing and employment navigation. Straddles food-basic-needs and housing-utilities.",
+    // A daytime homeless services center -- meals, showers, laundry, mail, plus housing and employment navigation. Straddles food-basic-needs and housing-utilities.
     "summary": "A daytime drop-in center for people experiencing homelessness in Dane County. Guests find meals, showers, laundry, a safe place during the day, and on-site connections to housing, employment, health, and benefits help.",
     "benefit": "Daytime shelter and basic-needs services, plus co-located partner agencies (Porchlight, Housing Navigation, Catalyst for Change, JustDane, and others) for housing, case management, and crisis support.",
     "howToApply": {
@@ -26,21 +26,26 @@
   },
 
   "rule": {
+    /* That is the entire published rule: experiencing homelessness + in Dane County. No income figure, no documentation, no application. Walk-in during open hours. */
     "eligibility": {
       "kind": "allOf",
       "of": [
-        { "kind": "compare", "fact": "isExperiencingHomelessness", "op": "eq", "value": true,
-          "_sourceText": "a daytime drop-in shelter and resource center for individuals and families experiencing homelessness in Dane County" },
-        { "kind": "compare", "fact": "county", "op": "eq", "value": "dane",
-          "_sourceText": "experiencing homelessness in Dane County" }
-      ],
-      "_note": "That is the entire published rule: experiencing homelessness + in Dane County. No income figure, no documentation, no application. Walk-in during open hours."
+        // "a daytime drop-in shelter and resource center for individuals and families experiencing homelessness in Dane County"
+        { "kind": "compare", "fact": "isExperiencingHomelessness", "op": "eq", "value": true },
+        // "experiencing homelessness in Dane County"
+        { "kind": "compare", "fact": "county", "op": "eq", "value": "dane" }
+      ]
     },
     "factsNeeded": [
       { "key": "isExperiencingHomelessness", "type": "boolean", "sourceText": "individuals and families experiencing homelessness -- housingStatus has 'unhoused-or-temporary' which is close, but 'experiencing homelessness' in the McKinney-Vento sense is broader (doubled-up, motels, imminent loss)" }
     ],
+    "expressibility": {
+      "level": "full",
+      "note": "The rule is genuinely just 'experiencing homelessness + Dane County'. Both leaves map (one needs a broader homelessness fact than housingStatus offers). Nothing material is manualReview."
+    },
+    "branchDropRisk": [],
     "unencodable": [
-      "Nothing material is left unencodable -- the rule is genuinely just 'homeless + Dane County'. The complexity is in the partner agencies' own programs, each with separate (mostly unpublished-here) criteria."
+      { "kind": "other", "text": "Nothing material is left unencodable -- the rule is genuinely just 'homeless + Dane County'. The complexity is in the partner agencies' own programs, each with separate (mostly unpublished-here) criteria." }
     ]
   },
 
@@ -48,7 +53,8 @@
     "entryUrl": "https://catholiccharitiesofmadison.org/the-beacon/",
     "ruleUrl": "https://catholiccharitiesofmadison.org/the-beacon/about-us/",
     "hops": ["the-beacon/ -> the-beacon/about-us/ -- 'What We Do' describes the center and its purpose; the only eligibility framing is 'people experiencing homelessness in Dane County'"],
-    "format": "none published (beyond 'experiencing homelessness in Dane County')",
+    "format": ["html-prose"],
+    "formatNotes": "prose only; the sole eligibility framing is 'experiencing homelessness in Dane County'. First guessed domain (beaconhelps.org) was a Ghana children's charity -- wrong Beacon.",
     "fetch": {
       "tool": "lib-source live fetcher (createLiveFetcher)",
       "status": "HTTP 200. First guessed domain (beaconhelps.org) was a Ghana children's charity -- wrong Beacon; corrected to catholiccharitiesofmadison.org/the-beacon via search. Recorded as a cautionary hop.",
@@ -57,11 +63,11 @@
       "formShellRecoveryNeeded": false,
       "robots": "allowed"
     },
-    "scopeColocated": [
+    "scopeSeparation": [
       {
-        "figure": "(none)",
-        "colocated": null,
-        "scopeLocation": "No figures. The one condition ('experiencing homelessness in Dane County') is stated plainly and repeatedly. n/a."
+        "scopeOf": "(no figure)",
+        "separation": "n/a — no governing figure",
+        "where": "No figures. The one condition ('experiencing homelessness in Dane County') is stated plainly and repeatedly."
       }
     ]
   },

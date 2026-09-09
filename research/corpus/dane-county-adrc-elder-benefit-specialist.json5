@@ -1,0 +1,76 @@
+{
+  "id": "dane-county-adrc-elder-benefit-specialist",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  // Split from dane-county-adrc (GO-NO-GO.md §6.6). Front door is the ADRC.
+  "sharedFrontDoor": { "id": "dane-county-adrc", "url": "https://www.daneadrc.org/", "phone": "608-240-7400" },
+
+  "record": {
+    "name": "Elder Benefit Specialist Program (ADRC of Dane County)",
+    "administeredBy": "Area Agency on Aging of Dane County (a Legal Services Program)",
+    "jurisdiction": "county",
+    "provider": "government",
+    "categories": ["health-disability"],
+    "summary": "Free legal advice and representation for Dane County adults 60 and older facing benefit denials, housing disputes, unpaid claims, and other problems with an economic or isolating effect.",
+    "benefit": "Legal advice and representation from an Elder Benefit Specialist on benefit, housing, and related disputes.",
+    "howToApply": {
+      "url": "https://www.daneadrc.org/What-We-Do",
+      "phone": "608-240-7400",
+      "steps": [
+        "Call the ADRC and ask for the Elder Benefit Specialist Program.",
+        "An Information & Assistance Specialist screens for age and county and connects you."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        // "senior adults (age 60+) residing in Dane County"
+        { "kind": "compare", "fact": "county", "op": "eq", "value": "dane" },
+        { "kind": "set", "fact": "age", "op": "in", "values": ["60-64", "65-plus"] }
+      ]
+    },
+    "factsNeeded": [],
+    "expressibility": {
+      "level": "full",
+      "note": "county + age 60+ -- both map to existing facts ('60 or older' = the top two AGE_BANDS). A legal-services program with no income test and nothing manualReview. The trivial end of the spectrum."
+    },
+    "branchDropRisk": [],
+    "unencodable": [
+      { "kind": "professional-assessment", "text": "'benefit, housing and other disputes ... that have an economic or socially isolating effect' -- whether a given problem is in scope is a case-acceptance judgment by the specialist." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.daneadrc.org/",
+    "ruleUrl": "https://www.daneadrc.org/What-We-Do",
+    "hops": ["daneadrc.org/What-We-Do -- the 'Elder Benefit Specialist Program' paragraph: 'legal advice/representation for senior adults (age 60+) residing in Dane County'"],
+    "format": ["html-prose"],
+    "formatNotes": "one prose paragraph on the ADRC 'What We Do' page.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200 (re-fetched for the §6 split)",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "age 60+",
+        "separation": "colocated",
+        "where": "Stated inline: 'senior adults (age 60+) residing in Dane County'."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 3, "workedBy": "agent", "notes": "Re-used the pilot's daneadrc.org/What-We-Do fetch; one sentence." },
+  "surprises": [
+    "The 60+ boundary here is exactly what the DBS 18-59 boundary hands off to -- two ADRC files whose age rules are complementary halves of one line, and only one of the two (this one) is expressible with today's AGE_BANDS."
+  ]
+}

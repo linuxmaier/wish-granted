@@ -35,17 +35,17 @@
       "kind": "allOf",
       "of": [
         {
+          // VA 2.01(2)(b)1.: "The applicant satisfies the requirements of s. 45.01(12), Stats., to be considered a veteran, or is a spouse or dependent of [such an individual]."
           "kind": "anyOf",
-          "_sourceText": "VA 2.01(2)(b)1.: The applicant satisfies the requirements of s. 45.01(12), Stats., to be considered a veteran, or is a spouse or dependent of [such an individual].",
           "of": [
             { "kind": "compare", "fact": "isVeteran", "op": "eq", "value": true },
             { "kind": "compare", "fact": "isSpouseOrDependentOfVeteran", "op": "eq", "value": true }
           ]
         },
-        { "kind": "compare", "fact": "lostIncomeFromIllnessInjuryOrDisaster", "op": "eq", "value": true,
-          "_sourceText": "VA 2.01(2)(b)2m.: The applicant has suffered a loss of income due to illness, injury, or natural disaster." },
-        { "kind": "incomeAtOrBelow", "scale": "fpl", "percent": 200,
-          "_sourceText": "VA 2.01(2)(b)3m.: the applicant's household income may not exceed 200 percent of the federal poverty guidelines ... for the number of the applicant's family members living in the primary residence. (Exception under par. (d) for spouse/dependent of an activated/deployed member: 'federal poverty guidelines do not apply'.)" },
+        // VA 2.01(2)(b)2m.: "The applicant has suffered a loss of income due to illness, injury, or natural disaster."
+        { "kind": "compare", "fact": "lostIncomeFromIllnessInjuryOrDisaster", "op": "eq", "value": true },
+        // VA 2.01(2)(b)3m.: "the applicant's household income may not exceed 200 percent of the federal poverty guidelines ... (Exception under par. (d) for spouse/dependent of an activated/deployed member: 'federal poverty guidelines do not apply'.)"
+        { "kind": "incomeAtOrBelow", "scale": "fpl", "percent": 200 },
         { "kind": "manualReview", "note": "VA 2.01(2)(b)4.: 'The applicant lacks other assets or income to meet basic subsistence needs and is not eligible to receive aid from other sources to meet those needs.' Plus the declaration-of-aid requirement -- exhaustion of all other county/state/federal aid, certified by a county official. Not decidable from interview facts." }
       ]
     },
@@ -54,11 +54,23 @@
       { "key": "isSpouseOrDependentOfVeteran", "type": "boolean", "sourceText": "or is a spouse or dependent of an individual who satisfies [s. 45.01(12)]" },
       { "key": "lostIncomeFromIllnessInjuryOrDisaster", "type": "boolean", "sourceText": "has suffered a loss of income due to illness, injury, or natural disaster (note: narrower than the existing recentIncomeDrop fact, which does not name a cause)" }
     ],
+    "expressibility": {
+      "level": "partial",
+      "note": "Veteran-or-family + cause-specific income loss + 200% FPL cap all map (given isVeteran and two new facts). The 'lacks other assets/income and is not eligible for other aid' test and the certified declaration-of-aid are manualReview -- a caseworker determination."
+    },
+    "branchDropRisk": [
+      {
+        "figure": "200 percent of the federal poverty guidelines",
+        "takenNaivelyAs": "a universal income ceiling for the grant",
+        "actuallyIs": "the cap for the ordinary route, but par. (d) carves out spouses/dependents of activated/deployed servicemembers entirely -- 'federal poverty guidelines do not apply'. Encoding 200% FPL as top-level drops that branch.",
+        "direction": "narrower"
+      }
+    ],
     "unencodable": [
-      "The 'declaration of aid' -- a county/tribal official must certify the applicant applied for and accepted all available county/state/federal aid.",
-      "'lacks other assets or income to meet basic subsistence needs' -- a WDVA determination against the applicant's asset list and 3 months of expenses.",
-      "The s. 45.01(12) statutory definition of 'veteran' itself (service length, discharge characterization, wartime service, etc.).",
-      "Loss of income from alcohol/other drug abuse requires proof of current treatment-program participation."
+      { "kind": "documentation", "text": "The 'declaration of aid' -- a county/tribal official must certify the applicant applied for and accepted all available county/state/federal aid." },
+      { "kind": "asset-test", "text": "'lacks other assets or income to meet basic subsistence needs' -- a WDVA determination against the applicant's asset list and 3 months of expenses." },
+      { "kind": "incorporated-law", "text": "The s. 45.01(12) statutory definition of 'veteran' itself (service length, discharge characterization, wartime service, etc.)." },
+      { "kind": "work-requirement", "text": "Loss of income from alcohol/other drug abuse requires proof of current treatment-program participation." }
     ]
   },
 
@@ -69,7 +81,8 @@
       "dva.wi.gov subsistence-aid page -- describes benefit limits and 'certain eligibility requirements must be met' but does NOT state the income threshold or the veteran test",
       "-> Wisconsin Administrative Code Chapter VA 2, s. VA 2.01(2)(b) -- carries the actual four-part eligibility rule including the 200% FPL cap"
     ],
-    "format": "html-prose (WDVA page) + wi-admin-code (Ch. VA 2)",
+    "format": ["html-prose", "wi-admin-code"],
+    "formatNotes": "WDVA page is prose (benefit caps only); the eligibility rule is in Chapter VA 2 of the Wisconsin Administrative Code. The admin-code render is cluttered (nav list + run-on paragraph) but the substantive text survives grep.",
     "fetch": {
       "tool": "lib-source live fetcher (createLiveFetcher)",
       "status": "HTTP 200 on both",
@@ -78,16 +91,16 @@
       "formShellRecoveryNeeded": false,
       "robots": "allowed"
     },
-    "scopeColocated": [
+    "scopeSeparation": [
       {
-        "figure": "200 percent of the federal poverty guidelines",
-        "colocated": false,
-        "scopeLocation": "Not on the WDVA program page at all -- only in the Administrative Code, s. VA 2.01(2)(b)3m. And the figure carries its own carve-out one paragraph later: VA 2.01(2)(b)3m. says 'Except for an applicant who is eligible under par. (d)' -- the deployed-military-family route, where 'federal poverty guidelines do not apply'."
+        "scopeOf": "200 percent of the federal poverty guidelines",
+        "separation": "other-document",
+        "where": "Not on the WDVA program page at all -- only in the Administrative Code, s. VA 2.01(2)(b)3m. And the figure carries its own carve-out one paragraph later: VA 2.01(2)(b)3m. says 'Except for an applicant who is eligible under par. (d)' -- the deployed-military-family route, where 'federal poverty guidelines do not apply'."
       },
       {
-        "figure": "$3,000 in any consecutive 12-month period / $7,500 lifetime",
-        "colocated": true,
-        "scopeLocation": "On the WDVA page and in the code; these are benefit caps, not eligibility gates."
+        "scopeOf": "$3,000 in any consecutive 12-month period / $7,500 lifetime",
+        "separation": "colocated",
+        "where": "On the WDVA page and in the code; these are benefit caps, not eligibility gates."
       }
     ]
   },

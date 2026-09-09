@@ -1,0 +1,98 @@
+{
+  "id": "dane-county-adrc-long-term-care-functional-screen",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  // Split from dane-county-adrc (GO-NO-GO.md §6.6). Front door is the ADRC.
+  "sharedFrontDoor": { "id": "dane-county-adrc", "url": "https://www.daneadrc.org/", "phone": "608-240-7400" },
+
+  "record": {
+    "name": "Long-Term Care Access / Adult Waiver Services (ADRC of Dane County)",
+    "administeredBy": "Dane County ADRC (the access point for publicly funded long-term care)",
+    "jurisdiction": "county",
+    "provider": "government",
+    "categories": ["health-disability"],
+    "summary": "The ADRC is the door to publicly funded long-term care (Family Care, IRIS, and Dane County Adult Waiver Services). It completes the functional eligibility screen and helps prepare the Medicaid application. Young adults with disabilities can start the process at 17 1/2 through the High School Transition team.",
+    "benefit": "A functional eligibility determination for long-term care programs, options counselling, and help preparing the Medicaid financial application.",
+    "howToApply": {
+      "url": "https://www.daneadrc.org/What-We-Do",
+      "phone": "608-240-7400",
+      "steps": [
+        "Contact the ADRC (High School Transition Helpline 608-240-7476 for young adults, or the main line).",
+        "An Information & Assistance Specialist explains the criteria and process.",
+        "The ADRC completes a functional screen and gathers medical documentation of the disability; if functionally eligible, it helps prepare the Medicaid application."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    /*
+      Two doors, one benefit (access to publicly funded LTC): the general adult
+      route and the High School Transition route (age 17 1/2+). Both end in the
+      same ADRC functional screen. The financial side is Medicaid EBD, not stated
+      here.
+    */
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        { "kind": "compare", "fact": "county", "op": "eq", "value": "dane" },
+        {
+          "kind": "anyOf",
+          "of": [
+            { "kind": "compare", "fact": "isAdult", "op": "eq", "value": true },
+            // "At age 17 1/2 or older feel free to contact the Aging and Disability Resource Center High School Transition Helpline"
+            { "kind": "compare", "fact": "ageAtLeast17AndAHalf", "op": "eq", "value": true }
+          ]
+        },
+        { "kind": "compare", "fact": "hasDisability", "op": "eq", "value": true },
+        { "kind": "manualReview", "note": "'The ADRC is responsible for determining eligibility for Adult Waiver Services and will need to complete an assessment and gather required medical documentation of your disability.' Functional eligibility is the Wisconsin Long-Term Care Functional Screen -- an instrument administered by trained staff, not self-reportable." },
+        { "kind": "manualReview", "note": "The financial side (Medicaid for the Elderly, Blind, or Disabled -- income and a strict asset test) is not stated on this page but gates the actual programs (Family Care / IRIS)." }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "isAdult", "type": "boolean", "sourceText": "adults with developmental and physical disabilities -- 'adult' (18+); no current fact asserts adulthood directly" },
+      { "key": "ageAtLeast17AndAHalf", "type": "boolean", "sourceText": "At age 17 1/2 or older ... contact the ... High School Transition Helpline -- a 17.5 cut point, unexpressible with AGE_BANDS" },
+      { "key": "hasDisability", "type": "boolean", "sourceText": "young adult with a disability / adults with developmental and physical disabilities -- hasDisability is RESERVED" }
+    ],
+    "expressibility": {
+      "level": "manual-review-dominant",
+      "note": "The gate that matters -- the Long-Term Care Functional Screen -- is a professional assessment. The financial (Medicaid EBD) side, also not on the page, adds an income + strict asset test. What is encodable (county, adult-or-17.5+, has a disability) only gets someone to the screening door."
+    },
+    "branchDropRisk": [],
+    "unencodable": [
+      { "kind": "professional-assessment", "text": "The Wisconsin Long-Term Care Functional Screen -- a trained-staff instrument determining nursing-home / ICF level of need. The single load-bearing condition and not self-reportable." },
+      { "kind": "asset-test", "text": "Medicaid EBD financial eligibility for the underlying programs (Family Care / IRIS) -- income plus a strict asset test with many exclusions." },
+      { "kind": "documentation", "text": "'gather required medical documentation of your disability' -- a records step, not a self-assertion." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.daneadrc.org/",
+    "ruleUrl": "https://www.daneadrc.org/What-We-Do",
+    "hops": ["daneadrc.org/What-We-Do -- 'Long Term Care Counseling' and 'High School Transition Program' paragraphs describe the ADRC as the access point and state the assessment requirement and the 17 1/2 age"],
+    "format": ["none-published"],
+    "formatNotes": "html-prose; describes the process and the assessment requirement but publishes no functional or financial eligibility criteria (those are the statewide Functional Screen and Medicaid EBD, elsewhere).",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200 (re-fetched for the §6 split)",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "functional eligibility for Adult Waiver Services",
+        "separation": "other-document",
+        "where": "The page says the ADRC 'will need to complete an assessment' but the assessment itself -- the Wisconsin Long-Term Care Functional Screen -- and the financial criteria (Medicaid EBD) are entirely off-page, in state instruments and the Medicaid handbook."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 6, "workedBy": "agent", "notes": "Re-used the pilot's daneadrc.org/What-We-Do fetch; merged the 'Long Term Care Counseling' and 'High School Transition' paragraphs (same benefit, two entry ages). Did not fetch the Functional Screen instrument or the Medicaid EBD handbook." },
+  "surprises": [
+    "The ADRC publishes 'we are the access point' and 'we do an assessment' but not a single criterion of what the assessment tests -- the entire eligibility rule is an off-page instrument. A record faithful to this source is almost all manualReview."
+  ]
+}

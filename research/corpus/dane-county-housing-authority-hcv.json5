@@ -22,29 +22,40 @@
     },
     "status": "closed",
     "seasonalNote": null,
-    "_statusNote": "Every DCHA voucher waitlist is 'Currently Closed' or referral-only as of the fetch."
+    // Every DCHA voucher waitlist is "Currently Closed" or referral-only as of the fetch.
   },
 
   "rule": {
+    /*
+      The HCV income rule (50% AMI, with 75% of admissions reserved for <=30%
+      AMI) is NOT stated on the DCHA pages fetched -- they describe the program
+      and list waitlist status. The rule is federal (24 CFR 982) and would have
+      to be pulled from HUD, not DCHA. A faithful record of THIS SOURCE is mostly
+      manualReview.
+    */
     "eligibility": {
       "kind": "allOf",
       "of": [
-        { "kind": "compare", "fact": "county", "op": "eq", "value": "dane",
-          "_sourceText": "assists eligible low-income families and individuals in obtaining ... housing in the Dane County area. Our jurisdiction is all of Dane County except the City of Madison" },
-        { "kind": "not", "of": { "kind": "compare", "fact": "city", "op": "eq", "value": "madison" },
-          "_sourceText": "except the City of Madison, which is covered by the CDA of the City of Madison -- note: a voucher can be used to move into Madison later (portability), so this scopes where you APPLY, not where you can live" },
+        // "assists eligible low-income families and individuals in obtaining ... housing in the Dane County area. Our jurisdiction is all of Dane County except the City of Madison"
+        { "kind": "compare", "fact": "county", "op": "eq", "value": "dane" },
+        // "except the City of Madison, which is covered by the CDA of the City of Madison -- note: a voucher can be used to move into Madison later (portability), so this scopes where you APPLY, not where you can live"
+        { "kind": "not", "of": { "kind": "compare", "fact": "city", "op": "eq", "value": "madison" } },
         { "kind": "manualReview", "note": "All waitlists closed / referral-only. Even when open, admission is subject to HUD income limits (generally 50% of area median income), the DCHA screening criteria, and waitlist position. Cannot be resolved to eligible/ruled-out from interview facts." }
-      ],
-      "_note": "The HCV income rule (50% AMI, with 75% of admissions reserved for <=30% AMI) is NOT stated on the DCHA pages fetched -- they describe the program and list waitlist status. The rule is federal (24 CFR 982) and would have to be pulled from HUD, not DCHA."
+      ]
     },
     "factsNeeded": [],
-    "_factsNote": "Nothing new needed for what DCHA publishes (county, city). The federal income rule, if encoded, uses incomeAtOrBelow('dane-ami', 50) and existing facts -- but DCHA does not publish it, so a faithful record of THIS SOURCE is mostly manualReview.",
+    // Nothing new needed for what DCHA publishes (county, city). The federal income rule, if encoded, uses incomeAtOrBelow('dane-ami', 50) and existing facts -- but DCHA does not publish it.
+    "expressibility": {
+      "level": "manual-review-dominant",
+      "note": "The source publishes only jurisdiction + waitlist status. The dominant fact (all waitlists closed) and the federal income rule (not on the DCHA site) are both manualReview. The encoded rule is geography + a shrug."
+    },
+    "branchDropRisk": [],
     "unencodable": [
-      "Waitlist closed -- the dominant fact. No amount of eligibility makes a closed list actionable.",
-      "The three referral-only routes (FUP via Dane County Human Services, VASH via the VA, Coordinated Entry for people experiencing homelessness).",
-      "HUD income limits and the 75%-of-admissions-below-30%-AMI targeting rule (not on the DCHA site).",
-      "DCHA tenant screening.",
-      "The 'living, working, or attending training in Dane County' waitlist preference (from when the list was last open)."
+      { "kind": "other", "text": "Waitlist closed -- the dominant fact. No amount of eligibility makes a closed list actionable." },
+      { "kind": "other", "text": "The three referral-only routes (FUP via Dane County Human Services, VASH via the VA, Coordinated Entry for people experiencing homelessness)." },
+      { "kind": "incorporated-law", "text": "HUD income limits (24 CFR 982) and the 75%-of-admissions-below-30%-AMI targeting rule (not on the DCHA site)." },
+      { "kind": "documentation", "text": "DCHA tenant screening." },
+      { "kind": "agency-discretion", "text": "The 'living, working, or attending training in Dane County' waitlist preference (from when the list was last open)." }
     ]
   },
 
@@ -52,7 +63,8 @@
     "entryUrl": "https://www.dcha.net/hcv",
     "ruleUrl": null,
     "hops": ["dcha.net/hcv -- program description + waitlist status; dcha.net/waitlists for the detail. Neither states an income rule."],
-    "format": "html-prose (no rule published beyond jurisdiction + waitlist status)",
+    "format": ["none-published"],
+    "formatNotes": "html-prose pages, but no eligibility rule published beyond jurisdiction + waitlist status. NOTE: 'danecountyhousingauthority.com' is NOT DCHA (returns unreachable); the authority is at dcha.net.",
     "fetch": {
       "tool": "lib-source live fetcher (createLiveFetcher)",
       "status": "HTTP 200 for dcha.net/hcv. NOTE: an earlier attempt at 'danecountyhousingauthority.com' returned 'unreachable: fetch failed' -- that domain is not DCHA; the authority is at dcha.net (found via search).",
@@ -61,11 +73,11 @@
       "formShellRecoveryNeeded": false,
       "robots": "allowed"
     },
-    "scopeColocated": [
+    "scopeSeparation": [
       {
-        "figure": "(none)",
-        "colocated": null,
-        "scopeLocation": "The source publishes no eligibility figure at all -- no income limit, no percentage. This is a 'no rule published' source for a program that unambiguously HAS a rule (federal HCV). scopeColocated has nothing to measure. The honest schema value here is 'n/a -- no figure in the source'."
+        "scopeOf": "(no eligibility figure in the source)",
+        "separation": "n/a — no governing figure",
+        "where": "The source publishes no eligibility figure at all -- no income limit, no percentage. This is a 'no rule published' source for a program that unambiguously HAS a rule (federal HCV, 50% AMI). scopeSeparation has nothing to measure."
       }
     ]
   },
