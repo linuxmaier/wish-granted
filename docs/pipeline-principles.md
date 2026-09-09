@@ -220,5 +220,7 @@ above — not a pipeline.
 A judgment recorded here without a named condition for reopening it is not
 finished being written; that rule applies to this document too.
 
-**This document has not been ratified.** It is a first pass, and #98 is the
-review that settles it. Treat anything here as provisional until that closes.
+**Ratified 2026-09-08** (#98), as a baseline rather than a settled design. The
+measurements in §3 are the durable part; the inferences drawn from them are
+marked as such and several carry a condition for reopening. Revising this
+document as the corpus widens is expected, not a sign something went wrong.
