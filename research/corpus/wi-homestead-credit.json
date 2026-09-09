@@ -1,0 +1,108 @@
+{
+  "id": "wi-homestead-credit",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Wisconsin Homestead Credit",
+    "administeredBy": "Wisconsin Department of Revenue",
+    "jurisdiction": "state",
+    "provider": "government",
+    "categories": ["housing-utilities"],
+    "_categoriesNote": "It offsets property tax or rent, so 'housing-utilities' is the closest of the six -- but it is delivered as a refundable income-tax credit, not a housing program.",
+    "summary": "A refundable state income-tax credit for lower-income Wisconsin renters and homeowners, to offset part of the property taxes or rent they paid. You can get it even if you owe no income tax.",
+    "benefit": "A refund of up to $1,168 (2025), based on household income and the property tax or rent you paid on your Wisconsin home. Paid as a tax refund.",
+    "howToApply": {
+      "url": "https://www.revenue.wi.gov/Pages/Individuals/Homestead-Credit.aspx",
+      "phone": "608-266-2486",
+      "steps": [
+        "File Schedule H (or the simpler Schedule H-EZ) with your Wisconsin income tax return, or on its own if you do not otherwise file.",
+        "Attach your 2025 property tax bill or an original rent certificate signed by your landlord.",
+        "If claiming as disabled and under 62, attach a disability verification statement."
+      ]
+    },
+    "requiredDocuments": ["Property tax bill or signed rent certificate", "Disability verification (if disabled and under 62)", "Record of all household income for 2025"],
+    "status": "open",
+    "seasonalNote": "Claimed on the annual income tax return; a claim for 2025 must generally be filed within 4 years of the original due date."
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        { "kind": "compare", "fact": "state", "op": "eq", "value": "WI", "_sourceText": "You were a legal resident of Wisconsin from January 1 through December 31, 2025" },
+        { "kind": "compare", "fact": "ownedOrRentedWisconsinHome", "op": "eq", "value": true, "_sourceText": "You owned or rented your home in 2025" },
+        { "kind": "compare", "fact": "claimedAsDependent", "op": "eq", "value": false, "_sourceText": "You will not be claimed as a dependent on someone else's 2025 federal income tax return (does not apply if you were 62 or older on Dec 31, 2025)" },
+        {
+          "kind": "anyOf",
+          "_sourceText": "You were between ages 18 and 61 on December 31, 2025, and had earned income / You were 62 or older on December 31, 2025, or disabled",
+          "of": [
+            { "kind": "allOf", "of": [
+              { "kind": "compare", "fact": "age18to61", "op": "eq", "value": true },
+              { "kind": "compare", "fact": "hadEarnedIncome", "op": "eq", "value": true }
+            ]},
+            { "kind": "compare", "fact": "age62Plus", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "isDisabled", "op": "eq", "value": true }
+          ]
+        },
+        { "kind": "compare", "fact": "householdIncomeUnder24680", "op": "eq", "value": true,
+          "_sourceText": "Was your household income (see section F. Definitions, #11) for 2025 less than $24,680?" },
+        { "kind": "not", "of": { "kind": "compare", "fact": "livesInNursingHomeOnTitleXIX", "op": "eq", "value": true },
+          "_sourceText": "Are you currently living in a nursing home and also receiving Title XIX medical assistance? (a 'Yes' disqualifies)" },
+        { "kind": "not", "of": { "kind": "compare", "fact": "receivedW2OrCountyReliefAllYear", "op": "eq", "value": true },
+          "_sourceText": "For each month of the entire 2025 year, did you receive either Wisconsin Works (W2) payments of any amount or county relief of $400 or more? (a 'Yes' disqualifies; W-2/county-relief months also reduce the credit)" }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "ownedOrRentedWisconsinHome", "type": "boolean", "sourceText": "You owned or rented your home in 2025 -- housingStatus today has renting / own-home but not 'neither' cleanly, and does not tie to Wisconsin" },
+      { "key": "age18to61 / age62Plus", "type": "enum", "sourceText": "ages 18 and 61 ... 62 or older -- the cut point is 62, which falls inside our 'under-60' band; AGE_BANDS cannot express it (same failure as WWWP)" },
+      { "key": "hadEarnedIncome", "type": "boolean", "sourceText": "had earned income (for the 18-61 route)" },
+      { "key": "isDisabled", "type": "boolean", "sourceText": "or disabled -- hasDisability is RESERVED; here it is a full alternative qualifying route, not a caveat" },
+      { "key": "householdIncome (Schedule H sense)", "type": "number", "sourceText": "'household income' here adds back untaxed items -- SSI, most pensions, child support, W-2/kinship-care/other cash assistance, workers' comp, etc. It is a distinct quantity from annualHouseholdIncome (taxable) and from the FPL-scaled incomeAtOrBelow input" },
+      { "key": "claimedAsDependent", "type": "boolean", "sourceText": "will not be claimed as a dependent" },
+      { "key": "livesInNursingHomeOnTitleXIX", "type": "boolean", "sourceText": "living in a nursing home and also receiving Title XIX medical assistance" },
+      { "key": "receivedW2OrCountyReliefAllYear", "type": "boolean", "sourceText": "each month of the entire 2025 year ... Wisconsin Works (W2) ... or county relief" }
+    ],
+    "unencodable": [
+      "The definition of 'household income' -- section F, Definitions #11, spanning instruction pages 10-17: it adds numerous nontaxable income sources back to Wisconsin taxable income. No engine fact captures this composite.",
+      "The credit is phased out as household income rises toward $24,680 (tables on instruction pages 25-26), so 'less than $24,680' is a hard cutoff but the amount near the top is small.",
+      "Tax-exempt housing rules, moved-to-tax-exempt-housing 12-month grace, farm/business proration, married-living-together must file one combined claim.",
+      "Only one credit per household; if married and living together, only one spouse may claim."
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.revenue.wi.gov/Pages/Individuals/Homestead-Credit.aspx",
+    "ruleUrl": "https://www.revenue.wi.gov/TaxForms2025/2025-ScheduleH-Inst.pdf",
+    "hops": [
+      "revenue.wi.gov Homestead Credit landing page -> links to the Schedule H instructions PDF",
+      "-> 2025 Schedule H Instructions (PDF, 26 pages): 'You may be able to claim homestead credit if' list on the cover; the Step-by-step qualifying questionnaire on page ~7; 'household income' defined in section F #11 (pp. 10-17)"
+    ],
+    "format": "pdf (26-page instruction booklet)",
+    "fetch": {
+      "tool": "lib-source live fetcher + pdf.ts (extractPdf) -- coordinate-based, keeps table columns",
+      "status": "HTTP 200, application/pdf, 26 pages, extractPdf ok",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeColocated": [
+      {
+        "figure": "$24,680 (household income cutoff)",
+        "colocated": false,
+        "scopeLocation": "The Step-2 questionnaire states 'Was your household income (see section F. Definitions, #11) for 2025 less than $24,680?' -- the figure is inseparable from a cross-reference to a definition 3-10 pages later. 'Household income' is a Schedule-H term of art that adds back untaxed income; a reader who takes it to mean wages, or taxable income, or FPL-relative income will mis-decide this rule in either direction."
+      },
+      {
+        "figure": "18 and 61 / 62 or older",
+        "colocated": true,
+        "scopeLocation": "On the cover list. But note the '62' cut point is unusual and easy to normalise to '65' or '60' -- see facts.ts, which already approximates Homestead's 62+ to the 60-64 band."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 18, "workedBy": "agent", "notes": "1 PDF fetch + 1 search. extractPdf produced usable structured text; the flat text was one giant line (no newlines) so grep -o with context windows was the way to pull specific figures. Reading a 26-page booklet for one rule is the expensive shape." },
+  "surprises": [
+    "'Household income' looks like the plainest possible field name and is in fact a 7-page statutory construction. This is a scope problem hiding inside a word rather than inside a table cell -- the schema's scopeColocated field, framed around figures, does not naturally capture 'the figure is fine, the noun beside it is the trap'."
+  ]
+}

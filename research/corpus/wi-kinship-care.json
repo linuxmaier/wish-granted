@@ -1,0 +1,83 @@
+{
+  "id": "wi-kinship-care",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Kinship Care",
+    "administeredBy": "Wisconsin Department of Children and Families (administered by county and tribal kinship care agencies)",
+    "jurisdiction": "state",
+    "provider": "government",
+    "categories": ["childcare-education"],
+    "_categoriesNote": "Fits 'childcare-education' only loosely -- it is a cash payment to a relative raising someone else's child, closer to 'food-basic-needs' in purpose. No CATEGORY cleanly covers kinship/foster support.",
+    "summary": "A monthly payment to a relative (or 'like-kin') who is raising a child that cannot safely live with their parents. Kinship Care has no income test for the caregiver.",
+    "benefit": "$384 per month per child (2026 rate, set by state statute). Court-ordered kinship care is paid at a different rate.",
+    "howToApply": {
+      "url": "https://dcf.wisconsin.gov/kinship",
+      "phone": null,
+      "steps": [
+        "Contact the Kinship Care Coordinator for your county or tribe.",
+        "Apply; the agency assesses the three basic eligibility tests and runs background checks on all adults in the home.",
+        "Eligibility is reviewed every 12 months."
+      ]
+    },
+    "requiredDocuments": ["Background Information Disclosure form (DCF-F-2978-E) for the caregiver and every adult resident"],
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        { "kind": "compare", "fact": "state", "op": "eq", "value": "WI" },
+        { "kind": "compare", "fact": "isRelativeCaregiverOfChildInHome", "op": "eq", "value": true,
+          "_sourceText": "a relative caregiver ... providing care and maintenance for a child; 'Relative' ... except that it does not include a parent. Child = person under 18 (or older if a full-time student, up to 19-21 in defined cases)." },
+        { "kind": "manualReview", "note": "The three basic tests are all agency judgments: (1) the basic needs of the child can be better met with the caregiver than with the parent; (2) the placement is in the best interests of the child; (3) the child currently or might meet the requirements to be in need of protection or services (CHIPS) if left with the parent(s)." },
+        { "kind": "manualReview", "note": "Criminal background check on the caregiver and all adult residents; a 'barred offense' is an initial denial, appealable via Director Review (local-agency discretion)." }
+      ],
+      "_note": "There is NO caregiver income test -- a deliberate design choice that distinguishes Kinship Care from W-2/TANF. An extractor primed by every other benefit in this corpus to look for an income threshold will not find one, and must resist inventing one."
+    },
+    "factsNeeded": [
+      { "key": "isRelativeCaregiverOfChildInHome", "type": "boolean", "sourceText": "a relative caregiver ... providing care and maintenance for a child [who lives with them rather than a parent]; 'Relative' does not include a parent" }
+    ],
+    "unencodable": [
+      "'basic needs of the child can be better met with the caregiver than with the parent' -- agency comparison.",
+      "'the placement is in the best interests of the child' -- agency judgment.",
+      "'the child currently or might meet the requirements to be in need of protection or services' -- a predictive legal standard (CHIPS).",
+      "Background check outcome, barred-offense list, and Director Review discretion.",
+      "Cooperation requirements: caregiver must apply for other benefits the child may be eligible for, and cooperate with child-support referral unless granted a good-cause exemption.",
+      "The child-age definition itself: 'under 18' plus student extensions to 19 and, in specific court-order / IEP cases, 21."
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://dcf.wisconsin.gov/kinship",
+    "ruleUrl": "https://docs.legis.wisconsin.gov/code/admin_code/dcf/021_099/58",
+    "hops": [
+      "dcf.wisconsin.gov/kinship summarises the three basic requirements and links to the code",
+      "-> docs.legis.wisconsin.gov/code/admin_code/dcf/021_099/58 (Chapter DCF 58) has the definitions (58.02) and the substantive tests across 58.04-58.07"
+    ],
+    "format": "html-prose (DCF page) + wi-admin-code (Chapter DCF 58)",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200 on both; docs.legis.wisconsin.gov is server-rendered and readable without a browser",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeColocated": [
+      {
+        "figure": "$384 per month (2026 kinship care rate)",
+        "colocated": false,
+        "scopeLocation": "On the DCF page the rate is a plain sentence with no scope; the scope ('this is the NON-court-ordered rate; court-ordered kinship care is paid differently') is implied by DCF 58.09 ('Special provisions for court-ordered kinship care') in the code, a separate document. This is a benefit figure, not an eligibility figure, but it is still a number whose governing branch sits elsewhere."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 14, "workedBy": "agent", "notes": "2 fetches. The admin-code chapter TOC + definitions section was enough; did not drill into every subsection. Confirmed 'no income test' by its ABSENCE across the DCF page and the code's stated purpose (a payment 'to assist with the expenses of providing care'), which is weaker evidence than a positive statement." },
+  "surprises": [
+    "'scopeColocated' assumes a figure that IS an eligibility gate. Here the only figures are the payment amount and age cutoffs, and the eligibility rule is almost entirely non-numeric agency judgment. The field still applies but strains -- it wants a fourth value beyond colocated true/false: 'n/a, rule has no governing figure'."
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "id": "katie-beckett-medicaid",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Katie Beckett Medicaid",
+    "administeredBy": "Wisconsin Department of Health Services",
+    "jurisdiction": "state",
+    "provider": "government",
+    "categories": ["health-disability"],
+    "summary": "A Medicaid eligibility pathway for children under 19 with a significant disability, chronic illness, or mental health need who live at home. The child can qualify on their own even when the parents' income or assets are too high for other Medicaid.",
+    "benefit": "Full Wisconsin Medicaid coverage for the child, including services private insurance often does not cover. Can be held alongside private insurance.",
+    "howToApply": {
+      "url": "https://www.dhs.wisconsin.gov/kbp/apply.htm",
+      "phone": "888-786-3246",
+      "steps": [
+        "Start the application online at access.wi.gov, by phone, or by email to DHSKatieBeckett@dhs.wisconsin.gov.",
+        "A Katie Beckett eligibility specialist helps complete the application and the disability/level-of-care determination.",
+        "The state assesses the child's functional level of care and the cost-effectiveness test."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        { "kind": "compare", "fact": "state", "op": "eq", "value": "WI" },
+        { "kind": "set", "fact": "citizenshipStatus", "op": "in", "values": ["us-citizen", "qualified-immigrant"] },
+        { "kind": "compare", "fact": "childUnder19", "op": "eq", "value": true,
+          "_sourceText": "Be under age 19." },
+        { "kind": "compare", "fact": "childHasDisability", "op": "eq", "value": true,
+          "_sourceText": "Meet the definition of \"disabled\" under the Social Security Act." },
+        { "kind": "manualReview", "note": "Requires a state 'functional level of care' determination (child needs hospital or long-term-care-facility level of care), a finding that care at home is safe and appropriate, and a cost-effectiveness test (home care must not cost more than institutional care). None of these are decidable from interview facts." },
+        { "kind": "compare", "fact": "childOwnIncomeAboveInstitutionalLimit", "op": "eq", "value": false,
+          "_sourceText": "Not have income in their name that is more than the current income limit for those living in an institution." }
+      ],
+      "_note": "The load-bearing branch: the income test is against the CHILD'S OWN income measured to the institutional limit -- parental household income is disregarded entirely ('Their parents have too much income or assets to qualify for other kinds of Medicaid' ... still qualifies). An extractor that reaches for annualHouseholdIncome / incomeAtOrBelow here inverts the program's whole point."
+    },
+    "factsNeeded": [
+      { "key": "childUnder19", "type": "boolean", "sourceText": "Be under age 19. -- our child facts are hasChildUnder5 and hasSchoolAgeChild; neither covers the full 0-18 range, and none identifies the specific child the rule is about" },
+      { "key": "childHasDisability", "type": "boolean", "sourceText": "Meet the definition of \"disabled\" under the Social Security Act -- hasDisability is RESERVED, and it is 'someone in the household', not 'the child'" },
+      { "key": "childOwnIncomeAboveInstitutionalLimit", "type": "boolean", "sourceText": "Not have income in their name that is more than the current income limit for those living in an institution -- a distinct concept from annualHouseholdIncome" }
+    ],
+    "unencodable": [
+      "Functional 'level of care' determination -- requires the kind of care typically provided by a hospital or long-term care facility.",
+      "'Receive safe and appropriate care at home.'",
+      "Cost-effectiveness test: home care must not cost more than the equivalent institutional care Medicaid would cover.",
+      "'Live at home, in a foster care setting, or in another eligible community-based setting' -- a living-arrangement carve-out with named exceptions."
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.dhs.wisconsin.gov/kbp/index.htm",
+    "ruleUrl": "https://www.dhs.wisconsin.gov/kbp/eligibility.htm",
+    "hops": ["kbp/index.htm -> 'Who is eligible' link -> kbp/eligibility.htm carries the eight-point list"],
+    "format": "html-prose + html-list",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeColocated": [
+      {
+        "figure": "the current income limit for those living in an institution",
+        "colocated": false,
+        "scopeLocation": "The eligibility list states the test without a number; the fact that it is scoped to the CHILD'S OWN income (not the household's) is carried by a separate callout box higher on the same page ('Their parents have too much income or assets ... still qualify'). The actual dollar figure is not on the page at all."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 8, "workedBy": "agent", "notes": "1 fetch of the eligibility page; index page and apply page URLs from web search, not re-fetched." },
+  "surprises": [
+    "Half the rule (level of care, safe-care-at-home, cost-effectiveness) is a professional assessment, not a rule. The honest encoding is mostly `manualReview`, which means the 'coverage' this candidate contributes is thin -- but leaving it out would hide a program that exists precisely for families other Medicaid rules turn away."
+  ]
+}

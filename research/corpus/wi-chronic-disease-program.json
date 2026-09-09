@@ -1,0 +1,98 @@
+{
+  "id": "wi-chronic-disease-program",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Wisconsin Chronic Disease Program",
+    "administeredBy": "Wisconsin Department of Health Services (ForwardHealth)",
+    "jurisdiction": "state",
+    "provider": "government",
+    "categories": ["health-disability"],
+    "summary": "State-funded help paying for care and supplies for Wisconsin residents with one of three conditions: chronic (end-stage) renal disease, hemophilia, or adult cystic fibrosis.",
+    "benefit": "Coverage of condition-specific services and supplies (dialysis/transplant care, blood products and infusion supplies, CF medicines and services). Members pay copays and deductibles; those over 300% FPL pay an income-based deductible first.",
+    "howToApply": {
+      "url": "https://www.dhs.wisconsin.gov/forwardhealth/wcdp.htm",
+      "phone": null,
+      "steps": [
+        "Get diagnosed and referred by the appropriate specialty center (a renal program, a hemophilia treatment center, or a cystic fibrosis center).",
+        "Submit the program-specific application (F-01186 renal, F-01184 hemophilia, F-01185 adult CF) with a Financial Need Statement.",
+        "Submit a new Financial Need Statement every year to keep benefits."
+      ]
+    },
+    "requiredDocuments": ["Program application", "Financial Need Statement (F-01189 / F-01187 / F-01188)", "Residency verification (F-01143 / F-01145 / F-01144)"],
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        { "kind": "compare", "fact": "state", "op": "eq", "value": "WI",
+          "_sourceText": "If the applicant is not a Wisconsin resident or does not intend to remain a resident of Wisconsin, the application will be denied." },
+        {
+          "kind": "anyOf",
+          "_sourceText": "WCDP helps people get services and supplies that treat: Adult cystic fibrosis / Hemophilia / Renal Disease",
+          "of": [
+            { "kind": "allOf", "of": [
+              { "kind": "compare", "fact": "hasEndStageRenalDisease", "op": "eq", "value": true },
+              { "kind": "manualReview", "note": "Renal members who can get Medicare must pay Medicare Part B premiums to receive benefits; those who can get Medicare but don't are ineligible until they start paying premiums." }
+            ]},
+            { "kind": "allOf", "of": [
+              { "kind": "compare", "fact": "hasHemophilia", "op": "eq", "value": true, "_sourceText": "A hemophilia treatment center must have diagnosed them." },
+              { "kind": "compare", "fact": "agreedToHemophiliaTreatmentProgram", "op": "eq", "value": true, "_sourceText": "They also must have agreed in writing to enter a treatment program through the center." }
+            ]},
+            { "kind": "allOf", "of": [
+              { "kind": "compare", "fact": "hasCysticFibrosis", "op": "eq", "value": true },
+              { "kind": "set", "fact": "age", "op": "in", "values": ["60-64", "65-plus", "under-60"], "_note": "'Members must be 18 years or older' -- but our age bands start at 'under-60', which includes minors. The 18 floor is not expressible.", "_sourceText": "Members must be 18 years or older. The medical director of a cystic fibrosis center must have diagnosed them." }
+            ]}
+          ]
+        }
+      ],
+      "_note": "There is NO income ceiling. '300% of the federal poverty level' is a deductible trigger, not an eligibility gate: 'If you make more than 300% of the federal poverty level each year, you must pay a certain amount yourself before getting benefits.' Same shape as SeniorCare (seniorcare-wi) -- a prominent FPL percentage that reads as a ceiling but is a cost-share tier."
+    },
+    "factsNeeded": [
+      { "key": "hasEndStageRenalDisease", "type": "boolean", "sourceText": "The Chronic Renal Disease Program helps people with advanced renal disease." },
+      { "key": "hasHemophilia", "type": "boolean", "sourceText": "The Hemophilia Home Care Program helps people with hemophilia. A hemophilia treatment center must have diagnosed them." },
+      { "key": "hasCysticFibrosis", "type": "boolean", "sourceText": "The Adult Cystic Fibrosis Program helps adults with cystic fibrosis." },
+      { "key": "agreedToHemophiliaTreatmentProgram", "type": "boolean", "sourceText": "must have agreed in writing to enter a treatment program through the center" },
+      { "key": "diagnosedBySpecialtyCenter", "type": "boolean", "sourceText": "The medical director of a cystic fibrosis center must have diagnosed them / A hemophilia treatment center must have diagnosed them -- not just 'has the condition' but 'diagnosed by a specific type of accredited center'" }
+    ],
+    "unencodable": [
+      "The diagnosis itself, and the requirement that it come from a specific accredited center type.",
+      "The annual Financial Need Statement -- 'a member is not eligible for benefits until this completed statement is on file'.",
+      "Renal: the Medicare Part B premium condition.",
+      "The 18+ floor for the adult CF program (age bands cannot express it).",
+      "Estate Recovery: 'The state gets paid for benefits it provides through the Wisconsin Estate Recovery Program' -- a lien-style recovery, relevant context but not an eligibility test.",
+      "Full statutory eligibility is in ss. 49.68 / 49.683 / 49.685 / 49.686, Wis. Stats., not fetched here."
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.dhs.wisconsin.gov/forwardhealth/wcdp.htm",
+    "ruleUrl": null,
+    "hops": ["forwardhealth/wcdp.htm carries the per-condition eligibility snippets and the 300% FPL deductible statement; deeper detail is in the Member Handbook P-01147 (PDF, not fetched) and the statutes"],
+    "format": "html-prose+list",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeColocated": [
+      {
+        "figure": "300% of the federal poverty level",
+        "colocated": true,
+        "scopeLocation": "The scope IS adjacent -- 'you must pay a certain amount yourself before getting benefits' is in the same sentence. But the figure still reads as a ceiling at a glance, and it is the only FPL number on the page. This is a 'colocated but still misreadable' case: the safeguard against branch-drop here is reading the whole sentence, not finding a scope elsewhere."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 9, "workedBy": "agent", "notes": "1 fetch + 1 search. Did not fetch the Member Handbook PDF or the statutes; the citizen page was enough to characterise the rule shape and the 300% trap." },
+  "surprises": [
+    "Second independent instance in the pilot (after SeniorCare) of 'prominent FPL % that is a cost-share tier, not a ceiling'. Two of the first ten candidates -- this looks less like a rare trap and more like a standard way Wisconsin health programs are written."
+  ]
+}
