@@ -1,0 +1,89 @@
+{
+  "id": "dane-county-veterans-service-office",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Dane County Veterans Service Office",
+    "administeredBy": "Dane County (County Veterans Service Office, per Wis. Stat. ch. 45)",
+    "jurisdiction": "county",
+    "provider": "government",
+    "categories": ["veterans"],
+    // A cross-cutting benefits-navigation office for veterans -- like wi-211 and the ADRC, it is worth listing precisely because it abstains. Same category-set framing as dane-county-adrc.
+    "summary": "Free, confidential help for Dane County veterans, their dependents, and survivors: figuring out which local, state, and federal benefits you qualify for and applying for them, including VA disability claims, pensions, health care enrollment, education benefits, and burial benefits.",
+    "benefit": "Benefits counselling, claims assistance and representation, and referrals. Also administers the 'Vets Ride with Pride' bus pass and sells grave/memorial flag holders at cost.",
+    "howToApply": {
+      "url": "https://www.danevets.com/services",
+      "phone": "608-266-4158",
+      "steps": [
+        "Call (608) 266-4158 or come to a walk-in session (Wednesdays 9:00 am - 4:00 pm), or schedule an appointment.",
+        "A Veterans Service Officer reviews your situation and identifies benefits you may qualify for.",
+        "They help you file claims and applications and can represent you on VA claims and appeals."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    /*
+      No eligibility rule beyond being a veteran, dependent, or survivor who
+      resides in Dane County. Per Wis. Stat. ch. 45 the CVSO serves all such
+      people. This is a referral/navigation service -- worth listing precisely
+      because it abstains (compare wi-211, dane-county-adrc).
+    */
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        { "kind": "compare", "fact": "county", "op": "eq", "value": "dane" },
+        {
+          "kind": "anyOf",
+          "of": [
+            { "kind": "compare", "fact": "isVeteran", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "isDependentOrSurvivorOfVeteran", "op": "eq", "value": true }
+          ]
+        }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "isVeteran", "type": "boolean", "sourceText": "serve nearly 30,000 veterans, dependents, and survivors who reside in Dane County (RESERVED today)" },
+      { "key": "isDependentOrSurvivorOfVeteran", "type": "boolean", "sourceText": "dependents, and survivors" }
+    ],
+    "expressibility": {
+      "level": "full",
+      "note": "county + (veteran or dependent/survivor). A deliberate abstention, like wi-211 and dane-county-adrc -- the value is that it makes no eligibility judgment and helps everyone in the class."
+    },
+    "branchDropRisk": [],
+    "unencodable": [
+      { "kind": "other", "text": "The specific downstream benefits the office helps with (VA disability, pension, education, burial, 'Vets Ride with Pride') each have their own rules -- captured separately where fetched (us-va-veterans-pension, wi-gi-bill-tuition-remission, dane-county-veteran-transportation)." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.danevets.com/",
+    "ruleUrl": "https://www.danevets.com/services",
+    "hops": ["danevets.com -> /services -- lists the program areas the office helps with; the only eligibility framing is 'Dane County veterans and their families'"],
+    "format": ["none-published"],
+    "formatNotes": "html-prose; a service-catalogue page. The 'per Wis. Stat. ch. 45 ... veterans, dependents, and survivors who reside in Dane County' framing came from a danecounty.gov press release confirmed alongside the danevets.com page.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200 for danevets.com/services. NOTE: veterans.countyofdane.com / cvso.danecounty.gov / www.danecounty.gov/departments/... all 404 or unreachable; the office's site is danevets.com (found via search).",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "(no eligibility figure)",
+        "separation": "n/a — no governing figure",
+        "where": "No income or numeric test. Statutory service population (veterans/dependents/survivors in Dane County)."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 10, "workedBy": "agent", "notes": "3 fetch attempts (2 wrong domains) + 2 searches. The office moved off countyofdane.com; its current site is a third-party-looking danevets.com. Entity/domain disambiguation, again, was most of the cost." },
+  "surprises": [
+    "The county's statutory veterans office -- mandated by Wis. Stat. ch. 45 -- is at 'danevets.com', not any danecounty.gov or countyofdane.com path. Third candidate in the corpus (after the-beacon-dane and dane-county-housing-authority-hcv) where finding the real domain was harder than reading the rule."
+  ]
+}

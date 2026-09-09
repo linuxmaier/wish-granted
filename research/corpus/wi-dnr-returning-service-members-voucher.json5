@@ -1,0 +1,84 @@
+{
+  "id": "wi-dnr-returning-service-members-voucher",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "DNR Returning Service Members Voucher (free hunting or fishing license)",
+    "administeredBy": "Wisconsin Department of Veterans Affairs, with the Wisconsin Department of Natural Resources",
+    "jurisdiction": "state",
+    "provider": "government",
+    "categories": ["veterans"],
+    "summary": "A one-time free hunting or fishing license for recently discharged Wisconsin resident veterans who served during a war period.",
+    "benefit": "One free license of the veteran's choice: Small Game, Archery, Gun Deer, or Annual Fishing.",
+    "howToApply": {
+      "url": "https://dva.wi.gov/benefits/outdoor-rec-and-sports/hunting-fishing-license/",
+      "phone": "800-947-8387",
+      "steps": [
+        "Fill out eligibility form WDVA 2240 (or apply through MyWisVets.com).",
+        "WDVA issues a voucher code, to be redeemed within 365 days of discharge.",
+        "Redeem at any DNR Service Center, or by phone at 1-888-936-7463 for a mailed license."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        { "kind": "compare", "fact": "isVeteran", "op": "eq", "value": true },
+        // "recently returned Wisconsin resident veterans"
+        { "kind": "compare", "fact": "state", "op": "eq", "value": "WI" },
+        // "must have separated from military service under honorable conditions within the past 365 days"
+        { "kind": "compare", "fact": "separatedHonorablyWithinPast365Days", "op": "eq", "value": true },
+        // "and have served during a 'war period'" -- defined here as post-9/11 OEF/OIF-era service windows
+        { "kind": "compare", "fact": "servedDuringDefinedWarPeriod", "op": "eq", "value": true }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "isVeteran", "type": "boolean", "sourceText": "recently returned ... veterans (RESERVED today)" },
+      { "key": "separatedHonorablyWithinPast365Days", "type": "boolean", "sourceText": "must have separated from military service under honorable conditions within the past 365 days -- a recency window plus a discharge-character test" },
+      { "key": "servedDuringDefinedWarPeriod", "type": "boolean", "sourceText": "have served during a 'war period' -- here specifically the post-9/11 OEF window (Sept 11, 2001 -) and the OIF window (March 19, 2003 -)" }
+    ],
+    "expressibility": {
+      "level": "full",
+      "note": "A clean four-part allOf. Every leaf maps given isVeteran and two new booleans. No manualReview -- the voucher is issued on the form. The 'within the past 365 days' recency window is the only awkward part (time-relative)."
+    },
+    "branchDropRisk": [],
+    "unencodable": [
+      { "kind": "incorporated-law", "text": "The exact 'war period' definition (specific operation start dates and successor-operation language)." },
+      { "kind": "documentation", "text": "Discharge-character verification via form WDVA 2240 / MyWisVets." },
+      { "kind": "other", "text": "One-time only; voucher expires 365 days after discharge." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://dva.wi.gov/benefits/outdoor-rec-and-sports/hunting-fishing-license/",
+    "ruleUrl": null,
+    "hops": ["dva.wi.gov/benefits/outdoor-rec-and-sports/hunting-fishing-license/ -- 'DNR Returning Service Members Voucher' section states the rule and the war-period definition inline"],
+    "format": ["html-prose"],
+    "formatNotes": "prose + bullets. The 'war period' definition is given inline as two dated windows.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "'war period'",
+        "separation": "colocated",
+        "where": "The page defines its own term inline: 'For purposes of the DNR Returning Service Members Voucher, \"war period\" means: [two dated windows]'. A rare case of a term-of-art being defined right where it is used."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 5, "workedBy": "agent", "notes": "1 fetch. A small, well-specified benefit -- the whole rule and its one term-of-art are on one page." },
+  "surprises": [
+    "The 'war period' term that wi-veterans-assistance-grant and wi-gi-bill leave to the statute is here defined inline, and narrowly (post-9/11 only). Same phrase, three programs, and only this one tells you what it means."
+  ]
+}

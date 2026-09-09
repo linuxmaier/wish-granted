@@ -1,0 +1,99 @@
+{
+  "id": "us-va-aid-attendance",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "VA Aid and Attendance and Housebound benefits",
+    "administeredBy": "U.S. Department of Veterans Affairs",
+    "jurisdiction": "federal",
+    "provider": "government",
+    "categories": ["veterans", "health-disability"],
+    "summary": "An increased monthly payment added to a VA pension for veterans or survivors who need help with daily activities, are bedridden, are in a nursing home due to disability, or are housebound by a permanent disability.",
+    "benefit": "A higher monthly VA pension rate (Aid and Attendance, or the lower Housebound allowance -- not both at once).",
+    "howToApply": {
+      "url": "https://www.va.gov/pension/aid-attendance-housebound/",
+      "phone": "800-827-1000",
+      "steps": [
+        "You must already get, or be eligible for, a VA pension (see us-va-veterans-pension).",
+        "Have a medical examiner complete VA Form 21-2680 (Examination for Housebound Status or Permanent Need for Regular Aid and Attendance).",
+        "Apply online, by mail to the Pension Intake Center (PO Box 5365, Janesville, WI), or in person at a VA regional office."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        // "You may be eligible for this benefit if you get a VA pension and you meet at least 1 of these requirements."
+        { "kind": "compare", "fact": "getsOrEligibleForVaPension", "op": "eq", "value": true },
+        {
+          "kind": "anyOf",
+          "of": [
+            // Aid and Attendance route
+            { "kind": "compare", "fact": "needsHelpWithDailyActivities", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "isBedriddenByIllness", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "isNursingHomePatientForDisability", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "hasSevereVisualImpairment5_200", "op": "eq", "value": true },
+            // Housebound route
+            { "kind": "compare", "fact": "isHouseboundByPermanentDisability", "op": "eq", "value": true }
+          ]
+        }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "getsOrEligibleForVaPension", "type": "boolean", "sourceText": "if you get a VA pension -- this benefit sits ON TOP of us-va-veterans-pension; all of that program's income/net-worth/service tests apply first" },
+      { "key": "needsHelpWithDailyActivities", "type": "boolean", "sourceText": "You need another person to help you perform daily activities, like bathing, feeding, and dressing" },
+      { "key": "isBedriddenByIllness", "type": "boolean", "sourceText": "You have to stay in bed - or spend a large portion of the day in bed - because of illness" },
+      { "key": "hasSevereVisualImpairment5_200", "type": "boolean", "sourceText": "Your eyesight is limited (even with glasses ... only 5/200 or less in both eyes; or concentric contraction of the visual field to 5 degrees or less)" },
+      { "key": "isHouseboundByPermanentDisability", "type": "boolean", "sourceText": "you spend most of your time in your home because of a permanent disability" }
+    ],
+    "expressibility": {
+      "level": "partial",
+      "note": "The functional-need disjunction (ADL help / bedridden / nursing home / severe vision / housebound) maps to booleans. But eligibility is gated on VA pension eligibility first (a whole separate means + service test), and the actual determination is made from a medical examiner's VA Form 21-2680 -- a clinical assessment."
+    },
+    "branchDropRisk": [
+      {
+        "figure": "5/200 visual acuity",
+        "takenNaivelyAs": "the general disability bar for the benefit",
+        "actuallyIs": "one of five alternative functional routes -- the severe-vision route. Someone who needs ADL help or is housebound qualifies without meeting the vision standard.",
+        "direction": "narrower"
+      }
+    ],
+    "unencodable": [
+      { "kind": "professional-assessment", "text": "The determination is made from VA Form 21-2680, completed by a medical examiner -- not self-reportable." },
+      { "kind": "incorporated-law", "text": "VA pension eligibility itself is a prerequisite -- the full income, net-worth, wartime-service, and discharge tests of us-va-veterans-pension apply before this benefit is reachable." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.va.gov/pension/aid-attendance-housebound/",
+    "ruleUrl": null,
+    "hops": ["va.gov/pension/aid-attendance-housebound/ -- 'Am I eligible?' states both routes (Aid and Attendance, Housebound) inline"],
+    "format": ["html-prose"],
+    "formatNotes": "prose + 'at least 1 of these must be true' bullets. Clean va.gov structure.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "'if you get a VA pension' (the prerequisite)",
+        "separation": "cross-reference",
+        "where": "The page opens every eligibility branch with 'if you get a VA pension and ...'. The entire pension eligibility test (means + service, us-va-veterans-pension) is a linked prerequisite, not restated here."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 6, "workedBy": "agent", "notes": "1 fetch (shared session with us-va-veterans-pension). Captured as a separate candidate because it is a distinct benefit with its own form and its own functional-need rule -- but it is not reachable without the pension." },
+  "surprises": [
+    "A benefit whose eligibility page never states an income figure at all -- because the income test is entirely inherited from the pension it rides on. The record for this program is only honest if it points at us-va-veterans-pension as a hard prerequisite."
+  ]
+}

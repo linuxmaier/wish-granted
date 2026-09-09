@@ -1,0 +1,88 @@
+{
+  "id": "wisconsin-veterans-homes",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Wisconsin Veterans Homes",
+    "administeredBy": "Wisconsin Department of Veterans Affairs",
+    "jurisdiction": "state",
+    "provider": "government",
+    "categories": ["health-disability", "veterans"],
+    "summary": "Three state-operated homes (Chippewa Falls, King, Union Grove) providing 24-hour skilled nursing care to veterans, their spouses, and Gold Star parents.",
+    "benefit": "Skilled nursing and long-term residential care at a Wisconsin Veterans Home.",
+    "howToApply": {
+      "url": "https://dva.wi.gov/services/wisconsin-veterans-homes/",
+      "phone": "800-947-8387",
+      "steps": [
+        "Contact the specific home (Chippewa Falls 715-720-6775, King 715-258-5586, Union Grove 262-878-6700) or visit wisvetshomes.com.",
+        "Complete the admission application and a clinical assessment of care needs.",
+        "Admission depends on a bed being available and the home being able to meet the applicant's care needs."
+      ]
+    },
+    "status": "waitlist",
+    "seasonalNote": null,
+    // Skilled-nursing facilities with finite beds; admission is application + clinical assessment + bed availability. Modelled as waitlist.
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        {
+          // "24-hour skilled nursing care to our nation's veterans, their spouses, and Gold Star Parents"
+          "kind": "anyOf",
+          "of": [
+            { "kind": "compare", "fact": "isVeteran", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "isSpouseOfVeteran", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "isGoldStarParent", "op": "eq", "value": true }
+          ]
+        },
+        { "kind": "manualReview", "note": "Requires a skilled-nursing / long-term-care level of need (a clinical assessment), an admission application, and an available bed. None decidable from interview facts. Detailed eligibility (WI residency, discharge character, care level) is on wisvetshomes.com and in Ch. VA 6, neither fetched here." }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "isVeteran", "type": "boolean", "sourceText": "our nation's veterans (RESERVED today)" },
+      { "key": "isSpouseOfVeteran", "type": "boolean", "sourceText": "their spouses" },
+      { "key": "isGoldStarParent", "type": "boolean", "sourceText": "and Gold Star Parents -- a parent whose child died in military service" }
+    ],
+    "expressibility": {
+      "level": "manual-review-dominant",
+      "note": "The dva.wi.gov page publishes only who it's for (veteran / spouse / Gold Star parent) and three phone numbers. The actual gate -- a skilled-nursing level-of-care assessment plus bed availability -- is entirely manualReview, and the residency/discharge detail is off-page."
+    },
+    "branchDropRisk": [],
+    "unencodable": [
+      { "kind": "professional-assessment", "text": "Skilled-nursing / long-term-care level-of-need assessment -- the load-bearing condition." },
+      { "kind": "agency-discretion", "text": "Bed availability across the three homes." },
+      { "kind": "documentation", "text": "Admission application, DD-214 discharge character review, Wisconsin residency (per Ch. VA 6, off-page)." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://dva.wi.gov/services/wisconsin-veterans-homes/",
+    "ruleUrl": null,
+    "hops": ["dva.wi.gov/services/wisconsin-veterans-homes/ -- lists the three homes with addresses/phones and one sentence on who is served; points to wisvetshomes.com for detail"],
+    "format": ["none-published"],
+    "formatNotes": "html-prose; a directory page, not an eligibility page. Real criteria are on wisvetshomes.com and in Wis. Admin. Code Ch. VA 6 (not fetched).",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200 (normalized length ~667 -- a very thin page)",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "(no eligibility figure)",
+        "separation": "other-document",
+        "where": "The entry page has no eligibility criteria; the real rule (level of care, residency, discharge) is on wisvetshomes.com and in Ch. VA 6."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 5, "workedBy": "agent", "notes": "1 fetch. The dva.wi.gov page is essentially a signpost to wisvetshomes.com; captured at that level deliberately -- 'the official services page publishes no rule' is the finding." },
+  "surprises": [
+    "The state's flagship veterans benefit -- three skilled-nursing homes -- gets a ~120-word page on the official services site with no eligibility criteria at all, just addresses and a link to a separate domain."
+  ]
+}

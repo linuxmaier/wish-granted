@@ -1,0 +1,109 @@
+{
+  "id": "wi-veterans-health-care-aid-grant",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Wisconsin Veterans Health Care Aid Grant",
+    "administeredBy": "Wisconsin Department of Veterans Affairs (applications through County/Tribal Veterans Service Offices)",
+    "jurisdiction": "state",
+    "provider": "government",
+    "categories": ["veterans", "health-disability"],
+    "summary": "A grant that pays a share of dental, vision, and hearing care costs for Wisconsin veterans who cannot afford them and have exhausted other sources of aid. Paid directly to the provider.",
+    "benefit": "Aid toward dental (up to $800 / 12 months; extended dental up to $4,000 / 24 months), vision (up to $400 / 12 months), and hearing care (up to $200 / 12 months; up to $1,875 per hearing aid / 24 months). $7,500 combined lifetime limit with Subsistence Aid.",
+    "howToApply": {
+      "url": "https://dva.wi.gov/services/mental-health-and-emergency-services/subsistence-aid-health-care-aid-grants/",
+      "phone": "800-947-8387",
+      "steps": [
+        "Contact your County or Tribal Veterans Service Office (CVSO/TVSO).",
+        "Submit the Health Care Aid Grant application; WDVA issues a Description of Benefits listing approved care and a time window.",
+        "Give the Description of Benefits to your chosen provider, who must agree to accept WDVA's payment (plus insurance and your determined ability to pay) as payment in full."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        {
+          "kind": "anyOf",
+          "of": [
+            { "kind": "compare", "fact": "isVeteran", "op": "eq", "value": true },
+            // "Unremarried surviving spouses and dependent children of an eligible veteran who died in the line of duty ... OR the qualified spouse and dependent children of an activated or deployed military service member"
+            { "kind": "compare", "fact": "isSurvivingSpouseOrDependentOfEligibleVeteran", "op": "eq", "value": true }
+          ]
+        },
+        // "s. VA 2.01(2)(a)" -- the health care aid rule in the admin code; the page states caps, not the income cap. Chapter VA 2 sets a 200% FPL household-income cap for the ordinary route, same as Subsistence Aid.
+        { "kind": "incomeAtOrBelow", "scale": "fpl", "percent": 200 },
+        { "kind": "manualReview", "note": "'the Department may not provide health care aid ... unless the ... health care provider agrees to accept, as full payment ... the amount of the payment, the amount of the recipient's health insurance ... and the amount that the Department determines the applicant is capable of paying.' The 'capable of paying' determination is a WDVA means assessment against the applicant's finances. Plus: all other sources of aid must be exhausted." }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "isVeteran", "type": "boolean", "sourceText": "assist veterans and military families (RESERVED today)" },
+      { "key": "isSurvivingSpouseOrDependentOfEligibleVeteran", "type": "boolean", "sourceText": "Unremarried surviving spouses and dependent children of an eligible veteran who died in the line of duty ... OR the qualified spouse and dependent children of an activated or deployed military service member" }
+    ],
+    "expressibility": {
+      "level": "manual-review-dominant",
+      "note": "Veteran-or-family + a 200% FPL cap (from the admin code, not the page) are encodable. But the load-bearing conditions -- provider agrees to accept WDVA payment as payment in full, WDVA's 'capable of paying' determination, and exhaustion of all other aid -- are all manualReview."
+    },
+    "branchDropRisk": [
+      {
+        "figure": "$800 / $400 / $200 / $1,875 (care-type caps)",
+        "takenNaivelyAs": "eligibility thresholds",
+        "actuallyIs": "per-care-type benefit caps over rolling 12- or 24-month windows -- they limit the payout, not who qualifies. The eligibility figure (200% FPL) is not on this page at all.",
+        "direction": "narrower"
+      },
+      {
+        "figure": "200 percent of the federal poverty guidelines (from Ch. VA 2)",
+        "takenNaivelyAs": "absent -- the page states no income test",
+        "actuallyIs": "the same 200% FPL household-income cap as the Subsistence Aid grant, in the admin code, with the same par. (d) deployed-military-family carve-out. A reader of only the WDVA page would author a record with no income rule.",
+        "direction": "narrower"
+      }
+    ],
+    "unencodable": [
+      { "kind": "professional-assessment", "text": "WDVA's determination of 'the amount ... the applicant is capable of paying' -- a means assessment against the applicant's finances." },
+      { "kind": "other", "text": "The provider must agree to accept WDVA's payment + insurance + the applicant's determined contribution as payment in full -- a provider-side condition outside the applicant's control." },
+      { "kind": "documentation", "text": "Exhaustion of all other sources of aid, certified via the CVSO/TVSO." },
+      { "kind": "incorporated-law", "text": "The s. 45.01(12) 'veteran' definition and the full VA 2.01(2)(a) rule (not fetched here)." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://dva.wi.gov/services/mental-health-and-emergency-services/subsistence-aid-health-care-aid-grants/",
+    "ruleUrl": "https://docs.legis.wisconsin.gov/code/admin_code/va/2",
+    "hops": [
+      "dva.wi.gov subsistence-aid-health-care-aid-grants page -- states the care-type dollar caps and the provider-payment condition, but NOT the income eligibility test",
+      "-> Wisconsin Administrative Code Chapter VA 2 (s. VA 2.01(2)(a)) -- the health care aid eligibility rule including the FPL cap (shared with Subsistence Aid, wi-veterans-assistance-grant)"
+    ],
+    "format": ["html-prose", "wi-admin-code"],
+    "formatNotes": "shared WDVA page with Subsistence Aid; the page is prose (caps + process only). Eligibility rule is Chapter VA 2. Did not re-fetch the code for this candidate -- carried the 200% FPL / par. (d) structure from wi-veterans-assistance-grant, which fetched it.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "the income eligibility test",
+        "separation": "other-document",
+        "where": "Entirely absent from the WDVA program page -- which is all dollar caps and process. The rule (including the FPL cap) is in Chapter VA 2 of the Administrative Code. Same separation pattern as wi-veterans-assistance-grant."
+      },
+      {
+        "scopeOf": "$800 / $400 / $200 (dental / vision / hearing caps)",
+        "separation": "colocated",
+        "where": "Listed inline in the 'Assistance Grant Fact Sheet' section with their rolling time windows. Benefit caps, clearly scoped."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 8, "workedBy": "agent", "notes": "1 fetch (shared page with wi-veterans-assistance-grant). Split into its own candidate because Health Care Aid is a distinct benefit (dental/vision/hearing) with a distinct application, per GO-NO-GO §6.6. Did not re-fetch Ch. VA 2." },
+  "surprises": [
+    "The WDVA page pairs Subsistence Aid and Health Care Aid on one URL, lists ~15 lines of dollar caps for each, and states the income eligibility rule for NEITHER. Two candidate programs, one page, zero eligibility figures -- the rule for both lives only in the admin code."
+  ]
+}
