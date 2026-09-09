@@ -99,6 +99,14 @@ bugs, and that the resulting rule tends to come out *narrower* than reality.
 looser direction about as often. The shared shape would still hold, but
 "narrower" would stop being the useful half of the description.
 
+*Tested, not triggered (2026-09-09).* The #100 corpus survey (60 candidates,
+`research/corpus/FINDINGS.md` §4) counted 24 narrower, 3 looser, 7 "either"
+(a term-trap or person-scope confusion that mis-decides both ways — a bucket the
+original binary did not have). Narrower still dominates, so the condition above
+is not met — but looser is now reproducible rather than hypothetical
+(an income *floor* in `habitat-dane-home-repairs`; programs with no income test
+in `wi-kinship-care` and `wi-veterans-property-tax-credit`).
+
 **Deliberately not asserted: why it happens.** Explanations were offered at the
 time and are preserved in #97 and the archived research. None was tested against
 an alternative, so none is recorded here as a cause — and a plausible diagnosis
@@ -192,17 +200,34 @@ the interview's current vocabulary — the circular reasoning #88 rejected.
 Not rhetorical. These are the things we do not know, and the reason no
 architecture is specified here.
 
+**Q1–Q4 now have a first round of evidence** from the #100 corpus survey (60
+hand-authored candidates, `research/corpus/FINDINGS.md`, 2026-09-09). It is
+evidence, not a decision — §6 still stands. Q5 and Q6 are untouched by it.
+
 1. **What shapes do real eligibility rules actually take?** Across a sufficiently 
    broad corpus, how often is a rule a clean threshold, a
    disjunction of categorical routes, a table scoped by a column, a
    cross-reference, or prose that no engine can encode?
+   → FINDINGS §1: a load-bearing disjunction in 28/60; a `manualReview` inside
+   the rule in 36/60 (the majority); 80% of sources are prose; 10/60 publish no
+   rule.
 2. **Does the fact vocabulary need to change?** `isVeteran` and `hasDisability`
    are reserved on reasoning that #88 already discredited elsewhere. The corpus
    work is the moment to settle it with evidence.
+   → FINDINGS §2: `isVeteran` unlocks 11 candidates (a whole category);
+   `hasDisability` unlocks the `health-disability` category and ~5 programs but
+   ~6 disability-gated programs need a rating/functional fact it does not carry;
+   `AGE_BANDS` is broken by ~14 candidates.
 3. **Is deterministic parsing worth rebuilding?** It was cheap and honest, but
    its premise was a tiering we no longer trust. If a large share of new sources
    publish clean structured tables, that answer changes.
+   → FINDINGS §3: it does not. 48/60 sources are prose; a structured table
+   appears in 10, with an attached column-header scope in 5. Structure
+   *preservation* is worth keeping; a structure-*dependent* parser would idle.
 4. **Is there any mechanism that catches branch-dropping?** 
+   → FINDINGS §4 measures the signal (32/60 candidates carry a figure separated
+   from its scope; 55% of figure-bearing scope entries are separated) but does
+   not propose a mechanism.
 5. **What does a reviewer actually need?** Nothing ever produced a
    reviewer-facing artefact — candidate rule, provenance, the diff against the
    existing record — so the throughput assumption underneath the whole

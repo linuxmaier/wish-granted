@@ -67,13 +67,22 @@ they are the reason the term needs a definition at all:
 | Alternative qualifying routes ("or") | `foodshare-snap-wi` — an income test **or** categorical SSI/W-2 receipt |
 | A table column or row scoping a figure to a population | `badgercare-plus-population-columns` — 201% vs 306% by column header |
 | A named tier that is not an eligibility gate at all | `seniorcare-coverage-levels` — cost-sharing levels, not an income ceiling |
+| A bare FPL % that reads as a ceiling but triggers cost-sharing | `seniorcare-wi`, `wi-chronic-disease-program` — the corpus survey found this recurring, both WI DHS health programs; a plain "300% FPL" with no *named* tier, still not a gate (`research/corpus/FINDINGS.md` §4) |
 | A conditional carve-out | `lifeline-survivor-extended` — a survivor-only extended threshold |
 | A capped discretionary allowance | `headstart-cfr-over-income-allowance` |
 | A composition test rather than an income test | `snap-cfr-elderly-separate-household` |
+| A person-scoped income concept, not a household aggregate | `wi-family-planning-only-services` ("only your own income counts"), `katie-beckett-medicaid` (the child's own income) — from the corpus survey |
 
 **Branch-dropping** is then sayable in one line: *taking a number as the whole
 rule and discarding the branch that governs it.* See
 [`pipeline-principles.md`](pipeline-principles.md) §3.1.
+
+**Direction of the error.** The corpus survey (`research/corpus/FINDINGS.md` §4)
+counts branch-drop risks as *narrower* (rules out people the program takes — the
+measured failure), *looser* (invents a limit the program lacks), or *either* (a
+term-trap or person-scope confusion that mis-decides both ways). Narrower still
+dominated (24 of 34), but *looser* was reproducible (3 cases) and *either* was
+newly significant (7).
 
 ### Encoding and outcome
 

@@ -75,6 +75,24 @@ county** bodies; and figures whose governing scope sits away from the figure.
 Check the candidate is not already a shipped record (`src/data/programs/`,
 17 files) or already captured here.
 
+**Batch-2 lessons (2026-09-09):**
+
+- **A multi-benefit org's umbrella page may publish no rule while each
+  sub-program page does.** The pilot's `svdp-madison-assistance` was captured as
+  "none published" from the `/get-help/` page; the six `/program/<name>/` pages
+  each carried a tidy `Eligibility:` list. Before recording "none published" for
+  an org, fetch the individual program pages. (The §6.6 split assumes this.)
+- **`dhs.wisconsin.gov` and `dcf.wisconsin.gov` restructured their paths.** Many
+  once-stable URLs 404 (`/w2` → `/w2/parents/w2`; `/medicaid/msp.htm` → gone,
+  now `/medicaid/qmb.htm` + a PDF; `/nutrition/tefap.htm` →
+  `/nutrition/tefap/index.htm`). Guessing a `.htm` path is unreliable now —
+  fetch the section index and grep its hrefs, or web-search the page title.
+- **County/nonprofit sites move off the obvious domain.** The Dane County
+  Veterans Service Office is at `danevets.com` (not any `danecounty.gov` path);
+  the Salvation Army's Dane County site was unreachable and the fallback was
+  `salvationarmyusa.org/wi/madison/...`. Entity/domain disambiguation was the
+  single biggest time cost in batch 2, as in the pilot.
+
 ---
 
 ## 2. Fetch the source
