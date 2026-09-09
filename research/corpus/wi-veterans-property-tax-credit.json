@@ -1,0 +1,101 @@
+{
+  "id": "wi-veterans-property-tax-credit",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Wisconsin Veterans and Surviving Spouses Property Tax Credit",
+    "administeredBy": "Wisconsin Department of Revenue (eligibility certified by the Wisconsin Department of Veterans Affairs)",
+    "jurisdiction": "state",
+    "provider": "government",
+    "categories": ["veterans", "housing-utilities"],
+    "summary": "A refundable state income-tax credit equal to 100% of the property taxes paid on the primary Wisconsin home (and up to one acre) of a veteran with a 100% service-connected disability rating, or their unremarried surviving spouse.",
+    "benefit": "A refundable credit for the full amount of property taxes paid during the year on the principal dwelling. Renters who pay property tax through rent may qualify with proof. There is no income limit.",
+    "howToApply": {
+      "url": "https://dva.wi.gov/services/housing-and-financial-services/property-tax-credit/",
+      "phone": "800-947-8387",
+      "steps": [
+        "Contact your County or Tribal Veterans Service Office for a WDVA eligibility certification (form / booklet WDVA B0106).",
+        "Attach the WDVA certificate to your Wisconsin income tax return the first year you claim the credit.",
+        "Claim the credit on your Wisconsin income tax return each year."
+      ]
+    },
+    "requiredDocuments": ["WDVA eligibility verification certificate", "Property tax bill(s) for the primary residence"],
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "anyOf",
+      "_note": "Two independent routes: eligible veteran, or eligible unremarried surviving spouse. Encoding the veteran route; the surviving-spouse route is structurally similar with extra death/DIC conditions and is summarised in unencodable.",
+      "of": [
+        {
+          "kind": "allOf",
+          "_sourceText": "'Eligible veteran' means an individual ... certified by the WDVA as meeting all of the following:",
+          "of": [
+            { "kind": "compare", "fact": "isVeteran", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "servedActiveDutyHonorable", "op": "eq", "value": true,
+              "_sourceText": "Served on active duty under honorable conditions in the U.S. Armed Forces or in forces incorporated in the U.S. Armed Forces" },
+            { "kind": "compare", "fact": "wisconsinResidencyNexusAtEntryOr5Years", "op": "eq", "value": true,
+              "_sourceText": "Was a resident of Wisconsin at the time of entry into active service or ... for any consecutive 5-year period after entry into that active duty service" },
+            { "kind": "compare", "fact": "state", "op": "eq", "value": "WI",
+              "_sourceText": "Is currently a resident of Wisconsin for purposes of receiving veterans benefits under ch. 45, Wis. Stats." },
+            { "kind": "compare", "fact": "vaDisabilityRating100OrIU", "op": "eq", "value": true,
+              "_sourceText": "Has a service-connected disability rating of 100% under 38 USC 1114 or 1134 or a 100% disability rating based on individual unemployability" },
+            { "kind": "compare", "fact": "ownsAndOccupiesPrimaryResidence", "op": "eq", "value": true,
+              "_sourceText": "property taxes paid on ... an eligible veteran's ... principal dwelling; up to one acre of land; not second homes or vacation properties" }
+          ]
+        }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "isVeteran", "type": "boolean", "sourceText": "an eligible veteran (RESERVED today)" },
+      { "key": "servedActiveDutyHonorable", "type": "boolean", "sourceText": "Served on active duty under honorable conditions" },
+      { "key": "wisconsinResidencyNexusAtEntryOr5Years", "type": "boolean", "sourceText": "resident of Wisconsin at the time of entry ... or ... any consecutive 5-year period after entry -- a residency-history test, not a current-state test" },
+      { "key": "vaDisabilityRating100OrIU", "type": "enum-or-boolean", "sourceText": "a service-connected disability rating of 100% under 38 USC 1114 or 1134 or a 100% disability rating based on individual unemployability -- far more specific than the reserved hasDisability boolean; 'individual unemployability' itself has a multi-part definition (60% rating, or 40%+combined-70%, plus an administrative adjustment to 100%)" },
+      { "key": "ownsAndOccupiesPrimaryResidence", "type": "boolean", "sourceText": "principal dwelling ... up to one acre ... not second homes or vacation properties (housingStatus today is renting/own-home/unhoused/living-with-others -- 'own-home' is close but does not capture principal-vs-vacation or the one-acre limit)" }
+    ],
+    "unencodable": [
+      "The WDVA certification step itself -- eligibility is a determination the WDVA makes and stamps, not something the taxpayer self-asserts.",
+      "The 'individual unemployability' sub-definition (compound VA rating arithmetic).",
+      "The three surviving-spouse routes: (a) veteran died on active duty while a WI resident; (b) veteran had a 100%/IU rating and died a WI resident; (c) National Guard/reserve member died in line of duty; (d) spouse receives and continues to receive Dependency and Indemnity Compensation -- each with its own residency conditions.",
+      "Joint-ownership proration; farm/business-use proration; renters must prove the property-tax portion of rent."
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://dva.wi.gov/services/housing-and-financial-services/property-tax-credit/",
+    "ruleUrl": "https://www.revenue.wi.gov/Pages/FAQS/ise-vetqual.aspx",
+    "hops": [
+      "dva.wi.gov property-tax-credit page -- the eligibility list, plus a link to the DOR guidance",
+      "-> revenue.wi.gov ise-vetqual.aspx -- the DOR qualifications guidance document (No. 100216), with the statutory definitions of 'eligible veteran', 'eligible unremarried surviving spouse', and 'individual unemployability'; statutory cite secs. 71.07(6e), 73.03, Wis. Stats."
+    ],
+    "format": "html-prose+list (WDVA) / html-prose recovered from an ASP.NET WebForms shell (DOR)",
+    "fetch": {
+      "tool": "lib-source live fetcher + form-shell recovery (unwrapContentShell)",
+      "status": "HTTP 200 on both; revenue.wi.gov returned a near-empty body (0 chars of usable text) until unwrap-shell neutralised the wrapping <form> (SharePoint/WebForms shell), recovering 6,448 chars",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": true,
+      "robots": "allowed"
+    },
+    "scopeColocated": [
+      {
+        "figure": "100% service-connected disability rating",
+        "colocated": true,
+        "scopeLocation": "Inline in both eligibility lists -- but 'or a 100% disability rating based on individual unemployability' expands it, and the definition of individual unemployability sits in a separate FAQ answer further down the DOR page."
+      },
+      {
+        "figure": "no income limit",
+        "colocated": false,
+        "scopeLocation": "This program has NO income test, which is unusual for the corpus. Nothing on either page says 'there is no income limit' explicitly -- it must be inferred from the total absence of an income condition in an otherwise exhaustive eligibility list. A reader pattern-matching 'benefit => income threshold' could hallucinate one."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 15, "workedBy": "agent", "notes": "2 fetches + 1 search. The DOR page needed form-shell recovery -- first candidate in the pilot to exercise that path. Did not fetch the WDVA B0106 booklet PDF (would add surviving-spouse detail)." },
+  "surprises": [
+    "A 'disability' program where the reserved hasDisability boolean is almost useless: the rule turns on a specific 100% VA rating with compound arithmetic behind 'individual unemployability'. If hasDisability is un-reserved on the strength of the corpus, cases like this show the boolean still won't carry the rule."
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "id": "head-start-dane",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Head Start and Early Head Start (Dane County - Reach Dane)",
+    "administeredBy": "Reach Dane (federal Head Start grantee for Dane and Green counties); program rules set by the U.S. Administration for Children and Families",
+    "jurisdiction": "federal",
+    "provider": "nonprofit",
+    "categories": ["childcare-education"],
+    "summary": "Free early education, health, and family support for pregnant women and children under 6 in low-income families. Early Head Start serves pregnant women and children under 3; Head Start serves children 3 to 5.",
+    "benefit": "Center-based or home-based early education, meals and diapers for enrolled children, health and developmental screening, disability services, dual-language support, and family case management. No cost to the family.",
+    "howToApply": {
+      "url": "https://www.reachdane.org/enroll/",
+      "phone": "608-275-6740",
+      "steps": [
+        "Complete the application online or on paper (return by mail, email, fax, or in person).",
+        "Submit income verification (last two pay stubs, or SSI benefit letter; none needed if homeless).",
+        "For in-person full-day programming, a child care subsidy is also required."
+      ]
+    },
+    "requiredDocuments": ["Income verification (pay stubs or SSI benefit letter)", "Child's age verification (a program cannot require documents if it creates an enrollment barrier)", "Child care subsidy confirmation (full-day in-person programs only)"],
+    "status": "waitlist",
+    "seasonalNote": null,
+    "_statusNote": "45 CFR 1302.12(d)(2)(vii) presumes waiting lists exist ('The eligibility criteria category of each child on the program's waiting list'). Reach Dane accepts applications year-round; slots are limited."
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        {
+          "kind": "anyOf",
+          "_sourceText": "45 CFR 1302.12(b) Age requirements",
+          "of": [
+            { "kind": "compare", "fact": "isPregnantOrPostpartum", "op": "eq", "value": true, "_note": "Early Head Start also serves pregnant women." },
+            { "kind": "compare", "fact": "hasChildUnder6", "op": "eq", "value": true, "_sourceText": "Early Head Start: infant/toddler younger than three. Head Start Preschool: at least three and no older than the age required to attend school." }
+          ]
+        },
+        {
+          "kind": "anyOf",
+          "_sourceText": "45 CFR 1302.12(c)(1): A pregnant woman or a child is eligible if -- (i) income at or below the poverty line; or (ii) eligible for / potentially eligible for public assistance including TANF child-only; or (iii) the child is homeless (part 1305 definition); or (iv) the child is in foster care.",
+          "of": [
+            { "kind": "incomeAtOrBelow", "scale": "fpl", "percent": 100 },
+            { "kind": "set", "fact": "currentBenefits", "op": "includesAny", "values": ["w2-tanf", "ssi"], "_note": "'eligible for or potentially eligible for public assistance' is broader than 'currently receiving' -- our currentBenefits fact only captures current receipt." },
+            { "kind": "compare", "fact": "childIsHomeless", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "childInFosterCare", "op": "eq", "value": true }
+          ]
+        }
+      ],
+      "_note": "The '100% of the poverty line' figure is one of four alternative qualifying routes in (c)(1), NOT the rule. On top of that: (c)(2) lets a program fill up to 10% of enrollment with over-income children who 'would benefit from services'; (d)(1) lets a program enroll another 35% with incomes below 130% of poverty; (e) lets Tribal programs enroll regardless of income; (f) makes Migrant/Seasonal families eligible via agricultural employment. An extractor that emits incomeAtOrBelow('fpl', 100) alone drops the categorical routes AND both over-income allowances -- the `headstart-cfr-over-income-allowance` case from docs/pipeline-principles.md §3.1."
+    },
+    "factsNeeded": [
+      { "key": "hasChildUnder6", "type": "boolean", "sourceText": "birth to compulsory school age -- our facts are hasChildUnder5 and hasSchoolAgeChild; the boundary the rule uses ('age required to attend school') is community-specific" },
+      { "key": "childIsHomeless", "type": "boolean", "sourceText": "The child is homeless, as defined in part 1305 (the McKinney-Vento definition -- includes doubled-up/shared housing due to loss of housing, not only literal homelessness)" },
+      { "key": "childInFosterCare", "type": "boolean", "sourceText": "The child is in foster care." },
+      { "key": "potentiallyEligibleForPublicAssistance", "type": "boolean", "sourceText": "The family is eligible for or, in the absence of child care, would be potentially eligible for public assistance -- a hypothetical eligibility test, not a current-receipt test" }
+    ],
+    "unencodable": [
+      "(c)(2): the 10% 'would benefit from services' over-income allowance -- a program-discretion slot, no household-level rule.",
+      "(d)(1): the additional 35% under 130% poverty, gated on the program having outreach/enrollment policies and serving (c)-eligible families first.",
+      "(i)(1)(ii): a program MAY reduce counted income by housing costs exceeding 30% of gross income -- an optional deduction the family cannot rely on.",
+      "(i)(1)(v): 'if the family can demonstrate a significant change in income ... program staff may consider current income' -- discretionary.",
+      "(e) Tribal 'regardless of income'; (f) Migrant/Seasonal agricultural-employment route; (g) small-community (<=1,000 people) local criteria.",
+      "Reach Dane's full-day programs additionally require a child care subsidy and a working / job-search parent -- a local overlay on the federal rule."
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.reachdane.org/enroll/",
+    "ruleUrl": "https://www.ecfr.gov/current/title-45/subtitle-B/chapter-XIII/subchapter-B/part-1302/subpart-A/section-1302.12",
+    "hops": [
+      "reachdane.org/enroll -- the local grantee page, with a 100% / 130% poverty income table and a short list of categorical routes (homeless, foster care, TANF, SSI)",
+      "-> 45 CFR 1302.12 (eCFR) -- the federal rule with all branches: (b) age, (c)(1) four qualifying routes, (c)(2) 10% allowance, (d)(1) 35%/130% allowance, (e) Tribal, (f) Migrant/Seasonal"
+    ],
+    "format": "html-table (Reach Dane) + ecfr (45 CFR 1302.12)",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200. eCFR requested URL redirected from subtitle-A to subtitle-B/chapter-XIII/subchapter-B (recorded the destination). reachdane.org served fine.",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed. NOTE: web search surfaced findhelp.org / auntbertha.com listings for Reach Dane -- those are on the hard-deny list and were not fetched."
+    },
+    "scopeColocated": [
+      {
+        "figure": "100% of the poverty line ($15,650 for 1 person, ... 2025 guidelines)",
+        "colocated": false,
+        "scopeLocation": "In 45 CFR 1302.12 the poverty-line test is (c)(1)(i) -- the first of four disjuncts in one sentence, so its scope (that it is sufficient but not necessary) IS local to the sentence. But the two over-income allowances that materially widen who can enrol are in entirely separate paragraphs -- (c)(2) and (d)(1) -- three and four subsections away, and the 130% figure only appears in (d)(1)."
+      },
+      {
+        "figure": "130% Poverty Level column on the Reach Dane table",
+        "colocated": false,
+        "scopeLocation": "The Reach Dane table presents 100% and 130% columns side by side with no explanation of what the 130% column means. Its governing scope -- 45 CFR 1302.12(d)(1), the 'additional 35% of participants ... whose incomes are below 130 percent' allowance, conditioned on program policies -- is not on the Reach Dane page at all."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 20, "workedBy": "agent", "notes": "3 fetches (eCFR, Reach Dane enroll, 1 search). eCFR page carries heavy site chrome; the regulatory text was clean in the flat-text extraction once grepped. Reach Dane needed for the local apply path and to confirm the grantee." },
+  "surprises": [
+    "This is the rare source that states its branches WELL -- the regulation is explicit and exhaustive. The failure risk is entirely on the reading side: (c)(1) is a four-way 'or' packed into one sentence, and the allowances are far enough away that a section-scoped extractor would never see them. Good regulation drafting does not protect against branch-drop."
+  ]
+}

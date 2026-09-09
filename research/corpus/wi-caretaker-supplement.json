@@ -1,0 +1,94 @@
+{
+  "id": "wi-caretaker-supplement",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Caretaker Supplement",
+    "administeredBy": "Wisconsin Department of Health Services / Department of Children and Families (paid with the state SSI payment; applications through county and Tribal agencies)",
+    "jurisdiction": "state",
+    "provider": "government",
+    "categories": ["childcare-education", "food-basic-needs"],
+    "_categoriesNote": "A cash benefit for SSI-recipient parents raising minor children -- 'childcare-education' and 'food-basic-needs' both partly fit; neither squarely.",
+    "summary": "A monthly cash benefit for parents who receive Wisconsin SSI and are living with and caring for their own minor children.",
+    "benefit": "$275 per month for the first eligible child and $165 per month for each additional eligible child, paid as part of the parent's monthly state SSI payment.",
+    "howToApply": {
+      "url": "https://www.dhs.wisconsin.gov/ssi/caretaker.htm",
+      "phone": null,
+      "steps": [
+        "Apply online through ACCESS, by phone, mail (form F-22571), or in person at your county or Tribal agency.",
+        "Confirm you receive a Wisconsin SSI payment and are living with your minor children.",
+        "Cooperate with the child support agency regarding any absent parent."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        { "kind": "compare", "fact": "state", "op": "eq", "value": "WI",
+          "_sourceText": "Your household must meet some nonfinancial criteria, such as Wisconsin residency." },
+        { "kind": "compare", "fact": "receivesWisconsinSSIPayment", "op": "eq", "value": true,
+          "_sourceText": "You must be getting a Wisconsin SSI payment. (Handbook: if the entire SSI payment is being recouped, the parent does not qualify.)" },
+        { "kind": "compare", "fact": "livingWithAndCaringForOwnMinorChild", "op": "eq", "value": true,
+          "_sourceText": "Are living with and caring for your minor children" },
+        { "kind": "compare", "fact": "childMeetsIncomeAndAssetTest", "op": "eq", "value": true,
+          "_sourceText": "Your children must meet income and asset requirements." },
+        { "kind": "not", "of": { "kind": "compare", "fact": "childReceivesSSI", "op": "eq", "value": true },
+          "_sourceText": "You cannot get CTS benefits for any of your children who are also receiving SSI." },
+        { "kind": "manualReview", "note": "If the child has two parents in the household, BOTH parents must be receiving Wisconsin SSI. Not decidable without knowing household composition and each parent's SSI status." }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "receivesWisconsinSSIPayment", "type": "boolean", "sourceText": "getting a Wisconsin SSI payment -- currentBenefits has 'ssi', but this is specifically the WISCONSIN state SSI supplement, and 'not being fully recouped'" },
+      { "key": "livingWithAndCaringForOwnMinorChild", "type": "boolean", "sourceText": "living with and caring for your minor children -- hasChildUnder5 / hasSchoolAgeChild are close but do not assert the respondent is the parent, nor 'minor' (under 18)" },
+      { "key": "childMeetsIncomeAndAssetTest", "type": "boolean", "sourceText": "Your children must meet income and asset requirements -- a child-level financial test, like Katie Beckett's 'income in their name'" },
+      { "key": "childReceivesSSI", "type": "boolean", "sourceText": "any of your children who are also receiving SSI" }
+    ],
+    "unencodable": [
+      "The two-parents-both-on-SSI rule (needs household composition + each parent's benefit status).",
+      "The child income/asset thresholds (not published on the citizen page; in the CTS Handbook).",
+      "'If the entire SSI payment is being recouped, the parent does not qualify.'",
+      "Child support cooperation requirement.",
+      "The effect on FoodShare (benefit interaction, not eligibility)."
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.dhs.wisconsin.gov/ssi/caretaker.htm",
+    "ruleUrl": "https://www.emhandbooks.wisconsin.gov/cts/1/1.1.htm",
+    "hops": [
+      "dhs.wisconsin.gov/ssi/caretaker.htm 'Eligibility' section -- the citizen summary",
+      "-> Caretaker Supplement Handbook (emhandbooks.wisconsin.gov/cts) -- the operational detail including the child income/asset thresholds"
+    ],
+    "format": "html-prose+list (citizen) / html-prose (handbook)",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200 on both",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeColocated": [
+      {
+        "figure": "$275 / $165 per month",
+        "colocated": true,
+        "scopeLocation": "In the Benefits section: '$275 for the first eligible child and $165 for each additional eligible child'. Benefit amounts, not eligibility gates."
+      },
+      {
+        "figure": "the children's income and asset requirements",
+        "colocated": false,
+        "scopeLocation": "The citizen page says only 'Your children must meet income and asset requirements' with no numbers. The thresholds are in the CTS Handbook, a separate site."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 9, "workedBy": "agent", "notes": "2 fetches + 1 search. The citizen page carries a clean eligibility list; the handbook fetch was to confirm the child-financial-test and two-parent rule exist, not to transcribe thresholds." },
+  "surprises": [
+    "Third candidate (with Katie Beckett and, loosely, FPOS) whose income test is on the CHILD or the APPLICANT specifically, not 'the household'. incomeAtOrBelow() and annualHouseholdIncome assume a single household aggregate; a recurring pattern in the corpus is rules that scope income to a person within the household."
+  ]
+}
