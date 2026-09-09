@@ -1,0 +1,101 @@
+{
+  "id": "wi-birth-to-3",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Wisconsin Birth to 3 Program",
+    "administeredBy": "Wisconsin Department of Health Services; delivered by county Birth to 3 Programs (Part C of IDEA)",
+    "jurisdiction": "state",
+    "provider": "government",
+    "categories": ["childcare-education", "health-disability"],
+    "summary": "Early intervention services for children under 3 who have a developmental delay or a disability -- therapies, developmental support, and family coaching, coordinated through the family's county program.",
+    "benefit": "An individualized family service plan: developmental, physical, occupational, and speech therapy, service coordination, and family support. Costs are on a sliding parental-fee scale; services are not denied for inability to pay.",
+    "howToApply": {
+      "url": "https://www.dhs.wisconsin.gov/birthto3/family/eligibility.htm",
+      "phone": "800-642-7837",
+      "steps": [
+        "Contact your county Birth to 3 Program (a referral from anyone -- parent, doctor, WIC -- starts it).",
+        "A team including you, a service coordinator, and child-development professionals evaluates your child.",
+        "If eligible, the team writes an Individualized Family Service Plan."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        { "kind": "compare", "fact": "state", "op": "eq", "value": "WI" },
+        // "serves families with children under the age of 3"
+        { "kind": "compare", "fact": "hasChildUnder3", "op": "eq", "value": true },
+        {
+          /* "Eligibility is based on one of these:" */
+          "kind": "anyOf",
+          "of": [
+            // "A developmental delay of at least 25% in one or more areas of development"
+            { "kind": "compare", "fact": "childHas25PercentDevelopmentalDelay", "op": "eq", "value": true },
+            // "A physician-diagnosed condition with a high probability of developmental delay"
+            { "kind": "compare", "fact": "childHasDiagnosedConditionLikelyToCauseDelay", "op": "eq", "value": true },
+            // "Atypical (unusual) development that negatively affects your child's overall development"
+            { "kind": "compare", "fact": "childHasAtypicalDevelopment", "op": "eq", "value": true }
+          ]
+        },
+        { "kind": "manualReview", "note": "All three routes are determined by a multidisciplinary evaluation team, not self-report. The 25% delay is measured on standardized instruments; 'atypical development' is a clinical judgment." }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "hasChildUnder3", "type": "boolean", "sourceText": "children under the age of 3 -- hasChildUnder5 is close but 3 years old is the exact boundary, and it is Part C's federal boundary" },
+      { "key": "childHas25PercentDevelopmentalDelay", "type": "boolean", "sourceText": "A developmental delay of at least 25% in one or more areas of development -- a measured figure a parent cannot self-assess" },
+      { "key": "childHasDiagnosedConditionLikelyToCauseDelay", "type": "boolean", "sourceText": "A physician-diagnosed condition with a high probability of developmental delay" },
+      { "key": "childHasAtypicalDevelopment", "type": "boolean", "sourceText": "Atypical (unusual) development that negatively affects your child's overall development" }
+    ],
+    "expressibility": {
+      "level": "manual-review-dominant",
+      "note": "The structure (under 3 + one of three delay routes) is clean, but every one of the three routes is decided by a professional evaluation team on standardized instruments. A parent can say 'my child seems behind'; only the evaluation decides eligibility. No income test at all."
+    },
+    "branchDropRisk": [
+      {
+        "figure": "a developmental delay of at least 25%",
+        "takenNaivelyAs": "the eligibility bar -- 'your child must be 25% delayed'",
+        "actuallyIs": "one of three alternative routes. A physician-diagnosed high-probability condition (e.g. Down syndrome) qualifies with no measured delay at all, and so can 'atypical development'. Encoding only the 25% route rules out children who qualify categorically.",
+        "direction": "narrower"
+      }
+    ],
+    "unencodable": [
+      { "kind": "professional-assessment", "text": "The multidisciplinary evaluation -- measures the 25% delay, assesses 'atypical development', and reviews any diagnosis. The whole gate." },
+      { "kind": "incorporated-law", "text": "The list of 'physician-diagnosed conditions with a high probability of developmental delay' -- defined in Wisconsin's Part C rules, not on the page." },
+      { "kind": "other", "text": "Parental fees are on a sliding scale (payment.htm); certain services (evaluation, service coordination, IFSP development) are always free -- a fee structure, not an eligibility test." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.dhs.wisconsin.gov/birthto3/index.htm",
+    "ruleUrl": "https://www.dhs.wisconsin.gov/birthto3/family/eligibility.htm",
+    "hops": ["birthto3/index.htm -> birthto3/family/eligibility.htm -- 'Who is eligible?' lists the three routes inline"],
+    "format": ["html-prose"],
+    "formatNotes": "prose + a three-bullet 'Who is eligible?' list. The county-level evaluation process is described but not the diagnostic criteria.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200 on both",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "'at least 25%' developmental delay",
+        "separation": "colocated",
+        "where": "Stated inline as the first of three bullets under 'Eligibility is based on one of these:'. The 'one of these' framing that makes it a route, not a gate, is right there."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 8, "workedBy": "agent", "notes": "2 fetches (index + eligibility page). The eligibility page states the three routes clearly; the diagnostic detail behind each is in Wisconsin's Part C administrative rules, not fetched." },
+  "surprises": [
+    "A children's disability program with a prominent percentage (25% delay) that is explicitly 'one of these' -- the page does the branch-drop safeguard for you by heading the list 'Eligibility is based on one of these:'. When a source frames the disjunction well, the trap nearly disappears."
+  ]
+}

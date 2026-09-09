@@ -1,0 +1,124 @@
+{
+  "id": "wi-medicare-savings-programs",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Medicare Savings Programs (QMB, SLMB, SLMB+, QDWI)",
+    "administeredBy": "Wisconsin Department of Health Services (Division of Medicaid Services)",
+    "jurisdiction": "state",
+    "provider": "government",
+    "categories": ["health-disability"],
+    "summary": "Wisconsin Medicaid programs that pay some or all of a person's Medicare costs (premiums, deductibles, coinsurance) for people on Medicare with limited income and assets. Four tiers by income band.",
+    "benefit": "QMB pays Medicare Part A and B premiums, deductibles, and coinsurance. SLMB and SLMB+ pay the Part B premium. QDWI pays the Part A premium for disabled working people who lost premium-free Part A.",
+    "howToApply": {
+      "url": "https://www.dhs.wisconsin.gov/medicaid/qmb.htm",
+      "phone": "800-362-3002",
+      "steps": [
+        "Apply online (access.wi.gov), by phone, in person, or by mail -- the same application as other Medicaid.",
+        "Report income and assets for you (and your spouse).",
+        "The agency places you in the tier your countable income falls into."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    /*
+      One benefit family, four tiers scoped by income BAND (not a single ceiling):
+      QMB <=100% FPL; SLMB 100-120%; SLMB+ 120-135%; QDWI <200% + disabled &
+      employed. All also require a Medicare entitlement and countable assets at
+      or below the program limit. Income is "countable ... after certain credits
+      are applied" -- not gross. See branchDropRisk.
+    */
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        // "Are entitled to Medicare Part A or Part B-ID benefits."
+        { "kind": "compare", "fact": "entitledToMedicarePartAOrBID", "op": "eq", "value": true },
+        // "Have countable assets at or below the program limit." ($9,950 single / $14,910 couple, 2026)
+        { "kind": "compare", "fact": "countableAssetsAtOrBelowMspLimit", "op": "eq", "value": true },
+        {
+          "kind": "anyOf",
+          "of": [
+            // QMB: "countable monthly income at or below 100% of the federal poverty level after certain credits are applied"
+            { "kind": "incomeAtOrBelow", "scale": "fpl", "percent": 100 },
+            // SLMB: "between 100% and 120% of the FPL"
+            { "kind": "incomeAtOrBelow", "scale": "fpl", "percent": 120 },
+            // SLMB+: "between 120% and 135% of the FPL" AND "not enrolled in full-benefit Medicaid, Family Planning Only Services, or Tuberculosis-Related Only Services"
+            { "kind": "allOf", "of": [
+              { "kind": "incomeAtOrBelow", "scale": "fpl", "percent": 135 },
+              { "kind": "not", "of": { "kind": "set", "fact": "currentBenefits", "op": "includesAny", "values": ["medicaid-badgercare"] } }
+            ]},
+            // QDWI: "less than 200% of the FPL" AND "disabled and employed" AND "not enrolled in Medicaid"
+            { "kind": "allOf", "of": [
+              { "kind": "incomeAtOrBelow", "scale": "fpl", "percent": 200 },
+              { "kind": "compare", "fact": "isDisabledAndEmployed", "op": "eq", "value": true },
+              { "kind": "not", "of": { "kind": "set", "fact": "currentBenefits", "op": "includesAny", "values": ["medicaid-badgercare"] } }
+            ]}
+          ]
+        }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "entitledToMedicarePartAOrBID", "type": "boolean", "sourceText": "Are entitled to Medicare Part A or Part B-ID benefits" },
+      { "key": "countableAssetsAtOrBelowMspLimit", "type": "boolean", "sourceText": "Have countable assets at or below the program limit ($9,950 single / $14,910 couple, 2026) -- an asset test" },
+      { "key": "isDisabledAndEmployed", "type": "boolean", "sourceText": "QDWI: 'You are disabled and employed.'" }
+    ],
+    "expressibility": {
+      "level": "partial",
+      "note": "The four-tier structure maps to an anyOf of FPL bands. But 'countable income after certain credits' is not gross household income, the asset test is real, and the SLMB+ / QDWI branches carry 'not enrolled in X' exclusions. The tier a person lands in also depends on other Medicaid enrolment."
+    },
+    "branchDropRisk": [
+      {
+        "figure": "100% of the federal poverty level (QMB)",
+        "takenNaivelyAs": "the income ceiling for 'Medicare Savings' as a whole",
+        "actuallyIs": "only the QMB tier's upper bound. SLMB reaches 120%, SLMB+ 135%, QDWI 200%. Encoding 100% FPL alone rules out everyone the higher tiers cover -- the classic band-scoped-figure drop.",
+        "direction": "narrower"
+      },
+      {
+        "figure": "'$1,330 each month' (QMB single)",
+        "takenNaivelyAs": "compare the person's gross monthly income to $1,330",
+        "actuallyIs": "the limit is on COUNTABLE income 'after certain credits are applied' -- gross income can exceed $1,330 and still qualify after the disregards.",
+        "direction": "either"
+      }
+    ],
+    "unencodable": [
+      { "kind": "asset-test", "text": "The countable-asset limit ($9,950 / $14,910, 2026) -- with the usual Medicaid asset-counting rules and exclusions." },
+      { "kind": "incorporated-law", "text": "'countable monthly income ... after certain credits are applied' -- the SSI/Medicaid income-disregard methodology, defined in the Medicaid Eligibility Handbook, not on this page." },
+      { "kind": "other", "text": "SLMB+ and QDWI exclude people already in full-benefit Medicaid / FPOS / TB-Only / Medicaid -- benefit-interaction rules." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.dhs.wisconsin.gov/medicaid/qmb.htm",
+    "ruleUrl": "https://www.dhs.wisconsin.gov/publications/p1/p10062.pdf",
+    "hops": [
+      "dhs.wisconsin.gov/medicaid/qmb.htm -- the QMB rule inline (100% FPL, asset limits, auto-enroll groups)",
+      "-> P-10062 (PDF, 2 pages) -- all four programs (QMB / SLMB / SLMB+ / QDWI) with their FPL bands and a 2026 income/asset table"
+    ],
+    "format": ["html-prose", "pdf"],
+    "formatNotes": "the per-program pages (qmb.htm, slmb.htm) each state one tier; the PDF P-10062 has the full four-tier table with FPL bands and dollar rows.",
+    "fetch": {
+      "tool": "lib-source live fetcher + pdf.ts (extractPdf)",
+      "status": "HTTP 200. Guessed URLs msp.htm / msps.htm 404'd; qmb.htm and P-10062 via search. PDF is 2 pages, extractPdf ok, table columns preserved.",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "100% / 120% / 135% / 200% of FPL",
+        "separation": "column-header",
+        "where": "In P-10062 the four percentages are column headers of the '2026 Monthly Income Limits' table, each tied to a named program (QMB / SLMB / SLMB+ / QDWI). On the individual qmb.htm / slmb.htm pages, only that page's tier is shown -- a reader landing on one page sees one band and could take it for the whole rule."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 14, "workedBy": "agent", "notes": "4 fetch attempts (2 x 404 on guessed URLs) + 1 search + 1 PDF. The single-program pages (qmb.htm) and the multi-program PDF (P-10062) tell different-sized stories; needed the PDF for the full tier structure." },
+  "surprises": [
+    "The DHS site splits one program family across a page-per-tier -- qmb.htm, slmb.htm -- each stating one FPL band as if it were the rule. Only the PDF shows all four bands together. Landing on qmb.htm, an extractor authors 'MSP = income at or below 100% FPL', dropping three tiers that reach to 200%."
+  ]
+}

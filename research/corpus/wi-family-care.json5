@@ -1,0 +1,95 @@
+{
+  "id": "wi-family-care",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Family Care",
+    "administeredBy": "Wisconsin Department of Health Services (Division of Medicaid Services), delivered by managed care organizations",
+    "jurisdiction": "state",
+    "provider": "government",
+    "categories": ["health-disability"],
+    "summary": "A Medicaid managed long-term care program for adults 18+ who are a frail elder or have a disability and need ongoing help with daily activities. An MCO coordinates all the person's long-term care services under one benefit.",
+    "benefit": "Managed long-term care: help with daily tasks at home, personal care, home modifications, day services, residential care, and more, coordinated by a managed care organization.",
+    "howToApply": {
+      "url": "https://www.dhs.wisconsin.gov/familycare/index.htm",
+      "phone": "800-362-3002",
+      "steps": [
+        "Contact your local ADRC to find out if you are eligible.",
+        "Complete the Long-Term Care Functional Screen and the Medicaid application.",
+        "If eligible, choose a managed care organization (MCO) and enroll."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null,
+    // My Choice Wisconsin (an MCO) is under DHS corrective action -- affects service delivery, not eligibility.
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        // "Be at least 18 years old."
+        { "kind": "compare", "fact": "isAdult", "op": "eq", "value": true },
+        // "Be a frail elder or an adult with a disability."
+        {
+          "kind": "anyOf",
+          "of": [
+            { "kind": "compare", "fact": "isFrailElder", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "hasDisability", "op": "eq", "value": true }
+          ]
+        },
+        // "Be eligible for Medicaid."
+        { "kind": "set", "fact": "currentBenefits", "op": "includesAny", "values": ["medicaid-badgercare"] },
+        // "Have a long-term care condition that will last more than 90 days."
+        { "kind": "compare", "fact": "hasLongTermCareConditionOver90Days", "op": "eq", "value": true },
+        // "Be functionally eligible. The Long-Term Care Functional Screen helps confirm eligibility."
+        { "kind": "manualReview", "note": "The Wisconsin Long-Term Care Functional Screen. Same instrument as IRIS and the ADRC long-term-care route. 'People with dementia and a terminal condition also may qualify' -- an additional route decided by the screen." }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "isAdult", "type": "boolean", "sourceText": "Be at least 18 years old" },
+      { "key": "isFrailElder", "type": "boolean", "sourceText": "Be a frail elder -- more specific than age 60+; the screen decides 'frail'" },
+      { "key": "hasDisability", "type": "boolean", "sourceText": "or an adult with a disability -- hasDisability is RESERVED" },
+      { "key": "hasLongTermCareConditionOver90Days", "type": "boolean", "sourceText": "Have a long-term care condition that will last more than 90 days" }
+    ],
+    "expressibility": {
+      "level": "partial",
+      "note": "18+ + (frail elder or disabled) + Medicaid-eligible + condition >90 days all map. The functional screen is manualReview and the Medicaid financial side is an EBD asset test off-page. 'Frail' is a screen determination, not a self-report."
+    },
+    "branchDropRisk": [],
+    "unencodable": [
+      { "kind": "professional-assessment", "text": "The Long-Term Care Functional Screen -- and the determination that a person is a 'frail elder'." },
+      { "kind": "asset-test", "text": "Medicaid financial eligibility (EBD) behind 'Be eligible for Medicaid' -- income + strict asset test, with a cost share for some members." },
+      { "kind": "professional-assessment", "text": "'A long-term care condition that will last more than 90 days' -- a clinical prognosis." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.dhs.wisconsin.gov/familycare/index.htm",
+    "ruleUrl": null,
+    "hops": ["dhs.wisconsin.gov/familycare/index.htm -- 'Who is eligible' section, five bullets inline"],
+    "format": ["html-prose"],
+    "formatNotes": "prose + a five-bullet 'Who is eligible' list. The financial-eligibility detail is not on the page.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "'Be eligible for Medicaid'",
+        "separation": "cross-reference",
+        "where": "One bullet. The EBD financial test behind it (income + asset limit + cost share) is entirely off-page in the Medicaid Eligibility Handbook -- same pattern as IRIS."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 6, "workedBy": "agent", "notes": "1 fetch. Near-identical shape to IRIS (its self-directed counterpart); captured separately because it is a distinct benefit (managed vs self-directed) with its own enrolment." },
+  "surprises": [
+    "Family Care and IRIS have the same five-part eligibility rule almost word for word -- they diverge only after eligibility, on how services are delivered. Two candidate records, one rule; the pilot's 'one benefit, one file' logic is strained when two benefits genuinely share a rule."
+  ]
+}
