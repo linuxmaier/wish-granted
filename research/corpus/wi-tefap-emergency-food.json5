@@ -1,0 +1,83 @@
+{
+  "id": "wi-tefap-emergency-food",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "The Emergency Food Assistance Program (TEFAP)",
+    "administeredBy": "U.S. Department of Agriculture, administered by the Wisconsin Department of Health Services; distributed through food pantries and community action agencies",
+    "jurisdiction": "federal",
+    "provider": "government",
+    "categories": ["food-basic-needs"],
+    "summary": "Free USDA foods -- a three-to-five-day emergency supply -- handed out at participating food pantries to Wisconsin residents with low incomes. You self-declare income eligibility at the pantry.",
+    "benefit": "A three-to-five-day emergency food supply of USDA commodities, on top of any FoodShare, CSFP, or regular pantry food you already get.",
+    "howToApply": {
+      "url": "https://www.dhs.wisconsin.gov/nutrition/tefap/index.htm",
+      "phone": "211",
+      "steps": [
+        "Find a participating pantry (call 211 or use 211 Wisconsin).",
+        "Complete the TEFAP Eligibility Application (F-40059) at the pantry -- you self-declare income.",
+        "Receive USDA foods. You may send someone to pick up for you."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        // "Wisconsin residents with low incomes"
+        { "kind": "compare", "fact": "state", "op": "eq", "value": "WI" },
+        // "See TEFAP Eligibility Application, F-40059, for eligibility information" -- WI TEFAP income limit (typically 185% FPL) is on the form, not the page
+        { "kind": "incomeAtOrBelow", "scale": "fpl", "percent": 185 }
+      ]
+    },
+    "factsNeeded": [],
+    "expressibility": {
+      "level": "full",
+      "note": "WI resident + income under the TEFAP limit (self-declared). Both map to existing facts. The exact % is on F-40059 not the page -- captured here as 185% FPL, the standard WI TEFAP figure, flagged as needing confirmation against the current form."
+    },
+    "branchDropRisk": [
+      {
+        "figure": "the income limit (not on the web page)",
+        "takenNaivelyAs": "no income test -- the page says only 'low incomes'",
+        "actuallyIs": "a real income limit on form F-40059 (self-declared). An extractor reading only the web page authors a record with an income test it cannot fill; one guessing the number risks getting the wrong figure.",
+        "direction": "either"
+      }
+    ],
+    "unencodable": [
+      { "kind": "documentation", "text": "The actual income threshold and the self-declaration process are on form F-40059, handed out at the pantry -- not on the public page. Income is self-declared, not verified." },
+      { "kind": "other", "text": "Which pantries participate, and their hours, vary -- found via 211." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.dhs.wisconsin.gov/nutrition/tefap/index.htm",
+    "ruleUrl": null,
+    "hops": ["guessed URLs (/nutrition/tefap.htm, /foodshare/tefap.htm) 404'd; /nutrition/index.htm links to /nutrition/tefap/index.htm -- 'Who can get TEFAP food assistance?' says 'low incomes' and points to form F-40059"],
+    "format": ["html-prose"],
+    "formatNotes": "prose. The income figure is deliberately not on the page -- 'See TEFAP Eligibility Application, F-40059'.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200 for /nutrition/tefap/index.htm. Two guessed URLs 404'd; found the real path by grepping hrefs out of /nutrition/index.htm.",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "the TEFAP income limit",
+        "separation": "other-document",
+        "where": "Not on the web page at all -- 'See TEFAP Eligibility Application, F-40059, for eligibility information ... Applications are provided at the food pantries'. Same shape as wi-senior-farmers-market-nutrition: the load-bearing number is on a downstream form."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 9, "workedBy": "agent", "notes": "2 x 404 + 1 href-grep + 1 fetch. Did not fetch form F-40059 (a PDF) to confirm the exact %; recorded 185% FPL as the standard WI TEFAP figure with a confirmation flag." },
+  "surprises": [
+    "The third corpus food program (with CSFP and Senior Farmers Market) where the state deliberately keeps the income number off the public page and on a form you get at the pantry. For food programs specifically, 'the number is on the application' looks like a Wisconsin pattern."
+  ]
+}

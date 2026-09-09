@@ -1,0 +1,92 @@
+{
+  "id": "tenant-resource-center-eviction-diversion",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Tenant Resource Center - Eviction Diversion and Defense Partnership (EDDP)",
+    "administeredBy": "Tenant Resource Center (nonprofit), with partner attorneys, mediators, and rental-assistance providers",
+    "jurisdiction": "county",
+    "provider": "nonprofit",
+    "categories": ["housing-utilities"],
+    "summary": "Help for Dane County tenants whose housing is at risk: housing counseling, court navigation, mediation, rental assistance, and referral to a partner attorney for free legal representation in an eviction case. Housing counseling is now limited to City of Madison and Dane County residents due to funding cuts.",
+    "benefit": "Housing counseling, mediation between tenant and landlord, court navigation, rental assistance (through partners), and free legal representation for eligible tenants facing eviction.",
+    "howToApply": {
+      "url": "https://www.tenantresourcecenter.org/eddp",
+      "phone": "608-257-0006",
+      "steps": [
+        "Walk in to the TRC office -- 'time is of the essence; the fastest way to connect ... is to walk in'.",
+        "Or call / email for housing counseling and a referral.",
+        "TRC refers eligible tenants whose housing stability is at risk to partner attorneys for free representation."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        // "housing stability for Dane County tenants" / housing counseling limited to "the City of Madison and Dane County"
+        { "kind": "compare", "fact": "county", "op": "eq", "value": "dane" },
+        // "tenants" -- renters, not owners
+        { "kind": "compare", "fact": "housingStatus", "op": "eq", "value": "renting" },
+        {
+          "kind": "anyOf",
+          "of": [
+            // housing counseling / mediation -- open to any Dane County tenant
+            { "kind": "always" },
+            // the legal-representation referral -- "eligible tenants whose housing stability is at risk"
+            { "kind": "compare", "fact": "housingStabilityAtRisk", "op": "eq", "value": true }
+          ]
+        },
+        { "kind": "manualReview", "note": "The published material does not state the eligibility criteria the PARTNER ATTORNEYS or the RENTAL ASSISTANCE apply -- TRC 'refers eligible tenants'. Income limits and case-type limits are set by those partners, off-page. Housing counseling and mediation have no published income test; the value-add services (legal rep, rent assistance) do, elsewhere." }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "housingStabilityAtRisk", "type": "boolean", "sourceText": "refer eligible tenants whose housing stability is at risk -- a broad 'at risk' framing, not a filed-eviction requirement" }
+    ],
+    "expressibility": {
+      "level": "partial",
+      "note": "Dane County renter maps. Housing counseling and mediation are open (encode as always). But the two services people most need -- a free attorney and rental assistance -- run through partners whose eligibility (income limits, whether an eviction is filed) is not published on TRC's page."
+    },
+    "branchDropRisk": [],
+    "unencodable": [
+      { "kind": "other", "text": "Partner-attorney eligibility for free legal representation -- income limits and case-type rules set by the legal aid partners, not stated here." },
+      { "kind": "other", "text": "Rental-assistance eligibility -- provided 'through partners'; each has its own income and arrears rules." },
+      { "kind": "other", "text": "Housing counseling was statewide; funding cuts reduced it to City of Madison + Dane County -- a live scope change." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.tenantresourcecenter.org/",
+    "ruleUrl": "https://www.tenantresourcecenter.org/eddp",
+    "hops": [
+      "tenantresourcecenter.org -> /get_help (program list) and /eddp (the Eviction Diversion and Defense Partnership page)",
+      "the /eviction_prevention_coordinated_entry_screening page returned ~225 chars -- effectively empty"
+    ],
+    "format": ["html-prose"],
+    "formatNotes": "prose describing the services + 'eviction tips'. No 'Eligibility' section -- who qualifies for the partner services is not on the page.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200 for / , /get_help , /eddp. /eviction_prevention and /eviction_prevention_coordinated_entry_screening returned 'gone' or near-empty.",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "eligibility for the free attorney and rental assistance",
+        "separation": "other-document",
+        "where": "TRC's page describes what it does and says it 'refers eligible tenants' -- but the eligibility rules for the two highest-value services (legal representation, rental assistance) belong to partner organisations and are not on TRC's site."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 11, "workedBy": "agent", "notes": "4 fetches (2 near-empty pages). The coordinated-entry screening page -- likely the one with real eligibility criteria -- returned ~225 chars; the EDDP page is descriptive. Recorded what is published, which is thin on eligibility." },
+  "surprises": [
+    "A tenant-help nonprofit whose own page carries no eligibility rule because the services that matter (a free lawyer, rent money) are other organisations' programs. The honest record is 'Dane County renter at risk -> go here, they will route you' -- an aggregator, like wi-211, but for one crisis."
+  ]
+}

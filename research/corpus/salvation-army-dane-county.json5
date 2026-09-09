@@ -1,0 +1,84 @@
+{
+  "id": "salvation-army-dane-county",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "The Salvation Army of Dane County - Emergency Assistance",
+    "administeredBy": "The Salvation Army of Dane County (nonprofit)",
+    "jurisdiction": "county",
+    "provider": "nonprofit",
+    "categories": ["housing-utilities", "food-basic-needs"],
+    "summary": "Emergency financial help (rent and utilities), food, and a coordinated-entry access point for rapid rehousing, for people in Dane County OUTSIDE the City of Madison who are homeless or at risk of losing housing.",
+    "benefit": "Emergency rent and utility assistance, food, case management, and housing navigation / rapid-rehousing access. Amounts and specifics are set at intake.",
+    "howToApply": {
+      "url": "https://www.salvationarmyusa.org/wi/madison/dane-county-corps-community-center/services-county-wide/",
+      "phone": "608-250-2280",
+      "steps": [
+        "Call the Dane County Corps Community Center.",
+        "For housing help, ask about the coordinated-entry access point for rapid rehousing.",
+        "Meet with staff, who assess your situation and available help at intake."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    /*
+      The fetched page is very thin (~478 chars). The one clear rule is a
+      NEGATIVE geographic one: services do not cover City of Madison residents,
+      "as alternate local resources are more accessible". Beyond that,
+      eligibility (income limits, being in an emergency) is set at intake and
+      not published.
+    */
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        { "kind": "compare", "fact": "county", "op": "eq", "value": "dane" },
+        // "Extension of services does not encompass City of Madison residents"
+        { "kind": "not", "of": { "kind": "compare", "fact": "city", "op": "eq", "value": "madison" } },
+        { "kind": "manualReview", "note": "Income limits, whether an emergency qualifies, and how much help is available are all set at intake and not published on the fetched page. Rapid-rehousing access runs through Dane County coordinated entry, which has its own homelessness criteria." }
+      ]
+    },
+    "factsNeeded": [],
+    "expressibility": {
+      "level": "manual-review-dominant",
+      "note": "The only encodable rule is 'Dane County, not the City of Madison'. Everything that decides whether a specific person gets rent help is an intake determination the source does not publish."
+    },
+    "branchDropRisk": [],
+    "unencodable": [
+      { "kind": "other", "text": "Explicit geographic carve-out: City of Madison residents are directed elsewhere ('alternate local resources are more accessible, varied, and abundant'). A rare stated NEGATIVE eligibility rule -- like svdp-madison's 'we do not provide rent assistance' referral." },
+      { "kind": "professional-assessment", "text": "Income and emergency-type eligibility set at intake -- not published." },
+      { "kind": "incorporated-law", "text": "Rapid-rehousing access is gated by Dane County's coordinated-entry homelessness criteria (HUD Continuum of Care rules), off-page." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.salvationarmyusa.org/wi/madison/dane-county-corps-community-center/services-county-wide/",
+    "ruleUrl": null,
+    "hops": ["salvationarmydane.org was unreachable; the salvationarmyusa.org/wi/madison/.../services-county-wide/ page fetched (~478 chars) -- names the services and the City-of-Madison carve-out; supplemented by a search summary for the rapid-rehousing access-point framing"],
+    "format": ["none-published"],
+    "formatNotes": "html-prose, very thin (~478 chars normalized). The Salvation Army's own Dane County domain (salvationarmydane.org) was unreachable at capture time.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "salvationarmydane.org -> 'unreachable: fetch failed'. salvationarmyusa.org/wi/madison/... -> HTTP 200 but a thin page. One web search used for the coordinated-entry / City-of-Madison-exclusion framing.",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "(no eligibility figure)",
+        "separation": "n/a — no governing figure",
+        "where": "No income or numeric criterion is published. The only stated rule is the geographic carve-out (Dane County minus the City of Madison)."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 10, "workedBy": "agent", "notes": "1 unreachable domain + 1 thin fetch + 1 search. A well-known emergency-help nonprofit whose Dane County web presence is minimal; the actionable fact is 'not for City of Madison residents' plus a phone number." },
+  "surprises": [
+    "The second corpus record (after svdp-madison-*) whose most useful published fact is a NEGATIVE: 'not for you if you live in the City of Madison -- go elsewhere'. For a benefits tool, correctly routing someone AWAY from a dead end is as valuable as routing them toward help."
+  ]
+}

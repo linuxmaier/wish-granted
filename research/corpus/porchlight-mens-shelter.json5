@@ -1,0 +1,84 @@
+{
+  "id": "porchlight-mens-shelter",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Porchlight Men's Shelter",
+    "administeredBy": "Porchlight, Inc. (nonprofit), operating Dane County's purpose-built men's shelter",
+    "jurisdiction": "county",
+    "provider": "nonprofit",
+    "categories": ["housing-utilities"],
+    "summary": "Overnight shelter for adult men experiencing homelessness in Dane County, at 1904 Bartillon Drive, Madison. Since September 2026 it is a 250-bed, waitlist-based shelter -- no longer drop-in. Guests get two meals a day, hygiene supplies, showers, and case management.",
+    "benefit": "An overnight shelter bed (5:00pm-8:00am daily), two meals a day, hygiene supplies, showers, case management, and shuttle transport to/from The Beacon day shelter.",
+    "howToApply": {
+      "url": "https://www.porchlightinc.org/mens-shelter/",
+      "phone": "608-257-2534",
+      "steps": [
+        "Connect with a Day Shelter (e.g. The Beacon) or a Street Outreach team to get on the waitlist.",
+        "Wait to be offered a bed -- guests must be offered a bed to access the shelter.",
+        "Take the shuttle from The Beacon (615 E Washington Ave) to the shelter each evening."
+      ]
+    },
+    "status": "waitlist",
+    "seasonalNote": null,
+    // Effective 9/1/26 the shelter has a fixed capacity of 250 beds and operates a waitlist -- no longer drop-in.
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        // "overnight shelter to male-identified individuals over the age of 18"
+        { "kind": "compare", "fact": "isMaleIdentified", "op": "eq", "value": true },
+        { "kind": "compare", "fact": "isAdult", "op": "eq", "value": true },
+        // implied: experiencing homelessness in Dane County (the shelter serves the Dane County homeless-services system)
+        { "kind": "compare", "fact": "isExperiencingHomelessness", "op": "eq", "value": true },
+        { "kind": "manualReview", "note": "'Guests must be offered a bed in order to access shelter.' Entry is via the Dane County coordinated homeless-services system -- connect with a Day Shelter or Street Outreach team to get on the 250-capacity waitlist. Also subject to Porchlight's shelter policies (and an appeal/reinstatement process for guests who have been barred)." }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "isMaleIdentified", "type": "boolean", "sourceText": "male-identified individuals over the age of 18" },
+      { "key": "isAdult", "type": "boolean", "sourceText": "over the age of 18" },
+      { "key": "isExperiencingHomelessness", "type": "boolean", "sourceText": "provides overnight shelter (shared with the-beacon-dane, svdp-madison-vinnys-lockers, wi-veterans-housing-recovery-program)" }
+    ],
+    "expressibility": {
+      "level": "manual-review-dominant",
+      "note": "The stated conditions (male-identified, 18+, homeless) map, but the operative gate is 'be offered a bed' from a 250-capacity waitlist via coordinated entry. Whether a person can access shelter tonight is entirely manualReview."
+    },
+    "branchDropRisk": [],
+    "unencodable": [
+      { "kind": "agency-discretion", "text": "250-bed fixed capacity + waitlist; 'guests must be offered a bed'. Entry via Day Shelter / Street Outreach referral." },
+      { "kind": "other", "text": "Porchlight shelter policies and the appeal/reinstatement process for guests who have been barred." },
+      { "kind": "other", "text": "The shift from drop-in to waitlist happened 9/1/26 -- a recent operational change; older references describe a drop-in shelter." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.porchlightinc.org/mens-shelter/",
+    "ruleUrl": null,
+    "hops": ["porchlightinc.org (redirect from a bare path) -> /mens-shelter/ -- describes who the shelter serves ('male-identified individuals over the age of 18') and how to get on the waitlist"],
+    "format": ["none-published"],
+    "formatNotes": "html-prose. States who it serves and the waitlist process, but no formal eligibility criteria beyond gender/age/homelessness.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200 ('moved' -- porchlightinc.org redirect recorded). /our-programs/ 404'd; /mens-shelter/ is the page.",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "(no eligibility figure)",
+        "separation": "n/a — no governing figure",
+        "where": "No income or numeric criterion. Access is gender + age + homelessness + an offered bed from a capacity-limited waitlist."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 7, "workedBy": "agent", "notes": "3 fetch attempts (1 x 404, 1 redirect) + reading. The page reflects a very recent (9/1/26) change from drop-in to waitlist -- the eligibility that matters now is 'can you get a bed', not 'do you fit the description'." },
+  "surprises": [
+    "A shelter whose published 'eligibility' (male, 18+, homeless) is nearly irrelevant to whether you can sleep there tonight -- the real gate is a 250-bed cap and a coordinated-entry waitlist. The shift from drop-in to waitlist in the last week makes even the recent web description of 'how to access' out of date."
+  ]
+}

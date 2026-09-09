@@ -1,0 +1,103 @@
+{
+  "id": "habitat-dane-home-repairs",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Habitat for Humanity of Dane County - Home Repair Program",
+    "administeredBy": "Habitat for Humanity of Dane County (nonprofit)",
+    "jurisdiction": "county",
+    "provider": "nonprofit",
+    "categories": ["housing-utilities"],
+    "summary": "Grant-funded repairs for low-to-moderate-income Dane County homeowners. Habitat staff and volunteers do the work; the homeowner contributes toward the cost. Currently not accepting applications.",
+    "benefit": "Grants toward needed home repairs, performed by Habitat's professional staff with volunteers.",
+    "howToApply": {
+      "url": "https://habitatdane.org/apply/apply-for-repairs/",
+      "phone": "608-255-1549",
+      "steps": [
+        "Applications are currently closed with no confirmed reopening date -- check back for updates.",
+        "When open: all adults and minors living in the home must be listed on the application.",
+        "Provide income documentation (2 years of tax returns / W-2s for all adults) and pass the debt and legal-standing checks."
+      ]
+    },
+    "status": "closed",
+    "seasonalNote": null,
+    // "Applications are currently closed, and we do not yet have a confirmed reopening date."
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        { "kind": "compare", "fact": "county", "op": "eq", "value": "dane" },
+        { "kind": "compare", "fact": "housingStatus", "op": "eq", "value": "own-home" },
+        // "Total gross annual household income ... must be greater than $15,000." -- an income FLOOR
+        { "kind": "compare", "fact": "grossAnnualHouseholdIncomeOver15000", "op": "eq", "value": true },
+        // "Income must be under 80 percent of the country [county] median income" ($74,800 for 1 person, ... HUD table)
+        { "kind": "incomeAtOrBelow", "scale": "dane-ami", "percent": 80 },
+        // "No bankruptcy within the past three years. Must be free from liens and open judgments in court. Any bills in collection must be actively in repayment ..."
+        { "kind": "compare", "fact": "meetsHabitatRepairsDebtStanding", "op": "eq", "value": true },
+        // "There can be no pending legal matters."
+        { "kind": "not", "of": { "kind": "compare", "fact": "hasPendingLegalMatters", "op": "eq", "value": true } },
+        { "kind": "manualReview", "note": "'willingness to help with the work'; all related and unrelated adults and minors in the home must appear on the application and meet selection criteria; two-year income history required for self-employment/business/bonus/commission/seasonal income. And the program is currently closed to applications." }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "grossAnnualHouseholdIncomeOver15000", "type": "boolean", "sourceText": "Total gross annual household income ... must be greater than $15,000 -- an income FLOOR, not a ceiling; the household must have enough income to afford its share" },
+      { "key": "meetsHabitatRepairsDebtStanding", "type": "boolean", "sourceText": "No bankruptcy within the past three years. Must be free from liens and open judgments in court. Any bills in collection must be actively in repayment" },
+      { "key": "hasPendingLegalMatters", "type": "boolean", "sourceText": "There can be no pending legal matters." }
+    ],
+    "expressibility": {
+      "level": "partial",
+      "note": "Geography + own-home + the income BAND ($15,000 to 80% AMI) + the debt-standing / no-pending-legal-matters conditions all map (given new facts). 'Willingness to help with the work' and the full household-listing / income-history verification are manualReview. Program is closed."
+    },
+    "branchDropRisk": [
+      {
+        "figure": "$15,000 (minimum gross annual household income)",
+        "takenNaivelyAs": "not a real condition, or read as a maximum",
+        "actuallyIs": "an income FLOOR -- the household must earn MORE than $15,000 to qualify (it must be able to afford its contribution). This is the opposite direction from every other income threshold in the corpus. An extractor that only knows 'income limit = ceiling' would drop or invert it.",
+        "direction": "looser"
+      },
+      {
+        "figure": "80 percent of the county median income ($74,800 / 1 person)",
+        "takenNaivelyAs": "a stand-alone ceiling",
+        "actuallyIs": "the upper bound of a BAND whose lower bound is $15,000. Encoding only the ceiling admits households too poor to afford the repair contribution, whom Habitat turns away.",
+        "direction": "narrower"
+      }
+    ],
+    "unencodable": [
+      { "kind": "asset-test", "text": "Debt standing: no bankruptcy in 3 years, no liens or open judgments, collections must be in active repayment -- a creditworthiness screen." },
+      { "kind": "documentation", "text": "Two years of state and federal tax returns + W-2s for every adult; a written explanation if no return was filed; all household members (related or not) listed." },
+      { "kind": "work-requirement", "text": "'Willingness to help with the work.'" },
+      { "kind": "other", "text": "Program is closed to applications (status: closed)." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://habitatdane.org/apply/apply-for-repairs/",
+    "ruleUrl": null,
+    "hops": ["habitatdane.org/apply/apply-for-repairs/ -- 'Home Repairs Qualifications' section: income guidelines (a >$15,000 floor AND an <80% AMI ceiling with a size chart), debt rules, and a household-listing requirement"],
+    "format": ["html-prose", "html-table"],
+    "formatNotes": "prose + an income chart (1-8 person, $74,800-$141,100 -- the HUD 80% AMI Dane County table, same as madison-cda-public-housing and projecthome-dane-minor-home-repair).",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "the $15,000 minimum and the 80% AMI maximum",
+        "separation": "same-page-elsewhere",
+        "where": "Both are in the 'Income Guidelines' paragraph, but several sentences apart, with two paragraphs of income-documentation rules between them. A reader who stops at the first figure ('greater than $15,000') or skips to the chart sees only half the band."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 9, "workedBy": "agent", "notes": "1 fetch (shared with habitat-dane-homeownership). The income FLOOR is the notable finding -- it took a careful read to catch 'greater than $15,000' as a condition rather than an example." },
+  "surprises": [
+    "The corpus's first true income FLOOR: you must earn MORE than $15,000 to qualify. Every other income threshold across ~55 candidates is a ceiling or a cost-share tier. An extractor's prior that 'income limit means don't-exceed' would silently invert this one -- a looser-direction branch-drop."
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "id": "habitat-dane-homeownership",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Habitat for Humanity of Dane County - Homeownership Program",
+    "administeredBy": "Habitat for Humanity of Dane County (nonprofit)",
+    "jurisdiction": "county",
+    "provider": "nonprofit",
+    "categories": ["housing-utilities"],
+    "summary": "A path to buying a modest home for low-income Dane County families: Habitat builds the home and sells it to a qualified partner family with a 25-30 year, low- or no-interest mortgage, plus homebuyer education. Partner families contribute 'sweat equity' hours.",
+    "benefit": "The chance to purchase a Habitat-built home with an affordable mortgage (low-to-no interest, 25-30 years), after completing homebuyer education and sweat-equity hours.",
+    "howToApply": {
+      "url": "https://habitatdane.org/apply/apply-for-home/",
+      "phone": "608-255-1549",
+      "steps": [
+        "Attend a Habitat informational meeting (held periodically; sessions currently full -- watch for 2027 dates).",
+        "Submit an application within 6 months of the meeting.",
+        "If selected, complete homebuyer education and sweat-equity hours before purchase."
+      ]
+    },
+    "status": "waitlist",
+    "seasonalNote": "Informational meetings (a prerequisite to applying) are currently full; next sessions expected in 2027.",
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        // "Applicants must ... reside in Dane County for 12 months prior to applying"
+        { "kind": "compare", "fact": "county", "op": "eq", "value": "dane" },
+        { "kind": "compare", "fact": "residedInDaneCounty12Months", "op": "eq", "value": true },
+        // "A household or family income no higher than 60 percent of the Dane County median income."
+        { "kind": "incomeAtOrBelow", "scale": "dane-ami", "percent": 60 },
+        // "U.S. Citizenship or Permanent Resident Alien Status."
+        { "kind": "set", "fact": "citizenshipStatus", "op": "in", "values": ["us-citizen", "qualified-immigrant"] },
+        // "Established credit - minimum score of 620."
+        { "kind": "compare", "fact": "creditScoreAtLeast620", "op": "eq", "value": true },
+        // "Three years positive and verifiable housing history."
+        { "kind": "compare", "fact": "hasThreeYearsPositiveHousingHistory", "op": "eq", "value": true },
+        // "Ability to pay a down payment on mortgage if selected"
+        { "kind": "compare", "fact": "canPayDownPayment", "op": "eq", "value": true },
+        {
+          /* "Show a need for housing ... due to any of the following situations:" */
+          "kind": "anyOf",
+          "of": [
+            { "kind": "compare", "fact": "inSubstandardUnsafeHousing", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "inTemporaryOrOvercrowdedHousing", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "housingCostOver30PercentOfIncome", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "housingInaccessible", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "inSubsidizedOrTransitionalHousing", "op": "eq", "value": true }
+          ]
+        },
+        { "kind": "manualReview", "note": "Attend an informational meeting (currently full), apply within 6 months, and be SELECTED -- Habitat picks partner families from qualified applicants; qualifying does not guarantee a home. Plus completing homebuyer education and sweat-equity hours." }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "residedInDaneCounty12Months", "type": "boolean", "sourceText": "reside in Dane County for 12 months prior to applying" },
+      { "key": "creditScoreAtLeast620", "type": "boolean", "sourceText": "Established credit - minimum score of 620" },
+      { "key": "hasThreeYearsPositiveHousingHistory", "type": "boolean", "sourceText": "Three years positive and verifiable housing history" },
+      { "key": "canPayDownPayment", "type": "boolean", "sourceText": "Ability to pay a down payment on mortgage if selected" },
+      { "key": "housingCostOver30PercentOfIncome", "type": "boolean", "sourceText": "Housing costs (rent + utilities) exceeds 30 percent of gross monthly household income -- one of five 'need for housing' routes" },
+      { "key": "inSubsidizedOrTransitionalHousing", "type": "boolean", "sourceText": "Resides in subsidized or transitional housing (section 8, Title 42, etc.)" }
+    ],
+    "expressibility": {
+      "level": "partial",
+      "note": "The numeric/categorical conditions map (60% AMI, 12-month residency, citizenship, credit >=620, 3-year housing history, the five-way housing-need anyOf). But 'established credit' and the housing-history verification are documentation, and SELECTION by Habitat from qualified applicants -- plus the currently-full info meetings -- is manualReview."
+    },
+    "branchDropRisk": [
+      {
+        "figure": "60 percent of the Dane County median income",
+        "takenNaivelyAs": "the 80% AMI used by the county's other housing programs (madison-cda-public-housing, projecthome-dane-minor-home-repair)",
+        "actuallyIs": "60% AMI -- Habitat's own threshold, tighter than the 80% figure that recurs elsewhere in the Dane County housing corpus. The same-looking 'Dane County median income' phrase carries different percentages across programs.",
+        "direction": "narrower"
+      }
+    ],
+    "unencodable": [
+      { "kind": "documentation", "text": "Credit report, three years of verifiable housing history, tax returns / W-2s from all adults, no pending legal matters." },
+      { "kind": "agency-discretion", "text": "Selection: Habitat chooses partner families from qualified applicants -- meeting every listed requirement does not guarantee a home." },
+      { "kind": "work-requirement", "text": "Sweat-equity hours and completion of homebuyer education before purchase." },
+      { "kind": "other", "text": "The informational meeting is a hard prerequisite and is currently full (status: waitlist)." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://habitatdane.org/apply/apply-for-home/",
+    "ruleUrl": null,
+    "hops": ["habitatdane.org (redirect from www) -> /apply/apply-for-home/ -- 'Habitat Homeownership Qualifications', a numbered list with a linked income chart (the 80% AMI HUD table, used here at the 60% row... actually the chart shown is the same $74,800 HUD table -- see notes)"],
+    "format": ["html-prose", "html-table"],
+    "formatNotes": "prose + a numbered qualifications list + an income chart. NOTE: the income-chart figures shown on the repairs sibling page are the HUD 80% AMI table; this page states the limit as '60 percent of the Dane County median income' in prose -- the on-page chart and the prose % need reconciling against Habitat's actual current chart.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200 (redirect www.habitatdane.org -> habitatdane.org, recorded).",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "'60 percent of the Dane County median income'",
+        "separation": "same-page-elsewhere",
+        "where": "The prose says 60%; the linked/embedded income chart is (on the sibling repairs page, at least) the HUD 80% AMI dataset. A reader taking the chart numbers at face value would apply the wrong threshold. The '(See chart below.)' cross-reference is where the ambiguity lives."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 13, "workedBy": "agent", "notes": "2 fetches (home + repairs pages) + 1 redirect. The prose says 60% AMI; the chart looked like the 80% HUD table (identical to madison-cda / projecthome). Flagged for reconciliation rather than resolved -- would need Habitat's current chart PDF." },
+  "surprises": [
+    "A nonprofit homeownership program with a bank-style rule -- credit score >=620, three-year housing history, no pending legal matters -- on top of an income CEILING (60% AMI) and a need test. It is simultaneously means-tested (must be poor enough) and credit-tested (must be creditworthy enough), a narrow band the interview has no way to check."
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "id": "wi-foodshare-employment-training",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "FoodShare Employment and Training (FSET)",
+    "administeredBy": "Wisconsin Department of Health Services; delivered by regional FSET agencies",
+    "jurisdiction": "state",
+    "provider": "government",
+    "categories": ["childcare-education", "food-basic-needs"],
+    "summary": "A free program for anyone 16 or older who gets FoodShare. FSET provides job skills training, education support (GED/HSED), certification programs (CDL, CNA), one-on-one case management, and help with work-related costs. Taking part is one way to meet the FoodShare work requirement.",
+    "benefit": "Free training and certifications, resume/interview/job-search help, GED/HSED support, a case manager, and supportive services (help paying for training, work clothes, transportation, books, tools).",
+    "howToApply": {
+      "url": "https://www.dhs.wisconsin.gov/fset/index.htm",
+      "phone": "800-362-3002",
+      "steps": [
+        "Enroll in FoodShare first (via ACCESS) if you are not already.",
+        "Find your local FSET agency and set up an orientation appointment.",
+        "Meet with an FSET worker to talk through your job goals."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        // "a free program for anyone 16 and older who gets FoodShare"
+        { "kind": "compare", "fact": "isAtLeast16", "op": "eq", "value": true },
+        { "kind": "set", "fact": "currentBenefits", "op": "includesAny", "values": ["snap-foodshare"] }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "isAtLeast16", "type": "boolean", "sourceText": "anyone 16 and older -- a 16 floor; AGE_BANDS cannot express it" }
+    ],
+    "expressibility": {
+      "level": "full",
+      "note": "Two conditions: 16+ and currently on FoodShare. Both map (16+ needs a new fact; FoodShare is in currentBenefits). Nothing manualReview -- it is an open program, not a gated benefit. Supportive services 'may vary by region' but that affects what you get, not eligibility."
+    },
+    "branchDropRisk": [],
+    "unencodable": [
+      { "kind": "other", "text": "Supportive-service availability 'may vary by region' -- what help with transport/clothes/tools you can get depends on the local FSET agency." },
+      { "kind": "work-requirement", "text": "FSET participation is a way to MEET the FoodShare able-bodied-adult work requirement, not itself a requirement -- the relationship runs the other way from most work-requirement caveats." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.dhs.wisconsin.gov/fset/index.htm",
+    "ruleUrl": null,
+    "hops": ["dhs.wisconsin.gov/foodshare/fset.htm redirects to /fset/index.htm -- the eligibility statement ('anyone 16 and older who gets FoodShare') is in the opening paragraph"],
+    "format": ["html-prose"],
+    "formatNotes": "prose. The eligibility rule is one sentence; most of the page is what FSET provides.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200; /foodshare/fset.htm redirected to /fset/index.htm (recorded the destination)",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "'anyone 16 and older who gets FoodShare'",
+        "separation": "colocated",
+        "where": "The whole eligibility rule is the first sentence of the page."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 5, "workedBy": "agent", "notes": "1 fetch (1 redirect). A rare fully-open program -- the only 'gate' is already being on FoodShare, which the interview asks." },
+  "surprises": [
+    "A program where the work-requirement relationship is inverted: FSET is not gated by a work requirement, it is one of the ways to SATISFY one. The corpus's usual pattern (a work requirement as an unencodable caveat that narrows eligibility) does not apply."
+  ]
+}

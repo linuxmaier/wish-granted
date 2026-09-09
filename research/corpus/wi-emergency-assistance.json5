@@ -1,0 +1,118 @@
+{
+  "id": "wi-emergency-assistance",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Emergency Assistance (EA)",
+    "administeredBy": "Wisconsin Department of Children and Families (a W-2 / TANF-related program); delivered by W-2 agencies",
+    "jurisdiction": "state",
+    "provider": "government",
+    "categories": ["housing-utilities", "food-basic-needs"],
+    "summary": "A one-time cash payment for Wisconsin families with a child under 18 who are facing an emergency -- homelessness, impending homelessness, domestic violence, fire, flood, natural disaster, or an energy crisis. It can cover first month's rent, a security deposit, necessary home repairs, essential household items, or utilities.",
+    "benefit": "Up to $1,200 for a group of 2-5 people ($220 per person for groups of 6+), or up to $750 for an energy crisis. Available once every 12 months.",
+    "howToApply": {
+      "url": "https://dcf.wisconsin.gov/ea",
+      "phone": "855-757-4539",
+      "steps": [
+        "Check eligibility anonymously on ACCESS (access.wi.gov), or apply online or in person.",
+        "Your local W-2 agency determines eligibility and helps you find local resources.",
+        "If approved, you get a payment to help with the emergency."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        // "you must be a parent or a relative caring for a child younger than 18"
+        {
+          "kind": "anyOf",
+          "of": [
+            { "kind": "compare", "fact": "isParent", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "isRelativeCaringForChildUnder18", "op": "eq", "value": true }
+          ]
+        },
+        { "kind": "compare", "fact": "hasChildUnder18InHome", "op": "eq", "value": true },
+        // "Your income must be at or below 115% of the Federal Poverty Level"
+        { "kind": "incomeAtOrBelow", "scale": "fpl", "percent": 115 },
+        // "you must have limited assets ... Your car is only counted as an asset if it is worth more than $10,000."
+        { "kind": "compare", "fact": "assetsWithinEALimitExcludingModestCar", "op": "eq", "value": true },
+        {
+          // "experiencing a current emergency due to fire, flood or natural disaster, impending homelessness, homelessness, domestic violence, or energy crisis"
+          "kind": "anyOf",
+          "of": [
+            { "kind": "compare", "fact": "isExperiencingHomelessness", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "facingImpendingHomelessness", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "experiencingDomesticViolence", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "hadFireFloodOrNaturalDisaster", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "hasEnergyCrisis", "op": "eq", "value": true }
+          ]
+        },
+        { "kind": "manualReview", "note": "The emergency must be 'current' and verified, and a Fact Finding Review is the appeal path. DCF 120 sets detailed rules on what counts as impending homelessness, an energy crisis, etc. Once every 12 months." }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "isRelativeCaringForChildUnder18", "type": "boolean", "sourceText": "a parent or a relative caring for a child younger than 18" },
+      { "key": "hasChildUnder18InHome", "type": "boolean", "sourceText": "a child younger than 18 (shared with wisconsin-works-w2)" },
+      { "key": "assetsWithinEALimitExcludingModestCar", "type": "boolean", "sourceText": "limited assets ... Your car is only counted as an asset if it is worth more than $10,000" },
+      { "key": "facingImpendingHomelessness", "type": "boolean", "sourceText": "impending homelessness -- distinct from currently homeless; DCF 120 defines it" },
+      { "key": "experiencingDomesticViolence", "type": "boolean", "sourceText": "domestic violence -- a qualifying emergency" },
+      { "key": "hadFireFloodOrNaturalDisaster", "type": "boolean", "sourceText": "fire, flood or natural disaster" },
+      { "key": "hasEnergyCrisis", "type": "boolean", "sourceText": "energy crisis" }
+    ],
+    "expressibility": {
+      "level": "partial",
+      "note": "Parent/relative + child under 18 + 115% FPL + asset limit + a five-way emergency-type anyOf all map (given new facts). But whether the emergency is 'current' and qualifying is a caseworker determination against DCF 120's definitions, and the $2,500-style asset test is not fully quantified on the page."
+    },
+    "branchDropRisk": [
+      {
+        "figure": "$1,200 (maximum payment, groups of 2-5)",
+        "takenNaivelyAs": "the benefit amount everyone eligible receives",
+        "actuallyIs": "a MAXIMUM, scoped by group size ($220/person for 6+) and emergency type ($750 for an energy crisis). The actual payment covers the specific emergency cost up to that cap.",
+        "direction": "narrower"
+      }
+    ],
+    "unencodable": [
+      { "kind": "asset-test", "text": "The asset limit -- 'limited assets', with the car excluded below $10,000; the exact figure is in DCF 120 / the EA Manual, not on the citizen page." },
+      { "kind": "professional-assessment", "text": "Whether a 'current emergency' exists and qualifies -- DCF 120 has detailed definitions of impending homelessness, energy crisis, etc.; the W-2 agency decides." },
+      { "kind": "documentation", "text": "Proof of the emergency (eviction notice, disconnect notice, police/shelter records for DV, fire report)." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://dcf.wisconsin.gov/ea",
+    "ruleUrl": null,
+    "hops": ["guessed /emergencyassistance 404'd; dcf.wisconsin.gov/ea -- 'Do I qualify?' states parent/relative + child under 18 + 115% FPL + limited assets + a qualifying emergency inline"],
+    "format": ["html-prose"],
+    "formatNotes": "prose + a 'Do I qualify?' list. The 115% FPL and payment caps are inline; the asset figure and emergency definitions are in DCF 120 / the EA Manual.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200 for /ea. /emergencyassistance and /Economic-Support/... 404'd; found /ea via search.",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "115% of the Federal Poverty Level",
+        "separation": "colocated",
+        "where": "In the 'Do I qualify?' list, right next to the parent-and-child condition. Same 115% figure as wisconsin-works-w2 (both are W-2-related)."
+      },
+      {
+        "scopeOf": "'limited assets'",
+        "separation": "cross-reference",
+        "where": "The page says 'limited assets' with the car carve-out but no dollar figure -- the actual asset limit is in DCF 120 / the EA Manual."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 10, "workedBy": "agent", "notes": "2 x 404 + 1 search + 1 fetch. Distinct from the shipped dane-eviction-prevention record (a Dane County program) and from wheap-crisis-assistance -- this is the statewide W-2 EA. The 115% FPL matches wisconsin-works-w2." },
+  "surprises": [
+    "Wisconsin runs a general emergency-cash program that most people have never heard of, gated behind 'have a child under 18'. A childless adult in exactly the same crisis (fire, DV, energy shutoff) is ineligible -- the categorical child requirement, not the emergency, is the real filter."
+  ]
+}
