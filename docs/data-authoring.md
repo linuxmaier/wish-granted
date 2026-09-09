@@ -116,340 +116,39 @@ Set `verified: true` and `lastVerified` to today's date once checked against the
 These are republished annually. Updating them is a yearly maintenance task, and every
 program's effective threshold moves when they do.
 
-## Automated refresh (scripts/refresh-income-tables)
+## Refreshing the income tables
 
-Issue #6 built a deterministic script -- no LLM anywhere in it -- that fetches all three
-income tables from their live sources, validates them, and patches
-`src/data/reference/income-tables.ts` in place for whatever changed. It never decides a
-table is verified; it never runs against `main`; and its git diff, not a summary, is the
-thing a human reviews.
+**By hand.** The deterministic refresher that used to do this
+(`scripts/refresh-income-tables`, issue #6) was deleted in the 2026-09-08 unwind
+(#97), along with the rest of the pipeline. Nothing fetches these figures now,
+and nothing warns you when they lapse.
 
-```
-npm run refresh:income-tables                        # fetch (recorded effectiveYear + 1) for every table
-npm run refresh:income-tables -- --year=2026          # fetch a specific year instead (e.g. to re-verify)
-npm run refresh:income-tables -- --dry-run            # validate and report, write nothing
-npm run refresh:income-tables -- --report-file=out.md # also save the report to a file
-```
+The procedure is the verification procedure above, applied to all three tables:
+fetch each from its live source, check `bySize` and `perAdditionalPerson`
+against it, bump `effectiveYear`, and set `lastVerified` to the date you
+actually read the page. The docblock in `src/data/reference/income-tables.ts`
+names the current expiry; `docs/standing-decisions.md` carries it as a dated
+obligation rather than a nice-to-have, because every program's effective
+threshold moves when these do.
 
-Requirements to run it: **`pdftotext`** (Poppler) on `PATH` -- only the Dane AMI source
-needs it, FPL and WI SMI are plain JSON/HTML. The npm script already runs `node
---use-system-ca`; without that flag, `liheapch.acf.gov` (the WI SMI source) fails Node's
-built-in fetch with `UNABLE_TO_VERIFY_LEAF_SIGNATURE` even though `curl` and every browser
-accept its certificate chain fine -- Node's bundled root store is pickier than the OS
-store here. If you invoke the script directly rather than through the npm script, keep the
-flag.
 
-### What each table's refresher actually does
+## Source change detection
 
-- **`FPL`** -- fetches ASPE's own JSON API (`.../poverty-guidelines/api/{year}/us/{size}`)
-  for household sizes 1-8, derives `perAdditionalPerson` from the (checked-constant) delta
-  between sizes, and cross-checks the size-4 figure against the human-facing guidelines
-  page as a secondary, non-blocking check.
+**There is none.** `scripts/check-sources` (issues #7, #82) was deleted in the
+unwind. Nothing notices when a source page moves, 404s, or quietly rewrites its
+eligibility rule.
 
-  **The API does not 404 for a year it does not have yet.** Asking for a future year
-  returns HTTP 200 with the most recent year it actually has, silently, e.g.
-  `.../2027/us/4` today returns `{"data":{"year":"2026",...}}`. Found this by actually
-  running the script against next year's figures while building it -- without checking the
-  echoed `data.year` against the year requested, the script would have written
-  `effectiveYear: 2027` next to 2026's real dollar amounts. The script checks the echo on
-  every request and treats a mismatch as "not yet published," not as success. If you touch
-  `sources/fpl.ts`, keep that check.
+Until something replaces it, the only signal is time-based: `stalePrograms()`
+below. Re-verify on that schedule and assume nothing about pages you have not
+opened recently. Recorded as a known gap in `docs/standing-decisions.md`.
 
-- **`WI_SMI_60`** -- fetches the LIHEAP Clearinghouse's Wisconsin state median income page
-  (`https://liheapch.acf.gov/profiles/povertytables/FY{year}/wismi.htm`), an HHS/ACF
-  republication that prints the six household-size-1-6 dollar figures directly as plain
-  HTML -- not the 2.5 MB WHEAP manual PDF the original hand verification (#3) had to use.
-  Sizes 7-8 (and `perAdditionalPerson`) are not published anywhere as raw numbers; 45 CFR
-  96.85(b) specifies them as a formula, so they are derived from the fetched size-4 figure,
-  and the regulation's fixed percentages are used as a self-check against all six fetched
-  values (six independent checks against one source, not one).
 
-  **The rounding is truncation, not standard rounding**, confirmed by running the fetcher
-  for real: `Math.floor(base * pct / 100)` reproduces all eight published figures (the six
-  fetched plus the manual's own size-7/8 rows) exactly; `Math.round` is off by a dollar on
-  several sizes. See the comment in `sources/wi-smi.ts` for the worked example.
+## Descriptive-field ingestion
 
-  **A change-detection signal worth passing to issue #7:** the Clearinghouse page carries a
-  publisher-authored `[Last edited MM/DD/YYYY]` stamp (e.g. `[Last edited 12/05/2025]` for
-  the FY2026 page) directly in the page body. This refresher doesn't use it -- it just
-  fetches and re-derives every run -- but it's a genuinely different thing from the generic
-  `Last-Modified` HTTP header noise the issue #5 spike found unusable elsewhere: it's a
-  human-maintained editorial date on a federal page, not a CDN/server artifact, so a diff on
-  that one string is a real "did the underlying data actually change" signal. Worth #7
-  checking for the same pattern on other government sources before assuming header-based
-  change detection is the only option.
+**There is none.** `scripts/ingest-descriptive` (issue #14) proposed phone
+numbers, URLs and statuses into a committed review queue; it was deleted in the
+unwind. Every field of every record is hand-authored today.
 
-- **`DANE_AMI`** -- fetches exactly one fact from each of two independent PDFs (WHEDA's
-  Section 8 Income Limits, FHLBank Chicago's HUD Income Guidelines): the county's stated
-  median family income, and requires the two to agree exactly. `sizeAdjustment` and
-  `perAdditionalPersonFactor` are HUD's fixed methodology, already modelled as constants,
-  and this refresher never touches them.
-
-  **`pdftotext -layout` mangles both PDFs' multi-column income-limit grids** -- columns
-  from adjacent counties bleed into each other, producing numbers that look plausible and
-  are wrong. Confirmed by hand while building this script (see the comment in
-  `sources/dane-ami.ts`). The next person tempted to parse the full grid for a richer
-  cross-check should read that comment first and expect to lose an afternoon to it. The
-  isolated `"FY{year} MFI: $X"` / `"MFI: X"` line does not have this problem, which is why
-  the script only ever reads that one line from each document.
-
-### The guardrail: calibrated to 25%, and why
-
-A year-over-year move over the guardrail on any figure holds that table's update back
-entirely -- nothing is written, and the report says so, naming the table, the specific
-figure, the old and new values, the percentage change, and the source URL. The threshold
-started at 10% and was raised to 25% once real data from building this script showed 10%
-was miscalibrated: it sits *below* normal annual movement rather than above it. Observed,
-legitimate, real moves: FPL ~3-4%/year, Dane AMI's actual 2026 correction (#3) 9.1%, WI
-SMI's 2026 correction 15-20%. A band that fires on every correct run is not a signal, it's
-noise -- it trains people to click through it, which also makes them click through the one
-run that matters. The guardrail's actual job is catching a *parse* error (a misread column,
-a footnote captured as a value, a row offset), which produces a grossly wrong number, not a
-12-20% one -- 25% still catches that comfortably. It also is not the only safety net: every
-run that changes anything still produces a diff a human reads before it merges. See the
-comment on `GUARDRAIL_PERCENT` in `lib/guardrail.ts` for the full reasoning; if you're
-considering tightening this again, get real observed movement across a few more years
-first, not just the one year that calibrated it originally.
-
-### Reviewing a proposed update
-
-This script can never write `verified: true`. When it changes a table's data, it writes
-`verified: false` and `lastVerified: null`, and inserts a new comment paragraph -- clearly
-marked `PROPOSED UPDATE (unverified)` -- directly above the export, without touching the
-table's existing hand-written prose. That means:
-
-1. **A refresher PR is not done when it merges.** Merging it with `verified: false` still
-   in place ships the "unverified data" banner to production for that table -- the engine
-   checks `verified`, not "a script touched this recently." Reviewing a proposed update
-   means doing the same thing as "Verifying the income tables" above: open the source
-   URL(s) in the comment, check the figures, and only then set `verified: true` and
-   `lastVerified` to today's date as a **separate, deliberate edit** on top of what the
-   script wrote.
-2. **This script must only ever run on a branch that becomes a PR, never against `main`
-   directly.** It refuses to write if the current branch is `main` or `master` (checked via
-   `git rev-parse --abbrev-ref HEAD`) -- a proposed change always needs a human in the loop
-   before it reaches production, and running it locally against a checked-out `main` is the
-   one path that would skip that.
-
-### Failure modes, and what each one asks a human to do
-
-The script distinguishes four outcomes deliberately, because they call for different
-responses -- collapsing them into one generic "failed" would train people to stop reading
-the message:
-
-- **not-yet-published** -- quiet, not an error. The next year's figures legitimately do not
-  exist yet at the expected URL.
-- **fetch-failed** -- could not reach or read a source at all. Fix: find the new URL, or
-  wait out an outage. Every message names which leg failed (e.g. `[Dane AMI / FHLBank
-  Chicago leg]`) -- Dane AMI's FHLBank Chicago URL carries an unpredictable per-year hash
-  suffix and has to be scraped fresh from a listing page every run, which makes it the
-  single most likely thing in this script to break first.
-- **parse-failed** -- reached the source, but its shape did not match what the script
-  expects. Fix: update the parser for the new layout.
-- **disagreement** -- reached and parsed everything, but two independent sources (or a
-  source vs. a regulation-derived expectation) do not agree. Fix: a human has to work out
-  which source is right. Never averaged, never guessed.
-
-Exit codes, for issue #15's benefit: **0** clean run (including "not yet published" and
-successfully-applied changes); **1** a hard failure (fetch/parse/disagreement) or a write
-refused for branch safety; **2** a change was found but held back by the guardrail. `#15`
-still needs to: run this on a schedule, capture the report (`--report-file`) as the PR body,
-`git diff --quiet` to decide whether to open a PR at all ("no change: exit quietly" is
-already the script's behavior), and treat exit code 1 as a failed CI run rather than "no
-change" -- silently swallowing a `parse-failed` as "nothing to do" is exactly the dangerous
-outcome the issue calls out.
-
-## Source change detection (scripts/check-sources)
-
-Issue #7 built the other half of "keeping data fresh": a scheduled job that notices when a
-program's `source.url` page *changes*, not just when its `lastVerified` date gets old. It
-automates the noticing, never the judgement — a detected change opens a PR and a human does
-the re-verification.
-
-```
-npm run check:sources                       # fetch all, update source-hashes.json, print the report
-npm run check:sources -- --dry-run           # fetch and report, write nothing
-npm run check:sources -- --id=wic-wisconsin  # just one record (repeatable)
-npm run check:sources -- --stale-days=90      # widen/narrow the stalePrograms() window in the report
-npm run check:sources -- --report-file=out.md
-```
-
-No extra tools to install (it reuses `scripts/refresh-income-tables/lib/http.ts`, so it
-sends a desktop-Chrome UA — WI state and some nonprofit sites 403 anything else). It reads
-the live `PROGRAMS` array via a small `node:module` resolve hook
-(`scripts/check-sources/resolve-hook.mjs`), so the ids and URLs it checks are always the
-real ones.
-
-### What it does, and the one hard part
-
-For each record it fetches `source.url`, reduces the page to its **meaningful text**, hashes
-that, and compares to the committed baseline in
-`scripts/check-sources/source-hashes.json` (one entry per program id, sorted, pretty-printed
-— a real change is a one- or two-line diff a reviewer can read).
-
-The reduction step is the whole ballgame. `docs/eligibility-extraction.md` Section 5
-measured that byte-level change on these sources is dominated by incidental churn — render
-timestamps, CSRF tokens, rotating announcement banners, session ids in links, analytics
-blobs — on pages whose actual figures move once a year. Three automatic change signals were
-tried there and all three rejected. So `lib/normalize.ts` strips the page hard: drop
-`<script>/<style>/<form>/<head>`, narrow to the page's main-content landmark — `<main>`,
-then `[role="main"]`, then a `#content` / `#main` container, then the weak `<body>`
-fallback (government CMS templates put everything volatile *outside* the landmark) — drop
-remaining nav/header/footer, strip all tags and attributes, decode entities, fold
-typographic Unicode to ASCII, and scrub date/timestamp/copyright/"N views"/opaque-token
-text patterns. It errs aggressive: a missed edit is caught on the next run or by the
-time-based check; a false "changed" trains the reviewer to ignore the job. Run-to-run
-stability is proven, not asserted, in `lib/__tests__/normalize.test.ts` (and was verified
-against all 17 live pages: two consecutive real fetches, zero baseline churn).
-
-The one place `<form>`-stripping backfires: ASP.NET WebForms / SharePoint wraps the whole
-`<body>` in a single `<form id="aspnetForm">`, so stripping `<form>` wholesale deletes the
-entire page (issue #82 — this silently disabled change detection for the three
-`energyandhousing.wi.gov` records; an empty normalization hashes consistently, so they
-compared nothing to nothing every run and always reported `unchanged`). So `check.ts`
-wraps `normalize()` in `normalizeWithUnwrap()`: when the plain reduction comes back
-near-empty (`< 200` chars), it retries once with that wrapper `<form>` neutralised to a
-`<div>` — `unwrapContentShell` from `scripts/render-fallback/lib/unwrap-shell.ts`, the
-exact transform the ingestion path (`recoverEmptyPage`) runs, reused rather than
-reimplemented. The CSRF/nonce/session inputs it was hiding are still dropped by
-`normalize()`'s blanket tag strip and opaque-token scrub. A real `<main>` page never
-enters the retry (it reduces well above 200), so the #7 stability property is untouched —
-re-verified across all 17 live pages, two consecutive runs, byte-identical baseline. As a
-backstop, a record whose normalized text is shorter than `MIN_PLAUSIBLE_CHARS` (50; the
-smallest real page is ~350) is reported as **unreadable**, never `unchanged` — an empty
-normalization is a reducer bug, never a valid baseline.
-
-When a record falls all the way through to the `<body>` fallback, the report names it under
-**Weak content-region fallback** — nav/header/footer are in its hash, so a site-wide
-template change can flag it (and every sibling on that domain) at once without the
-eligibility rule moving. If one of those shows up as `changed`, check the diff for chrome
-before treating it as a real edit; a hand-picked selector for that page is the fix if it
-churns (issue #49).
-
-### The outcomes, and why they are kept distinct
-
-| Outcome | Means | What a human does |
-|---|---|---|
-| **unchanged** | normalized text hashes to the stored value | nothing — silent, no PR |
-| **new** | no baseline yet (first run, or the URL changed) | nothing — baseline recorded |
-| **changed** | reachable, 200, normalized text moved | re-verify the record against the source (below) |
-| **unreadable** | reachable, 200, but normalized text is empty or `< MIN_PLAUSIBLE_CHARS` | a reducer bug, not an edit — fix `normalize.ts` until it sees the page; **do not** re-baseline against the empty hash (issue #82). Escalates on the first run |
-| **gone** | 404 / 410 — the page was removed, not edited | find the current official page; fix `source.url` in the record **and** in `source-hashes.json`; note "moved" vs "never correct" per the section above; then re-verify. **Escalates on the first run** — a retry counter must never hide a vanished program |
-| **unreachable** | timeout, 403, 5xx, network error | almost always a blip at 17 monthly sources. The last good hash is kept and a `consecutiveFailures` counter is recorded (force-pushed to the `automation/source-change-detection` branch as bookkeeping, never to `main`, no PR). Only the **2nd consecutive** failed run escalates to a re-verification PR; a successful fetch resets the counter. Once escalated, treat a genuinely-removed page as "gone" |
-
-A 404 is deliberately not an "edit" — see "Moved vs. never correct" above, and issue #14.
-`unreachable` stays distinct from `gone` for the same reason: the retry counter delays a
-flaky-fetch PR, but a real 404 is actionable immediately (issue #49).
-
-The report also prints `stalePrograms(days)` (from `src/data/programs/index.ts`) on the same
-run — the time-based half of the same question, now wired up.
-
-### The re-verification loop
-
-The scheduled workflow (`.github/workflows/check-sources.yml`, monthly) runs the script on a
-detached HEAD, first seeding `source-hashes.json` (and its `consecutiveFailures` counters)
-from the `automation/source-change-detection` branch when that branch exists. If
-`source-hashes.json` changed *and* there is an actionable finding (`changed` / `gone` / an
-escalated `unreachable`), it force-pushes `automation/source-change-detection` and opens (or
-updates) one PR with the report as its body. If the only change is a first-time
-`unreachable`'s `consecutiveFailures` counter, it force-pushes that one field to the same
-branch (bookkeeping — no page moved, nothing to review) and opens nothing. It never commits
-to `main`: `main` is Cloudflare Pages' production branch and every push to it deploys the
-live site (`docs/deploy.md`), so a counter bump driven by a flaky government server must not
-land there. That PR is the tracked item. To close it:
-
-1. For each **changed** record, do the full "Verifying a program record" procedure above
-   against the (new) source text. The hash moving is not proof the *eligibility rule*
-   changed — it might be reworded prose or a new caveat — so read it like any re-verification.
-2. Land any correction, and set a fresh `lastVerified` (or leave it `null` with a
-   `manualReview`, per the rules above), as edits **on top of** the baseline bump the bot
-   committed.
-3. For **gone** records, fix the URL first (in the record and in `source-hashes.json`), then
-   re-verify.
-4. Merge. The baseline advances with the reviewed state.
-
-Exit codes: **0** clean, or the only change is a first-time `unreachable`'s failure counter
-(bookkeeping — force-pushed to `automation/source-change-detection`, never `main`, no PR);
-**1** a write was refused because the script was run on `main`/`master` (it never advances
-the committed baseline without a PR, same rule as
-`refresh-income-tables`); **2** at least one record is changed, gone, `unreadable`, or
-`unreachable` for two consecutive runs.
-
-## Descriptive-field ingestion (scripts/ingest-descriptive)
-
-Issue #14, item 3 of `docs/data-sources.md`'s "Recommended ingestion order". Where
-`check-sources` says only "this page's text moved, go look", this goes one step further for
-the **descriptive half** of a record: it names the field, the proposed new value, and the
-verbatim source excerpt it came from, so a reviewer's job is verification, not research.
-
-```
-npm run ingest:descriptive                       # fetch all, update proposals.json, print the report
-npm run ingest:descriptive -- --dry-run           # fetch and report, write nothing
-npm run ingest:descriptive -- --id=sun-bucks-wi   # just one record (repeatable)
-npm run ingest:descriptive -- --report-file=out.md
-```
-
-Scope, deliberately narrow:
-
-- **`source.url` health** -- `ok` / `redirected` (same host, new path) / **`moved`** (a
-  different host -- the FNS->FNA case from `docs/data-sources.md`, distinct from both
-  `changed` and `gone`) / `gone` (404/410) / `unreachable` / `blocked`. A `moved` or
-  `redirected` result becomes a concrete `source.url` proposal; `gone` only flags (finding
-  the right replacement page is a human call).
-- **`howToApply.phone`** -- if the record has no phone and the page has exactly one, that is
-  a low-confidence proposal with its excerpt. If the record has a phone that is no longer on
-  the page, or the page has several candidates, that is a review flag, never a guess.
-- **`status`** -- high-precision phrases ("not currently accepting applications", "placed on
-  a waitlist") that disagree with the recorded status become a review flag.
-
-What it does **not** do: it never reads, extracts, proposes, or writes an `eligibility`
-rule. The LLM extractor in `scripts/llm-extraction/` is built but deliberately not wired in
--- its held-out eval produced a schema-valid dangerous over-claim (issue #51). See
-`scripts/ingest-descriptive/eligibility-seam.ts`.
-
-The output is `scripts/ingest-descriptive/proposals.json` -- a committed, diffable review
-queue with the same fixed-point property as `source-hashes.json` (an unchanged run
-reproduces it byte-for-byte, so the monthly workflow opens nothing). It is not a direct
-edit to `src/data/programs/*.ts` or `snapshot.json`: the record modules are hand-authored
-with load-bearing source comments, `snapshot.json` is generated, and the repo's curation
-model is "git is the database, PR review is the write gate" (see `design.md`). Resolving a
-proposal means landing the accepted change in the record file and running
-`npm run build:snapshot`, exactly as for any hand edit; the entry then drops out of the
-queue on the next run.
-
-**When a review flag is a false positive** — the record is already correct — add an
-`acknowledgement` block to that entry in `proposals.json` by hand:
-
-```json
-"acknowledgement": {
-  "reviewedOn": "2026-09-05",
-  "reason": "Why the record is right and the flag is noise. Written for the next reviewer.",
-  "sourceHash": "sha256:…"
-}
-```
-
-The `sourceHash` is the entry's normalized-page hash — copy it from that record's line in
-`scripts/check-sources/source-hashes.json` (same `normalize`, same digest). The report then
-lists the finding under **Reviewed — no change needed** instead of **Needs human review**,
-and it stops counting toward the exit code. The acknowledgement is carried forward on every
-run *only while that hash still matches the live page* — the moment the page text moves it
-is dropped automatically and the finding is a fresh review again, so an acknowledgement can
-never permanently silence a real future discrepancy (issue #49). `madison-housing-choice-voucher`'s
-`status-signal` is the worked example: its `seasonalNote` already documents that the
-Section 8 voucher waiting list has been closed since April 2023, and the page's generic
-"we maintain a wait list per program" boilerplate is what the heuristic matched.
-
-Sources that currently yield nothing: `211wisconsin.communityos.org` is on the hard-deny
-list (`scripts/ingest-descriptive/lib/robots.ts`) alongside findhelp.org.
-
-`energyandhousing.wi.gov` (SharePoint; the WHEAP and Weatherization pages) was thought to be
-a JS-rendered SPA that "normalizes to zero readable text". It is not (issue #76). A plain
-fetch returns the full server-rendered page, income table included; both text reducers just
-threw it away because ASP.NET WebForms wraps the whole `<body>` in one `<form>` and they
-strip `<form>` wholesale. `scripts/render-fallback/lib/unwrap-shell.ts` unwraps that shell
-whenever a page reduces to nothing — used by descriptive ingestion, agentic extraction, and
-(issue #82) `check-sources`' `normalize()` — so these three records are back in scope. See
-`scripts/render-fallback/lib/unwrap-shell.ts` and `tests/fixtures/js-pages/SOURCES.md`.
 
 ## Adding a new program
 
@@ -521,7 +220,7 @@ honest bucket. Two consequences for authoring:
 
 The extractor pipeline follows the same rule: `RESERVED_FACT_KEYS` (facts.ts) is the single
 source of truth for both the engine's vocabulary test and the extraction schema gate
-(`scripts/llm-extraction/schema-gate.ts`). A fact moving out of that list makes it encodable
+(the schema gate, deleted in the unwind). A fact moving out of that list makes it encodable
 on both sides at once.
 
 The snapshot's `factVocabulary` (see [design.md](design.md), "The shippable snapshot") is
@@ -552,39 +251,29 @@ window, defaulting to 180 days. Program details drift constantly: waiting lists 
 close, funding runs out mid-year, phone numbers change. A record verified two years ago is
 not meaningfully better than an unverified one.
 
-Re-verification is the same procedure as above, ending in a new `lastVerified` date. Two
-things surface which records need it: the time-based `stalePrograms()` check, and the
-page-based "Source change detection" job above — both report on the same schedule.
+Re-verification is the same procedure as above, ending in a new `lastVerified` date. Since
+the page-based change detector was deleted (above), `stalePrograms()` is the **only** thing
+that surfaces which records need it — and it measures elapsed time, not whether the page
+actually changed. A source can be rewritten the day after you verify it and nothing will
+say so.
 
 ## Future ingestion
 
-The schema is built so a pipeline could populate it later — Grants.gov, Benefits.gov,
-WI DHS, Dane County and City of Madison open data, 211 Wisconsin. Every field except
-`eligibility` is flat and machine-fillable.
+There is no pipeline. The one built through 2026 was unwound on 2026-09-08 —
+see #97 for why, and [`pipeline-principles.md`](pipeline-principles.md) for the
+constraints any future attempt inherits. Do not re-argue it here; whether
+`eligibility` stays hand-authored is a standing decision, recorded in
+[`standing-decisions.md`](standing-decisions.md).
 
-The "plausible middle path" below — ingest descriptive fields automatically, flag changed
-source text for a human, automate the noticing not the judgement — is now partly built:
-`scripts/ingest-descriptive` (issue #14) does the descriptive half, and the section above
-describes it. What remains future work: descriptive **prose** (`summary`, `benefit`,
-`howToApply.steps`) is still hand-authored — auto-diffing free text against a stripped page
-produces noise, and rewriting it well needs the same judgement `eligibility` does — and
-Tier-1 directory ingestion of *new* programs (where cross-source deduplication actually
-bites) has no confirmed access path per `docs/data-sources.md`.
+The schema is still built so a pipeline could populate it later: every field
+except `eligibility` is flat and machine-fillable, and `SnapshotRecord` carries
+a per-record `provenance` field reserved for that.
 
-`eligibility` is the hard part, and it is hand-authored *today*. Whether it stays that way
-is a standing decision, not a fact about the world — see
-[standing-decisions.md](standing-decisions.md). Do not re-argue it here.
+Two things do not move whatever comes next:
 
-Whatever the pipeline eventually does, the write gate does not move: a human reviews every
-eligibility change before it lands.
-
-The curation "database" is the git repo itself: history is the change log, PR review is the
-write gate — see [design.md](design.md), "The shippable snapshot" (issue #8). The first
-ingestion pipeline (#14) took this literally: rather than machine-editing the hand-authored
-record modules or the generated `snapshot.json`, it maintains a committed review queue
-(`scripts/ingest-descriptive/proposals.json`) and opens a PR against it. A human lands each
-accepted proposal in the record file and regenerates the snapshot, the same as any hand
-edit. If a later pipeline stage ever writes records directly, the snapshot stays its output
-target and `SnapshotRecord` carries the per-record `provenance` field reserved for it. A
-committed SQLite DB was considered and deferred — it is not justified until cross-source
-deduplication stops being something a human can catch in review (argued in design.md).
+- **A human reviews every eligibility change before it lands.**
+- **The curation "database" is the git repo itself** — history is the change log,
+  PR review is the write gate. See [design.md](design.md), "The shippable
+  snapshot" (issue #8). A committed SQLite DB was considered and deferred; it is
+  not justified until cross-source deduplication stops being something a human
+  can catch in review.

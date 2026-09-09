@@ -1,17 +1,25 @@
 /**
  * Income yardsticks the eligibility rules measure against.
  *
+ * THIS FILE IS HAND-MAINTAINED. Its generator (scripts/refresh-income-tables,
+ * issue #6) was deleted in the 2026-09-08 unwind (#97). Nothing refreshes these
+ * figures automatically, and nothing will warn you when they lapse.
+ *
  * These are republished annually by their respective agencies, so this file is
- * recurring maintenance, not a one-off (see issue #6, which proposes automating
- * the refresh). Every table carries a `verified` flag plus `lastVerified`. The
+ * recurring maintenance, not a one-off. The current FPL table is effective to
+ * 30 September 2026 -- refresh it by hand before then, or the app ships stale
+ * thresholds to people deciding whether to apply. Recorded as a dated
+ * obligation in docs/standing-decisions.md.
+ *
+ * Every table carries a `verified` flag plus `lastVerified`. The
  * UI surfaces an "unverified data" banner for as long as any table or program
  * record is unverified, so a lapsed re-verification cannot be forgotten by
  * accident.
  *
  * Constant names deliberately carry no year suffix -- the year lives in
- * `effectiveYear` and `lastVerified` so an annual refresh (by hand or by the
- * issue #6 automation) only ever rewrites values inside the object literal,
- * never an export name that other files import.
+ * `effectiveYear` and `lastVerified` so an annual refresh only ever rewrites
+ * values inside the object literal, never an export name that other files
+ * import.
  *
  * See docs/data-authoring.md for the verification procedure.
  */

@@ -2,7 +2,7 @@
 
 Raw HTML snapshots fetched **2026-09-07** with a plain `fetch()` carrying the standard
 desktop-Chrome User-Agent from `scripts/refresh-income-tables/lib/http.ts` (WI/government
-sites 403 a naive fetcher's default UA but serve a normal one — see `docs/data-sources.md`).
+sites 403 a naive fetcher's default UA but serve a normal one — see `docs/archive/data-sources.md`).
 No headless browser was used to capture these — that is the point (see below).
 
 Used by `scripts/render-fallback/` (`index.ts --self-test` and

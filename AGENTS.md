@@ -35,10 +35,10 @@ looks: the app has a third bucket, and "might qualify" is not a wrong answer in
 either direction. Read [`docs/standing-decisions.md`](docs/standing-decisions.md),
 "The two harms", before invoking either of these in an argument.
 
-Where the corpus stands: **21 records, 16 verified, maintained by ~22,000 lines of
-pipeline code.** If you are choosing between hardening the pipeline and adding
-ten verified program records, the records usually win. "We should add programs" is
-always in scope.
+Where the corpus stands: **21 records, 16 verified, all hand-authored.** There is
+no extraction pipeline — the one built through 2026 was unwound on 2026-09-08
+(#97), and widening the corpus by hand is the current route to reach. "We should
+add programs" is always in scope; it is presently the main job.
 
 ## Where principles live, and where new ones go
 
@@ -48,9 +48,10 @@ One rule: **a principle is stated once, and everywhere else links to it.**
 |---|---|---|
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | The product's promises, plus how to work here | Anything with a revisit condition |
 | [`docs/standing-decisions.md`](docs/standing-decisions.md) | **Every design principle and judgment**: the statement, the reason, the reopen condition, the glossary, and what has changed | Mechanism |
-| `docs/design.md`, `docs/data-authoring.md`, `docs/program-benchmark.md`, `docs/triage.md`, … | How a thing works, and how to use it | The *argument* for a principle |
+| `docs/design.md`, `docs/data-authoring.md`, `docs/pipeline-principles.md`, … | How a thing works, and how to use it | The *argument* for a principle |
 | Code and tests | The rule, in one line, with a link | Justification, history, or a retelling of why |
 | Git history and GitHub issues | The full argument at the time | — |
+| Issues labelled `superseded`, and `docs/archive/` | A dated record of retired work | **Anything current.** Not a source of reasoning — see below |
 
 **Writing a new principle?** It goes in `docs/standing-decisions.md`, in the
 standing-decisions table, **with a named condition under which it should be
@@ -58,6 +59,14 @@ reopened.** A judgment with no reopen condition is not finished being written.
 
 **About to explain in a code comment *why* a rule exists?** The explanation
 belongs in `standing-decisions.md`; the comment belongs at one line with a link.
+
+**Reading an issue labelled `superseded`, or a document under `docs/archive/`?**
+Those are the record of the eligibility-extraction programme, unwound on
+2026-09-08. They are history, **not a source of current reasoning**: nothing in
+them is a constraint, a requirement, or an established fact about what is
+possible. Measurements that survived are hoisted into this file's routing targets
+— `standing-decisions.md` and `docs/pipeline-principles.md`. Start there. #97 has
+the verdict and the findings that stand.
 
 ## How work goes wrong here
 
@@ -73,15 +82,21 @@ Watch for yourself doing them.
   and no rule can need it because we don't ask it." This kept a whole class of
   senior programs unreachable for months (#88). If a constraint's justification
   depends on the constraint, say so out loud.
-- **Caution that reads as safety but costs reach.** A pipeline that abstains on
-  everything has zero wrong answers and is worth nothing. The benchmark now blocks
-  on that (`MIN_USABLE_RULE_RATE`); your reasoning should too.
+- **Caution that reads as safety but costs reach.** Anything that abstains on
+  everything has zero wrong answers and is worth nothing. A measure of correctness
+  has to count *decidable* answers, not the presence of an answer — see
+  `standing-decisions.md`. Nothing enforces this in code today; your reasoning has
+  to.
 - **Correcting a document by appending.** If the top of a doc or an issue argues
   something a later paragraph retracts, readers get the retracted version. Fix the
   claim where it is made, and record the change in one place.
-- **The same word meaning three things.** "Over-claim" does, in this repo. Say the
-  direction in the sentence: *"tells someone they qualify when they do not."* See
-  the glossary in `standing-decisions.md`.
+- **The same word meaning two things.** "Over-claim" did, for months, and it cost
+  four architectures designed against a scoreboard that measured the wrong
+  direction. Say the direction in the sentence: *"tells someone they qualify when
+  they do not."* The same trap is live for `branch`, `rule`, `source` and
+  `program`, each of which names one thing in a source and a different thing in
+  our encoding of it. **"The words" in `standing-decisions.md` defines them; add
+  to it when you coin one.**
 
 ## Non-negotiables (details in CONTRIBUTING.md)
 
@@ -105,7 +120,8 @@ src/engine/     three-valued (Kleene) evaluation; criteria are data, not functio
 src/interview/  screens + adaptive flow; exactly one question writes each fact
 src/data/       hand-authored program records, compiled to snapshot.json
 src/ui/         React 19; useInterview.ts is the only place answers are held
-scripts/        build-time tools, never shipped
+scripts/        two directories only: build-snapshot (ships the app) and
+                lib-source (source-access tools, no consumer — see its README)
 ```
 
 Read `docs/design.md` for the architecture and its rationale. It is expected to
@@ -129,15 +145,17 @@ same PR.
 ## Commands
 
 ```
-npm test                     # 153 unit tests (vitest)
+npm test                     # 120 unit tests (vitest)
 npm run typecheck
 npm run build                # regenerates + checks snapshot, then tsc + vite
 npm run test:e2e             # Playwright, 3 viewports
 npm run build:snapshot       # after editing any program record — commit both
+npm run test:lib-source      # 73 tests (Node's runner, not vitest)
 ```
 
-Script suites and their self-tests are per-directory: `npm run test:<name>` and
-`npm run <name>:self-test`. See `package.json`.
+Two runners, deliberately separate: `npm test` is vitest over the app;
+`test:lib-source` is Node's built-in runner over `scripts/lib-source`. A failure
+should say which one broke. `npm run test:all` runs vitest plus Playwright.
 
 **Windows:** the Bash tool's PATH lacks node and gh —
 `export PATH="$PATH:/c/Program Files/nodejs:/c/Program Files/GitHub CLI"`.

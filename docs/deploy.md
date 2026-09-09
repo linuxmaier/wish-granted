@@ -31,22 +31,20 @@ financial crisis being unable to tap Continue on the device they actually
 have. There's no subset to cut that preserves that guarantee -- "desktop +
 one mobile size" is the subset that already failed once.
 
-**Why Node is pinned to the 24.x line, not current LTS (22.x).** Two npm
-scripts run `.ts` files directly:
+**Why Node is pinned to the 24.x line, not current LTS (22.x).** An npm
+script runs `.ts` files directly:
 
 ```
-"refresh:income-tables":      "node --use-system-ca scripts/refresh-income-tables/index.ts"
-"test:refresh-income-tables": "node --test scripts/refresh-income-tables/lib/__tests__/*.test.ts"
+"test:lib-source": "node --test \"scripts/lib-source/__tests__/*.test.ts\""
 ```
 
 That relies on Node's native TypeScript type-stripping, chosen deliberately
-in #6 so the refresher needs zero new dependencies (no `tsx`, no build
-step). That behaviour is absent or flag-gated on Node 22; pinning to
-current LTS would make `test:refresh-income-tables` fail in CI on what
-looks like a code problem but is actually a version problem. `.nvmrc` pins
-`24.19.0` -- the exact version this was developed and verified against
-(`node --version` locally, confirmed 19/19 on `test:refresh-income-tables`
-against it). `actions/setup-node` reads `.nvmrc` directly
+so `scripts/` needs zero new dependencies (no `tsx`, no build step). That
+behaviour is absent or flag-gated on Node 22; pinning to current LTS would
+make `test:lib-source` fail in CI on what looks like a code problem but is
+actually a version problem. `.nvmrc` pins `24.19.0` -- the exact version
+this was developed and verified against (`node --version` locally,
+confirmed 73/73 on `test:lib-source` against it). `actions/setup-node` reads `.nvmrc` directly
 (`node-version-file: '.nvmrc'`); the Cloudflare Pages build (below) is set
 to the same version via its `NODE_VERSION` build variable. All three
 places -- local dev, CI, Cloudflare's builder -- must agree, or a build

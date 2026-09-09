@@ -148,14 +148,15 @@ The app does **not** import `records.ts`. `npm run build:snapshot` serializes th
 into [`src/data/programs/snapshot.json`](../src/data/programs/snapshot.json) — a build-time
 artifact, committed to the repo, compiled into the bundle by Vite like any other module.
 `src/data/programs/index.ts` loads *that*, and nothing else, so the app only ever sees one
-shape of the dataset regardless of whether a record was hand-typed or (later, per #1/#14)
-ingested.
+shape of the dataset regardless of whether a record was hand-typed or, later, generated.
 
 Why a compiled artifact and not just the TS array:
 
-- **It is the pipeline's write target.** #1's architecture ends in "export static snapshot →
-  snapshot compiled into the bundle at build time". This is that file. The app never changes
-  shape again when ingestion lands; only what writes `records.ts` (or its successor) does.
+- **It is the write target for anything that generates records.** The app never changes
+  shape when that lands; only what writes `records.ts` (or its successor) does. Nothing
+  generates records today — the extraction programme was unwound on 2026-09-08 (#97) — but
+  the seam costs nothing to keep and is the reason the app is indifferent to how a record
+  was authored.
 - **It is validated as data, at build time.** [`snapshot-schema.ts`](../src/data/programs/snapshot-schema.ts)
   hand-rolls a validator (no new dependency). `npm run build` runs `build:snapshot -- --check`
   before `tsc`/`vite`, so a malformed *or stale* snapshot fails the build rather than
@@ -168,13 +169,13 @@ Why a compiled artifact and not just the TS array:
 
 **The fact-vocabulary seam.** `factVocabulary` is the sorted set of every fact key the
 shipped `eligibility` rules reference. It is *declared* in the snapshot rather than left to
-be re-derived, because it is the seam between the pipeline and the interview model: a rule
+be re-derived, because it is the seam between the dataset and the interview model: a rule
 that references a fact no question asks strands its program in "might qualify" for everyone,
 forever, and nothing in the running app surfaces that. `tests/data/vocabulary.test.ts` and
 `tests/data/snapshot.test.ts` both check the declared set against what the rules actually
 touch and against what the interview can ask; `--check` re-runs the cross-check in the
-build. When records become pipeline-generated, a record format that ships compiled criteria
-instead of full trees can still state its vocabulary here.
+build. If records ever become machine-generated, a record format that ships compiled
+criteria instead of full trees can still state its vocabulary here.
 
 **Round-trip fidelity.** `Program` is flat and `Criterion` is a data tree with no closures,
 so JSON serialization only drops `undefined`-valued optional keys and re-orders object keys
@@ -222,9 +223,9 @@ the change history, and PRs are both the write path and the review gate. This sa
 #14's "land changes as PRs, never write directly to the published dataset" for free, needs
 zero new infrastructure, and suits a one-person part-time maintainer. Per-record provenance
 for hand-authored records is `git blame` plus the record's own source-comment (the
-convention `docs/data-authoring.md` already enforces). #14's richer per-record provenance
-(source URL, fetch timestamp, the text span an extracted rule came from) attaches as an
-optional `provenance` field on `SnapshotRecord` when #14 lands — adding it is a
+convention `docs/data-authoring.md` already enforces). Richer per-record provenance
+(source URL, fetch timestamp, the text span a generated rule came from) attaches as an
+optional `provenance` field on `SnapshotRecord` if anything ever needs it — adding it is a
 non-breaking schema change, not a rework.
 
 A committed SQLite curation DB with the snapshot exported from it would be better at two
