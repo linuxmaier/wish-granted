@@ -1,0 +1,100 @@
+{
+  "id": "wisconsin-works-w2",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Wisconsin Works (W-2)",
+    "administeredBy": "Wisconsin Department of Children and Families; delivered by regional W-2 agencies",
+    "jurisdiction": "state",
+    "provider": "government",
+    "categories": ["food-basic-needs", "childcare-education"],
+    // Wisconsin's TANF program -- cash assistance plus employment services for low-income parents. Neither category fits squarely (it is cash + work support for parents); recorded as a partial fit.
+    "summary": "Cash assistance and employment services for low-income Wisconsin parents with a child under 18 in the home. You work with a W-2 agency on job training, education, and job matching, and may get a monthly payment while preparing for work.",
+    "benefit": "Up to $653 per month cash assistance (depending on assigned activities and hours), plus job training, education support, interview prep, job matching, and connections to FoodShare and SSI/SSDI help.",
+    "howToApply": {
+      "url": "https://dcf.wisconsin.gov/w2/parents/w2",
+      "phone": "855-757-4539",
+      "steps": [
+        "Check eligibility anonymously on ACCESS (access.wi.gov), or apply online or in person.",
+        "Find your local W-2 agency; they determine whether you meet program requirements.",
+        "If eligible, you are assigned to a W-2 employment position and activities."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        // "Are a parent;"
+        { "kind": "compare", "fact": "isParent", "op": "eq", "value": true },
+        // "Have a child younger than 18 who lives with you;"
+        { "kind": "compare", "fact": "hasChildUnder18InHome", "op": "eq", "value": true },
+        // "Your income must be at or below 115% of the Federal Poverty Level"
+        { "kind": "incomeAtOrBelow", "scale": "fpl", "percent": 115 },
+        // "Your total assets can't be more than $2,500 ... Your car is only counted as an asset if it is worth more than $10,000."
+        { "kind": "compare", "fact": "assetsAtOrBelow2500ExcludingModestCar", "op": "eq", "value": true },
+        { "kind": "manualReview", "note": "The W-2 agency assesses employability and assigns the applicant to a W-2 employment position (subsidized/unsubsidized employment, community service job, or W-2 Transition). Assignment, activity requirements, and participation rules are agency determinations. A Fact Finding Review is available if the applicant disagrees with the eligibility decision." }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "isParent", "type": "boolean", "sourceText": "Are a parent -- also includes a pregnant person and certain non-parent caretaker relatives in the full rule" },
+      { "key": "hasChildUnder18InHome", "type": "boolean", "sourceText": "Have a child younger than 18 who lives with you -- hasChildUnder5 / hasSchoolAgeChild do not cover the full under-18 range nor 'lives with you'" },
+      { "key": "assetsAtOrBelow2500ExcludingModestCar", "type": "boolean", "sourceText": "total assets can't be more than $2,500 ... car only counted if worth more than $10,000 -- an asset test with a specific vehicle exclusion" }
+    ],
+    "expressibility": {
+      "level": "partial",
+      "note": "Parent + child-under-18 + 115% FPL + a $2,500 asset limit map cleanly (given new facts). But the employability assessment and W-2 position assignment -- which determine what you actually get and whether you keep it -- are manualReview, and the income counting includes a coparent/spouse in the home."
+    },
+    "branchDropRisk": [
+      {
+        "figure": "$653 (monthly payment)",
+        "takenNaivelyAs": "a fixed benefit everyone eligible receives",
+        "actuallyIs": "an UP-TO amount 'depending on the hours of work and activities you do'. Someone in an unsubsidized-employment W-2 position may get $0 cash and only services. The cash is tied to assigned-activity participation, not to being eligible.",
+        "direction": "either"
+      }
+    ],
+    "unencodable": [
+      { "kind": "asset-test", "text": "The $2,500 asset limit -- 'savings accounts and any high-valued belongings', with the car counted only above $10,000." },
+      { "kind": "professional-assessment", "text": "The employability assessment and assignment to a W-2 employment position (subsidized job / community service job / W-2 Transition)." },
+      { "kind": "work-requirement", "text": "Activity participation requirements once assigned; sanctions for non-participation; a 60-month lifetime limit on some positions." },
+      { "kind": "incorporated-law", "text": "Gross-income counting includes 'the income of the individual's nonmarital coparent or spouse ... if they reside in the same home as the dependent child' (DCF 101.095) -- not stated on the citizen page." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://dcf.wisconsin.gov/w2/parents/w2",
+    "ruleUrl": null,
+    "hops": ["guessed URLs (/w2, /wisconsinworks) 404'd; dcf.wisconsin.gov/w2/parents/w2 -- 'Do I qualify?' section states the four conditions inline"],
+    "format": ["html-prose"],
+    "formatNotes": "prose + a 'Do I qualify?' bullet list. The 115% FPL and $2,500 asset figures are inline; income-counting detail (coparent/spouse) is in DCF 101.095, not on the page.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200 for /w2/parents/w2. Several guessed URLs 404'd first; found via search (the 115% FPL figure also confirmed against DCF 101.095).",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "115% of the Federal Poverty Level",
+        "separation": "colocated",
+        "where": "Stated inline in the 'Do I qualify?' list. But the DEFINITION of the income it applies to (including a coparent's or spouse's income when they live with the child) is in DCF 101.095, a separate document."
+      },
+      {
+        "scopeOf": "$2,500 asset limit",
+        "separation": "colocated",
+        "where": "Inline, with its own carve-out stated right there ('Your car is only counted as an asset if it is worth more than $10,000')."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 11, "workedBy": "agent", "notes": "3 x 404 on guessed DCF URLs + 1 search + 1 fetch. DCF restructured its site (/w2 -> /w2/parents/w2). The citizen page is clean; the income-counting rule is in the admin code." },
+  "surprises": [
+    "Wisconsin's TANF program states a clean 4-part rule on the citizen page -- and hides the part that catches people (a coparent's or spouse's income counts if they live with the child) in DCF 101.095. The $653 'benefit' is also not a benefit everyone gets; it is participation pay."
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "id": "dane-county-microenterprise-business-loan",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Dane County Microenterprise Business Loan (MBL) Program",
+    "administeredBy": "Dane County Office of Economic & Workforce Development, overseen by the Dane County CDBG Commission; funded by federal CDBG (HUD)",
+    "jurisdiction": "county",
+    "provider": "government",
+    "categories": ["small-business"],
+    "summary": "Small loans ($1,500-$8,000) for very small businesses (5 or fewer employees) in Dane County outside the City of Madison, to start a new business or create jobs for low- and moderate-income county residents.",
+    "benefit": "A $1,500-$8,000 loan for start-up overhead, licenses, advertising, incorporation, rent, utilities, insurance, equipment, or employee training. Not for operating deficits, debt refinancing, or personal income.",
+    "howToApply": {
+      "url": "https://cdbg.danecounty.gov/rlf/mbl",
+      "phone": "608-267-1540",
+      "steps": [
+        "Complete a small-business development training program (City of Madison 'Market Ready', WWBIC, UW-Madison SBDC, or an equivalent approved by the CDBG Commission).",
+        "Schedule and complete a pre-application advising session with OED staff.",
+        "Submit the application; it goes on the CDBG Commission's meeting agenda for a decision."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        // "The applicant must be the business owner or entrepreneur."
+        { "kind": "compare", "fact": "isBusinessOwnerOrEntrepreneur", "op": "eq", "value": true },
+        // "The business must be physically located within Dane County's Urban County Consortium." (Dane County outside the City of Madison)
+        { "kind": "compare", "fact": "county", "op": "eq", "value": "dane" },
+        { "kind": "not", "of": { "kind": "compare", "fact": "city", "op": "eq", "value": "madison" } },
+        // "The business must have five or fewer employees, including the owner."
+        { "kind": "compare", "fact": "businessHas5OrFewerEmployees", "op": "eq", "value": true },
+        // "established within the last five years or be ready to start within six months"
+        { "kind": "compare", "fact": "businessUnder5YearsOldOrStartingWithin6Months", "op": "eq", "value": true },
+        // "Prior to applying ... applicant must complete a business development training program from one of the following ..."
+        { "kind": "compare", "fact": "completedApprovedBusinessTraining", "op": "eq", "value": true },
+        {
+          /* CDBG national objective: the loan must create jobs for LMI county residents OR the owner is LMI. Stated in the program purpose, not the numbered applicant list. */
+          "kind": "anyOf",
+          "of": [
+            { "kind": "incomeAtOrBelow", "scale": "dane-ami", "percent": 80 },
+            { "kind": "compare", "fact": "loanWillCreateJobsForLMIResidents", "op": "eq", "value": true }
+          ]
+        },
+        { "kind": "manualReview", "note": "Ineligible business types: adult entertainment; gambling, liquor, or tobacco stores; marijuana dispensaries; passive real estate investments; pyramid structures. Plus a required pre-application advising session and a CDBG Commission vote -- discretionary." }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "isBusinessOwnerOrEntrepreneur", "type": "boolean", "sourceText": "The applicant must be the business owner or entrepreneur" },
+      { "key": "businessHas5OrFewerEmployees", "type": "boolean", "sourceText": "five or fewer employees, including the owner" },
+      { "key": "businessUnder5YearsOldOrStartingWithin6Months", "type": "boolean", "sourceText": "established within the last five years or be ready to start within six months" },
+      { "key": "completedApprovedBusinessTraining", "type": "boolean", "sourceText": "must complete a business development training program from one of the following organizations [City of Madison Market Ready / WWBIC / SBDC / approved equivalent]" },
+      { "key": "loanWillCreateJobsForLMIResidents", "type": "boolean", "sourceText": "creating jobs for low- and moderate-income (LMI) County residents -- the CDBG national objective; alternative to the owner being LMI" }
+    ],
+    "expressibility": {
+      "level": "partial",
+      "note": "Most conditions map (owner, geography, size, age, training completed). The CDBG LMI objective is a two-route branch (owner is LMI OR jobs for LMI residents). The ineligible-business-type list and the Commission vote are manualReview."
+    },
+    "branchDropRisk": [
+      {
+        "figure": "80% of area median income (the CDBG LMI standard)",
+        "takenNaivelyAs": "an income ceiling on the applicant",
+        "actuallyIs": "one of two ways to meet the CDBG national objective -- the OTHER being that the loan creates jobs for LMI residents (the business owner's own income is then not tested). Encoding only the owner-income route drops the job-creation route.",
+        "direction": "narrower"
+      }
+    ],
+    "unencodable": [
+      { "kind": "documentation", "text": "Proof of completing an approved business-development training program (syllabus + completion evidence for 'equivalent' programs, approved by the Commission)." },
+      { "kind": "agency-discretion", "text": "The required pre-application advising session and the CDBG Commission vote -- the application 'will be on the subsequent CDBG Commission meeting agenda'." },
+      { "kind": "other", "text": "Ineligible business types (adult entertainment, gambling/liquor/tobacco, marijuana dispensaries, passive real estate, pyramid structures)." },
+      { "kind": "incorporated-law", "text": "The CDBG 'national objective' framework (24 CFR 570) behind the LMI job-creation / LMI-owner requirement." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://cdbg.danecounty.gov/rlf/mbl",
+    "ruleUrl": "https://cdbg.danecounty.gov/documents/pdf/MBL-Loan-Manual.pdf",
+    "hops": [
+      "cdbg.danecounty.gov/rlf/mbl (the program page 404'd on fetch) -> the MBL Policies and Procedures Manual (PDF, 6 pages) -- 'Applicant Eligibility' is a numbered 7-item list; the LMI objective is in the opening paragraph"
+    ],
+    "format": ["pdf"],
+    "formatNotes": "6-page policy manual PDF. The program landing page returned 'gone' on fetch; the manual carries the rule.",
+    "fetch": {
+      "tool": "lib-source live fetcher + pdf.ts (extractPdf)",
+      "status": "cdbg.danecounty.gov/rlf/mbl returned 'gone'; the MBL-Loan-Manual.pdf fetched HTTP 200, 6 pages, extractPdf ok.",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "the LMI (80% AMI) requirement",
+        "separation": "same-page-elsewhere",
+        "where": "The numbered 'Applicant Eligibility' list (items 1-7) does NOT mention income or LMI at all. The LMI benefit requirement is in the manual's opening paragraph ('for the purpose of ... creating jobs for low- and moderate-income County residents'). A reader working through the numbered list would miss the CDBG objective entirely."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 12, "workedBy": "agent", "notes": "1 x 404 on the program page + 1 PDF fetch + 1 search. The eligibility 'list' and the eligibility 'purpose' are in different parts of the document and say different things." },
+  "surprises": [
+    "The numbered 'Applicant Eligibility' list omits the single most consequential condition -- the CDBG low-and-moderate-income objective -- which lives only in the introductory paragraph. Same shape as head-start (the real allowances sit away from the 'eligibility' text) and svdp-microlending (the purpose test is below the 'Eligibility:' heading)."
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "id": "wisconsin-sbdc",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Wisconsin Small Business Development Center (SBDC)",
+    "administeredBy": "University of Wisconsin System, with the U.S. Small Business Administration",
+    "jurisdiction": "state",
+    "provider": "government",
+    "categories": ["small-business"],
+    "summary": "Free, confidential business consulting and low-cost training for Wisconsin residents at any stage -- from testing an idea to launching, financing, or growing a business. Centers are hosted at UW campuses statewide (the Dane County center is at UW-Madison).",
+    "benefit": "No-cost one-on-one consulting, plus the paid Entrepreneurial Training Program and other classes. Referrals to lenders and other resources.",
+    "howToApply": {
+      "url": "https://wisconsinsbdc.org/",
+      "phone": "608-263-7794",
+      "steps": [
+        "Find your local SBDC center ('Find Your Local Center').",
+        "Request consulting through that center's intake form.",
+        "Meet with a consultant; there is no fee for consulting."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "manualReview",
+      "note": "No published eligibility rule. The SBDC serves 'you ... whether you're just getting started or looking for ways to improve your business' -- any Wisconsin resident with a business or a business idea. Consulting is free and open; there is no income test, no business-stage gate, and no application beyond an intake request."
+    },
+    "factsNeeded": [],
+    "expressibility": {
+      "level": "manual-review-dominant",
+      "note": "There is no rule to encode. Like wi-211 and the ADRC, it is a service worth listing because it helps anyone in a broad class (Wisconsin entrepreneurs) with no gate."
+    },
+    "branchDropRisk": [],
+    "unencodable": [
+      { "kind": "other", "text": "No eligibility conditions are published. Consulting is universally available to Wisconsin businesses and would-be founders; only paid classes have a fee." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://wisconsinsbdc.org/",
+    "ruleUrl": null,
+    "hops": ["wisconsinsbdc.org -- describes services (consulting, education, financing help, feasibility) and 'Find Your Local Center'; no eligibility section"],
+    "format": ["none-published"],
+    "formatNotes": "html-prose marketing/service page. No eligibility criteria anywhere.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "(no figure)",
+        "separation": "n/a — no governing figure",
+        "where": "No eligibility rule or figure. Free consulting, open to any Wisconsin business or founder."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 5, "workedBy": "agent", "notes": "1 fetch. Fast -- there is nothing to characterise. A useful data point that a large, well-funded government-backed small-business service publishes no eligibility rule because there isn't one." },
+  "surprises": [
+    "The small-business category's version of wi-211: a statewide, government-backed navigation/advising resource with genuinely no eligibility rule. Worth a record precisely because it abstains -- an entrepreneur turned away from a loan still has somewhere to go."
+  ]
+}
