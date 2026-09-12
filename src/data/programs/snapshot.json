@@ -14,11 +14,12 @@
     "paysHeatingCost",
     "recentIncomeDrop",
     "state",
-    "utilityShutoffRisk"
+    "utilityShutoffRisk",
+    "veteranConnection"
   ],
-  "generatedAt": "2026-09-08T01:11:30.694Z",
+  "generatedAt": "2026-09-12T19:27:28.155Z",
   "generator": "scripts/build-snapshot",
-  "recordCount": 17,
+  "recordCount": 20,
   "records": [
     {
       "administeredBy": "Wisconsin Department of Health Services",
@@ -1109,6 +1110,242 @@
       },
       "status": "open",
       "summary": "Helps pay for child care so parents and caregivers can work, go to school, or take part in an approved job-training program. Funds are loaded onto an EBT card you use to pay your child care provider."
+    },
+    {
+      "administeredBy": "Wisconsin Department of Veterans Affairs — apply through your County or Tribal Veterans Service Office",
+      "benefit": "Grant payments toward essential living expenses, covering up to a 90-day period. Up to $3,000 in any 12 months, and $7,500 over a lifetime counting the Health Care Aid Grant too.",
+      "categories": [
+        "veterans"
+      ],
+      "eligibility": {
+        "kind": "allOf",
+        "of": [
+          {
+            "fact": "state",
+            "kind": "compare",
+            "op": "eq",
+            "value": "WI"
+          },
+          {
+            "fact": "veteranConnection",
+            "kind": "set",
+            "op": "includesAny",
+            "values": [
+              "veteran",
+              "spouse-or-partner",
+              "surviving-spouse",
+              "child-or-dependent"
+            ]
+          },
+          {
+            "kind": "anyOf",
+            "of": [
+              {
+                "kind": "incomeAtOrBelow",
+                "percent": 200,
+                "scale": "fpl"
+              },
+              {
+                "kind": "allOf",
+                "of": [
+                  {
+                    "fact": "veteranConnection",
+                    "kind": "set",
+                    "op": "includesAny",
+                    "values": [
+                      "spouse-or-partner",
+                      "child-or-dependent"
+                    ]
+                  },
+                  {
+                    "kind": "manualReview",
+                    "note": "If you are the spouse or dependent child of a service member who is activated or deployed right now, the income limit does not apply to you at all. You would need to show the deployment, the income loss, and that an emergency happened during it."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "manualReview",
+            "note": "The lost income has to be because of an illness, an injury, or a natural disaster, and the grant covers the 90 days after that loss. Apply within 12 months of it."
+          },
+          {
+            "kind": "manualReview",
+            "note": "A caseworker decides two things we cannot: whether you have other assets or income that could cover basic needs, and whether you have already applied for and accepted every other county, state and federal aid available. A county official has to sign a \"declaration of aid\" saying so."
+          }
+        ]
+      },
+      "eligibilityCaveats": [
+        "Your County or Tribal Veterans Service Office files this for you, and has to sign off on it. Start there rather than with the state.",
+        "\"Veteran\" here means the definition in Wis. Stat. § 45.01(12), which sets its own rules about length of service, discharge, and a Wisconsin connection. Your service office will tell you whether you meet it.",
+        "If the loss of income came from alcohol or other drug use, you need to show you are currently in an approved treatment program.",
+        "You will be asked to list household assets and three months of living expenses."
+      ],
+      "howToApply": {
+        "phone": "800-947-8387",
+        "steps": [
+          "Contact your County or Tribal Veterans Service Office. In Dane County that is (608) 266-4158.",
+          "They help you fill in form WDVA 2453 and sign the declaration of aid.",
+          "Apply within 12 months of the loss of income."
+        ],
+        "url": "https://dva.wi.gov/services/mental-health-and-emergency-services/subsistence-aid-health-care-aid-grants/"
+      },
+      "id": "wi-veterans-subsistence-aid",
+      "jurisdiction": "state",
+      "name": "Veterans Subsistence Aid Grant",
+      "provider": "government",
+      "requiredDocuments": [
+        "Form WDVA 2453 (Subsistence Aid Grant application)",
+        "A declaration of aid signed by a county or tribal official",
+        "A list of household assets and three months of living expenses",
+        "Evidence of the loss of income"
+      ],
+      "source": {
+        "lastVerified": null,
+        "name": "Wis. Admin. Code ch. VA 2 (Subsistence and health care aid grant programs)",
+        "url": "https://docs.legis.wisconsin.gov/code/admin_code/va/2"
+      },
+      "status": "open",
+      "summary": "Short-term cash help with basic living costs for Wisconsin veterans and their families who have lost income because of an illness, an injury, or a natural disaster, and have already used up other help."
+    },
+    {
+      "administeredBy": "Wisconsin Department of Veterans Affairs",
+      "benefit": "A room at the Union Grove site with three meals a day, laundry, internet, and transportation help when available, plus case-managed support toward housing, work, education, healthcare and recovery goals.",
+      "categories": [
+        "housing-utilities",
+        "veterans"
+      ],
+      "eligibility": {
+        "kind": "allOf",
+        "of": [
+          {
+            "fact": "state",
+            "kind": "compare",
+            "op": "eq",
+            "value": "WI"
+          },
+          {
+            "fact": "veteranConnection",
+            "kind": "set",
+            "op": "includesAny",
+            "values": [
+              "veteran"
+            ]
+          },
+          {
+            "kind": "anyOf",
+            "of": [
+              {
+                "fact": "housingStatus",
+                "kind": "compare",
+                "op": "eq",
+                "value": "unhoused-or-temporary"
+              },
+              {
+                "fact": "facingLossOfHousing",
+                "kind": "compare",
+                "op": "eq",
+                "value": true
+              }
+            ]
+          },
+          {
+            "kind": "manualReview",
+            "note": "The Union Grove site decides who comes in, and there is one site for the whole state. Call them to ask about a referral and whether there is room right now."
+          }
+        ]
+      },
+      "eligibilityCaveats": [
+        "There is no income limit published for this program. Being homeless, or close to it, is the test.",
+        "Spouses and children cannot live at the site. Staff will help a veteran's family find housing and other resources separately.",
+        "This is one residential site, at Union Grove near Racine — not something available in Madison. Moving there is the program.",
+        "Referrals often come through the VA, a County Veterans Service Office, or a homeless-services agency, and going through one of those is usually faster than calling cold."
+      ],
+      "howToApply": {
+        "phone": "262-878-9151",
+        "steps": [
+          "Call the Union Grove site on (262) 878-9151 to ask about referrals and applications.",
+          "Or ask the VA, your County Veterans Service Office, or a shelter to refer you.",
+          "If there is room and the program fits what you need, you move in and start a goal plan."
+        ],
+        "url": "https://dva.wi.gov/services/housing-and-financial-services/veterans-housing-and-recovery/"
+      },
+      "id": "wi-veterans-housing-recovery",
+      "jurisdiction": "state",
+      "name": "Veterans Housing and Recovery Program",
+      "provider": "government",
+      "source": {
+        "lastVerified": null,
+        "name": "Wisconsin DVA — Veterans Housing and Recovery Program",
+        "url": "https://dva.wi.gov/services/housing-and-financial-services/veterans-housing-and-recovery/"
+      },
+      "status": "open",
+      "summary": "A place to live for Wisconsin veterans who are homeless or close to it, with meals, job training and a case worker, while you work toward permanent housing. Wisconsin has one site, at Union Grove near Racine."
+    },
+    {
+      "administeredBy": "Dane County (a County Veterans Service Office under Wis. Stat. ch. 45)",
+      "benefit": "Benefits advice and help applying — VA health care and dental enrollment, disability compensation and pension claims, GI Bill and other education benefits, home loan certificates, and burial allowances, markers and flags.",
+      "categories": [
+        "veterans"
+      ],
+      "eligibility": {
+        "kind": "allOf",
+        "of": [
+          {
+            "kind": "allOf",
+            "of": [
+              {
+                "fact": "state",
+                "kind": "compare",
+                "op": "eq",
+                "value": "WI"
+              },
+              {
+                "fact": "county",
+                "kind": "compare",
+                "op": "eq",
+                "value": "dane"
+              }
+            ]
+          },
+          {
+            "fact": "veteranConnection",
+            "kind": "set",
+            "op": "includesAny",
+            "values": [
+              "veteran",
+              "spouse-or-partner",
+              "surviving-spouse",
+              "child-or-dependent"
+            ]
+          }
+        ]
+      },
+      "eligibilityCaveats": [
+        "This is free, and it is worth using before applying for anything else — the office knows which benefits exist and files the paperwork with you.",
+        "The statute covers people who served and their dependents. The office also handles burial, marker and flag benefits that a veteran's family claims, so call and ask if you are not sure whether you count.",
+        "It helps with federal VA benefits as well as state and county ones, so one call can cover all three."
+      ],
+      "howToApply": {
+        "phone": "608-266-4158",
+        "steps": [
+          "Call (608) 266-4158.",
+          "Describe your service and your situation — a veterans service officer works out what you may be entitled to.",
+          "They help you file the claims and applications, and can represent you on VA claims and appeals."
+        ],
+        "url": "https://www.danevets.com/services"
+      },
+      "id": "dane-county-veterans-service-office",
+      "jurisdiction": "county",
+      "name": "Dane County Veterans Service Office",
+      "provider": "government",
+      "source": {
+        "lastVerified": null,
+        "name": "Dane County Veterans Service Office",
+        "url": "https://www.danevets.com/services"
+      },
+      "status": "open",
+      "summary": "Free help working out which veterans benefits you can get, and applying for them. A county officer can file VA claims for you and represent you if a claim is denied."
     },
     {
       "administeredBy": "Dane County Department of Human Services",
