@@ -1,0 +1,112 @@
+{
+  "id": "wi-veterans-assistance-grant",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Wisconsin Veterans Subsistence Aid Grant",
+    "administeredBy": "Wisconsin Department of Veterans Affairs (applications through County/Tribal Veterans Service Offices)",
+    "jurisdiction": "state",
+    "provider": "government",
+    "categories": ["veterans"],
+    "summary": "A short-term cash grant for Wisconsin veterans (and certain surviving spouses and military families) who have lost income because of illness, injury, or a natural disaster and have exhausted other aid.",
+    "benefit": "Grant payments toward essential living expenses (rent/mortgage, food, utilities, medications, essential travel, child care) for up to a 90-day period. Maximum $3,000 in any consecutive 12 months; $7,500 combined lifetime limit with Health Care Aid.",
+    "howToApply": {
+      "url": "https://dva.wi.gov/services/mental-health-and-emergency-services/subsistence-aid-health-care-aid-grants/",
+      "phone": "800-947-8387",
+      "steps": [
+        "Contact your County or Tribal Veterans Service Office (CVSO/TVSO).",
+        "Submit form WDVA 2453 with a 'declaration of aid' from a county/tribal official confirming you applied for all other county/state/federal aid.",
+        "Apply within 12 months of the verified loss of income."
+      ]
+    },
+    "requiredDocuments": [
+      "Form WDVA 2453 (Assistance to Needy Veterans Grant Application - Subsistence Aid)",
+      "Declaration of aid signed by an authorised county/tribal official",
+      "List of all household assets and 3 months of household living expenses",
+      "Evidence of the loss of income (and, if the loss stems from alcohol/other drug abuse, proof of current participation in an approved treatment program)"
+    ],
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        {
+          // VA 2.01(2)(b)1.: "The applicant satisfies the requirements of s. 45.01(12), Stats., to be considered a veteran, or is a spouse or dependent of [such an individual]."
+          "kind": "anyOf",
+          "of": [
+            { "kind": "compare", "fact": "isVeteran", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "isSpouseOrDependentOfVeteran", "op": "eq", "value": true }
+          ]
+        },
+        // VA 2.01(2)(b)2m.: "The applicant has suffered a loss of income due to illness, injury, or natural disaster."
+        { "kind": "compare", "fact": "lostIncomeFromIllnessInjuryOrDisaster", "op": "eq", "value": true },
+        // VA 2.01(2)(b)3m.: "the applicant's household income may not exceed 200 percent of the federal poverty guidelines ... (Exception under par. (d) for spouse/dependent of an activated/deployed member: 'federal poverty guidelines do not apply'.)"
+        { "kind": "incomeAtOrBelow", "scale": "fpl", "percent": 200 },
+        { "kind": "manualReview", "note": "VA 2.01(2)(b)4.: 'The applicant lacks other assets or income to meet basic subsistence needs and is not eligible to receive aid from other sources to meet those needs.' Plus the declaration-of-aid requirement -- exhaustion of all other county/state/federal aid, certified by a county official. Not decidable from interview facts." }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "isVeteran", "type": "boolean", "sourceText": "satisfies the requirements of s. 45.01(12), Stats., to be considered a veteran -- RESERVED today" },
+      { "key": "isSpouseOrDependentOfVeteran", "type": "boolean", "sourceText": "or is a spouse or dependent of an individual who satisfies [s. 45.01(12)]" },
+      { "key": "lostIncomeFromIllnessInjuryOrDisaster", "type": "boolean", "sourceText": "has suffered a loss of income due to illness, injury, or natural disaster (note: narrower than the existing recentIncomeDrop fact, which does not name a cause)" }
+    ],
+    "expressibility": {
+      "level": "partial",
+      "note": "Veteran-or-family + cause-specific income loss + 200% FPL cap all map (given isVeteran and two new facts). The 'lacks other assets/income and is not eligible for other aid' test and the certified declaration-of-aid are manualReview -- a caseworker determination."
+    },
+    "branchDropRisk": [
+      {
+        "figure": "200 percent of the federal poverty guidelines",
+        "takenNaivelyAs": "a universal income ceiling for the grant",
+        "actuallyIs": "the cap for the ordinary route, but par. (d) carves out spouses/dependents of activated/deployed servicemembers entirely -- 'federal poverty guidelines do not apply'. Encoding 200% FPL as top-level drops that branch.",
+        "direction": "narrower"
+      }
+    ],
+    "unencodable": [
+      { "kind": "documentation", "text": "The 'declaration of aid' -- a county/tribal official must certify the applicant applied for and accepted all available county/state/federal aid." },
+      { "kind": "asset-test", "text": "'lacks other assets or income to meet basic subsistence needs' -- a WDVA determination against the applicant's asset list and 3 months of expenses." },
+      { "kind": "incorporated-law", "text": "The s. 45.01(12) statutory definition of 'veteran' itself (service length, discharge characterization, wartime service, etc.)." },
+      { "kind": "work-requirement", "text": "Loss of income from alcohol/other drug abuse requires proof of current treatment-program participation." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://dva.wi.gov/services/mental-health-and-emergency-services/subsistence-aid-health-care-aid-grants/",
+    "ruleUrl": "https://docs.legis.wisconsin.gov/code/admin_code/va/2",
+    "hops": [
+      "dva.wi.gov subsistence-aid page -- describes benefit limits and 'certain eligibility requirements must be met' but does NOT state the income threshold or the veteran test",
+      "-> Wisconsin Administrative Code Chapter VA 2, s. VA 2.01(2)(b) -- carries the actual four-part eligibility rule including the 200% FPL cap"
+    ],
+    "format": ["html-prose", "wi-admin-code"],
+    "formatNotes": "WDVA page is prose (benefit caps only); the eligibility rule is in Chapter VA 2 of the Wisconsin Administrative Code. The admin-code render is cluttered (nav list + run-on paragraph) but the substantive text survives grep.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200 on both",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "200 percent of the federal poverty guidelines",
+        "separation": "other-document",
+        "where": "Not on the WDVA program page at all -- only in the Administrative Code, s. VA 2.01(2)(b)3m. And the figure carries its own carve-out one paragraph later: VA 2.01(2)(b)3m. says 'Except for an applicant who is eligible under par. (d)' -- the deployed-military-family route, where 'federal poverty guidelines do not apply'."
+      },
+      {
+        "scopeOf": "$3,000 in any consecutive 12-month period / $7,500 lifetime",
+        "separation": "colocated",
+        "where": "On the WDVA page and in the code; these are benefit caps, not eligibility gates."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 13, "workedBy": "agent", "notes": "2 fetches + 1 web search for URLs. The public-facing page was a dead end for the rule; the code had everything. The admin-code render is cluttered (nav list + run-on paragraph) but the substantive text survives grep." },
+  "surprises": [
+    "The citizen-facing WDVA page devotes ~40 lines to dollar caps and zero lines to who actually qualifies. Anyone (human or machine) who stopped at the official program page would author a record with no income rule and no veteran test."
+  ]
+}

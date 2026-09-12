@@ -1,0 +1,93 @@
+{
+  "id": "wi-family-planning-only-services",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Family Planning Only Services Program",
+    "administeredBy": "Wisconsin Department of Health Services (Medicaid limited-benefit program)",
+    "jurisdiction": "state",
+    "provider": "government",
+    "categories": ["health-disability"],
+    "summary": "A Medicaid limited-benefit program that covers birth control, STD testing and treatment, and related preventive care for people of reproductive age with limited income who are not on full Medicaid or BadgerCare Plus.",
+    "benefit": "Coverage for contraceptive services and supplies, limited vaccines, STD testing and treatment, natural family planning supplies, related preventive services (e.g. Pap tests), and voluntary sterilization at 21+. No premium or copay.",
+    "howToApply": {
+      "url": "https://www.dhs.wisconsin.gov/fpos/index.htm",
+      "phone": "800-362-3002",
+      "steps": [
+        "Apply through ACCESS (access.wi.gov) or a paper application.",
+        "For urgent needs, a provider or hospital can start Express Enrollment (temporary coverage) -- you cannot start it yourself.",
+        "File a full application to keep coverage past the temporary period."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        { "kind": "compare", "fact": "state", "op": "eq", "value": "WI" },
+        { "kind": "set", "fact": "citizenshipStatus", "op": "in", "values": ["us-citizen", "qualified-immigrant"] },
+        // "You are of childbearing or reproductive age."
+        { "kind": "compare", "fact": "isOfReproductiveAge", "op": "eq", "value": true },
+        // "Your income is $4,069.80 or less per month. ... Only your own income is counted." (Handbook 40.1: "income at or below 306% of the FPL".)
+        { "kind": "compare", "fact": "ownMonthlyIncome", "op": "lte", "value": 4069.80 },
+        // "You are not enrolled in Wisconsin Medicaid or BadgerCare Plus. (You can have a private health plan.)"
+        { "kind": "not", "of": { "kind": "set", "fact": "currentBenefits", "op": "includesAny", "values": ["medicaid-badgercare"] } }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "isOfReproductiveAge", "type": "boolean", "sourceText": "of childbearing or reproductive age -- deliberately vague on the page; no numeric band given" },
+      { "key": "ownMonthlyIncome", "type": "number", "sourceText": "Your income is $4,069.80 or less per month. Only your own income is counted. -- this is the APPLICANT'S income, not annualHouseholdIncome / householdSize, which is what incomeAtOrBelow() consumes" }
+    ],
+    "expressibility": {
+      "level": "partial",
+      "note": "Residency, citizenship, not-on-Medicaid map cleanly. The income test needs a person-scoped (not household-scoped) income fact, and its MAGI countable-income definition is cross-referenced to a separate handbook chapter. 'Reproductive age' is deliberately undefined."
+    },
+    "branchDropRisk": [
+      {
+        "figure": "$4,069.80 or less per month  /  306% of the FPL",
+        "takenNaivelyAs": "a household income test at 306% FPL: incomeAtOrBelow('fpl', 306) against annualHouseholdIncome",
+        "actuallyIs": "'Only your own income is counted' -- a person-scoped MAGI test. Encoding it against household income and size would mis-decide for anyone whose own income differs from the household aggregate.",
+        "direction": "either"
+      }
+    ],
+    "unencodable": [
+      { "kind": "incorporated-law", "text": "'Only your own income is counted' under MAGI rules -- the definition of what counts toward the $4,069.80 lives in a different handbook chapter (Section 16.1.2, Income Under Modified Adjusted Gross Income Rules), not on the eligibility page." },
+      { "kind": "other", "text": "Express Enrollment / temporary coverage can only be initiated by a provider or hospital." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.dhs.wisconsin.gov/fpos/index.htm",
+    "ruleUrl": "https://www.emhandbooks.wisconsin.gov/bcplus/policyfiles/5/40/40.1.htm",
+    "hops": [
+      "dhs.wisconsin.gov/fpos/index.htm 'Who is eligible' -- citizen-facing, states income as a flat $4,069.80/month",
+      "-> BadgerCare Plus Handbook 40.1 -- states the same limit as '306% of the FPL' and cross-references Section 16.1.2 for how income is counted"
+    ],
+    "format": ["html-prose"],
+    "formatNotes": "citizen page is prose + list; handbook is prose. Rule split across a citizen page and a policy handbook.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200 on both; emhandbooks.wisconsin.gov served fine to the desktop UA",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "$4,069.80 or less per month  /  306% of the FPL",
+        "separation": "cross-reference",
+        "where": "The number is on the page, but its two scoping conditions are not: (1) 'only your own income counts' is stated adjacent on the citizen page but the DEFINITION of countable income is cross-referenced to Handbook Section 16.1.2 (a separate chapter); (2) the citizen page and the handbook express the SAME limit two different ways ($/month vs % FPL), so a reader seeing only one has half the figure's meaning."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 10, "workedBy": "agent", "notes": "2 fetches. My plan predicted a 'population column' scope (as in badgercare-plus); the real separation is a cross-reference to the MAGI income-counting chapter. Recorded as found, not as predicted." },
+  "surprises": [
+    "The citizen page has quietly dropped the '306% FPL' framing entirely in favour of a bare dollar figure. Two official DHS pages state the same threshold in units that don't obviously match -- a reader (or extractor) landing on one page cannot tell it is the same rule as the other."
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "id": "the-beacon-dane",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "The Beacon (day resource center)",
+    "administeredBy": "Catholic Charities Diocese of Madison, in a public-private partnership with Dane County and the City of Madison",
+    "jurisdiction": "county",
+    "provider": "nonprofit",
+    "categories": ["food-basic-needs", "housing-utilities"],
+    // A daytime homeless services center -- meals, showers, laundry, mail, plus housing and employment navigation. Straddles food-basic-needs and housing-utilities.
+    "summary": "A daytime drop-in center for people experiencing homelessness in Dane County. Guests find meals, showers, laundry, a safe place during the day, and on-site connections to housing, employment, health, and benefits help.",
+    "benefit": "Daytime shelter and basic-needs services, plus co-located partner agencies (Porchlight, Housing Navigation, Catalyst for Change, JustDane, and others) for housing, case management, and crisis support.",
+    "howToApply": {
+      "url": "https://catholiccharitiesofmadison.org/the-beacon/",
+      "phone": "608-826-8095",
+      "steps": [
+        "Walk in during open hours -- The Beacon is open 8:00 am to 5:00 pm, 365 days a year, at 615 E. Washington Ave., Madison.",
+        "No application, referral, or appointment is described.",
+        "Ask front-desk / guest services staff to connect you with a partner agency for housing or benefits."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    /* That is the entire published rule: experiencing homelessness + in Dane County. No income figure, no documentation, no application. Walk-in during open hours. */
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        // "a daytime drop-in shelter and resource center for individuals and families experiencing homelessness in Dane County"
+        { "kind": "compare", "fact": "isExperiencingHomelessness", "op": "eq", "value": true },
+        // "experiencing homelessness in Dane County"
+        { "kind": "compare", "fact": "county", "op": "eq", "value": "dane" }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "isExperiencingHomelessness", "type": "boolean", "sourceText": "individuals and families experiencing homelessness -- housingStatus has 'unhoused-or-temporary' which is close, but 'experiencing homelessness' in the McKinney-Vento sense is broader (doubled-up, motels, imminent loss)" }
+    ],
+    "expressibility": {
+      "level": "full",
+      "note": "The rule is genuinely just 'experiencing homelessness + Dane County'. Both leaves map (one needs a broader homelessness fact than housingStatus offers). Nothing material is manualReview."
+    },
+    "branchDropRisk": [],
+    "unencodable": [
+      { "kind": "other", "text": "Nothing material is left unencodable -- the rule is genuinely just 'homeless + Dane County'. The complexity is in the partner agencies' own programs, each with separate (mostly unpublished-here) criteria." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://catholiccharitiesofmadison.org/the-beacon/",
+    "ruleUrl": "https://catholiccharitiesofmadison.org/the-beacon/about-us/",
+    "hops": ["the-beacon/ -> the-beacon/about-us/ -- 'What We Do' describes the center and its purpose; the only eligibility framing is 'people experiencing homelessness in Dane County'"],
+    "format": ["html-prose"],
+    "formatNotes": "prose only; the sole eligibility framing is 'experiencing homelessness in Dane County'. First guessed domain (beaconhelps.org) was a Ghana children's charity -- wrong Beacon.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200. First guessed domain (beaconhelps.org) was a Ghana children's charity -- wrong Beacon; corrected to catholiccharitiesofmadison.org/the-beacon via search. Recorded as a cautionary hop.",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "(no figure)",
+        "separation": "n/a — no governing figure",
+        "where": "No figures. The one condition ('experiencing homelessness in Dane County') is stated plainly and repeatedly."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 9, "workedBy": "agent", "notes": "3 fetch attempts (1 wrong org) + 2 searches. The name collision ('beaconhelps.org' vs the Madison Beacon) cost the extra round-trip." },
+  "surprises": [
+    "A jointly city+county+diocese-run facility with a rule so simple ('homeless, Dane County') it barely needs the interview -- and a name that collides with an unrelated charity on a near-identical domain. Disambiguating the ENTITY was harder than capturing the rule."
+  ]
+}

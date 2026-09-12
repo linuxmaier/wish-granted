@@ -1,0 +1,109 @@
+{
+  "id": "seniorcare-wi",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "SeniorCare",
+    "administeredBy": "Wisconsin Department of Health Services",
+    "jurisdiction": "state",
+    "provider": "government",
+    "categories": ["health-disability"],
+    "summary": "A state prescription-drug assistance program for Wisconsin residents 65 or older. It helps pay for covered prescription drugs and vaccines, and works alongside Medicare or other insurance.",
+    "benefit": "Coverage for covered prescription drugs and vaccines after a $30 per person annual enrollment fee. How much SeniorCare pays depends on your income (see the four participation levels), but everyone 65+ who enrolls gets some coverage.",
+    "howToApply": {
+      "url": "https://www.dhs.wisconsin.gov/seniorcare/apply.htm",
+      "phone": "800-657-2038",
+      "steps": [
+        "Fill out the SeniorCare application (available in the month you turn 65 or any time after).",
+        "Pay the $30 per person annual enrollment fee.",
+        "Renew your coverage every year to stay enrolled."
+      ]
+    },
+    "requiredDocuments": ["Proof of age", "Proof of Wisconsin residency", "Income information for you and your spouse"],
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    /*
+      There is deliberately NO income criterion here. The source is dominated by
+      income figures (160% / 200% / 240% FPL, dollar amounts) but every one names
+      a *coverage participation level*, not an eligibility ceiling. Level 3 is
+      explicitly "Income more than 240% of the federal poverty level ...
+      Individual: $38,305 or more" and is still in the program (with a spenddown).
+      See branchDropRisk.
+    */
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        { "kind": "compare", "fact": "state", "op": "eq", "value": "WI" },
+        { "kind": "set", "fact": "citizenshipStatus", "op": "in", "values": ["us-citizen", "qualified-immigrant"] },
+        // "65 years or older"
+        { "kind": "set", "fact": "age", "op": "in", "values": ["65-plus"] },
+        // "you can't be a member of a full-benefit Medicaid program like BadgerCare Plus"
+        { "kind": "not", "of": { "kind": "set", "fact": "currentBenefits", "op": "includesAny", "values": ["medicaid-badgercare"] } }
+      ]
+    },
+    "factsNeeded": [],
+    /*
+      The rule references state, citizenshipStatus, age, currentBenefits -- all
+      already in FACT_KEYS (citizenshipStatus is RESERVED but declared). This
+      "hard" case needs no new vocabulary. What it needs is for the reader NOT to
+      encode the prominent income figure as a gate.
+    */
+    "expressibility": {
+      "level": "full",
+      "note": "The categorical rule (resident, citizen/qualified immigrant, 65+, not full-benefit Medicaid) maps cleanly with existing facts. The difficulty is entirely in NOT encoding the prominent FPL figures as an income gate -- see branchDropRisk."
+    },
+    "branchDropRisk": [
+      {
+        "figure": "160% of the federal poverty level / Individual $25,536 / Couple $34,624",
+        "takenNaivelyAs": "an income ceiling: incomeAtOrBelow('fpl', 160)",
+        "actuallyIs": "the first rung of a four-level cost-sharing ladder. There is no upper income bound -- Level 3 is 'Income more than 240% ... $38,305 or more' and is still enrolled (with a spenddown).",
+        "direction": "narrower"
+      }
+    ],
+    "unencodable": [
+      { "kind": "documentation", "text": "The $30 per person annual enrollment fee (a cost of participating, not an eligibility test)." },
+      { "kind": "other", "text": "Annual renewal requirement." },
+      { "kind": "other", "text": "'a full-benefit Medicaid program like BadgerCare Plus' -- the word 'like' implies other full-benefit Medicaid programs too; the currentBenefits fact only carries badgercare/medicaid as one option, so a fully faithful exclusion is not expressible." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.dhs.wisconsin.gov/seniorcare/index.htm",
+    "ruleUrl": "https://www.dhs.wisconsin.gov/seniorcare/fpl.htm",
+    "hops": [
+      "seniorcare/index.htm states the four categorical requirements (resident, citizen/qualifying immigrant, 65+, not full-benefit Medicaid) and says 'See the SeniorCare annual income limits page to find your coverage level'",
+      "-> seniorcare/fpl.htm carries the four participation levels and the dollar figures"
+    ],
+    "format": ["html-prose"],
+    "formatNotes": "index page is prose + a list; fpl.htm is headings + lists. No table.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200 on both pages",
+      "userAgent": "desktop-chrome (shared USER_AGENT)",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed (dhs.wisconsin.gov/robots.txt does not disallow /seniorcare/)"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "160% of the federal poverty level / Individual $25,536 / Couple $34,624",
+        "separation": "same-page-elsewhere",
+        "where": "Sits directly under the 'Level 1 income limits' sub-heading, but the fact that governs it -- that this is the first rung of a four-level cost-sharing ladder and NOT an eligibility ceiling -- lives (a) in the paragraph above the table ('Your annual income determines how much of your prescription drug costs SeniorCare will cover') and (b) at 'Level 3 income limits: Income more than 240% ... $38,305 or more', several sub-sections down, which shows there is no upper bound."
+      },
+      {
+        "scopeOf": "65 years or older",
+        "separation": "colocated",
+        "where": "Stated inline in the 'To enroll in SeniorCare, you must be' list on the index page."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 12, "workedBy": "agent", "notes": "2 fetches. Index page URL was a correct guess; fpl.htm found by grepping hrefs out of the index raw HTML. No blocking." },
+  "surprises": [
+    "The cleanest branch-drop trap in the pilot needs zero new fact vocabulary -- the whole difficulty is a reader not treating '160% FPL' as a ceiling. A schema that only measures 'new facts needed' would score this case as trivial."
+  ]
+}

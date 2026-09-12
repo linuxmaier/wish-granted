@@ -1,0 +1,118 @@
+{
+  "id": "wi-funeral-cemetery-aids-program",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Wisconsin Funeral and Cemetery Aids Program (WFCAP)",
+    "administeredBy": "Wisconsin Department of Health Services (Division of Medicaid Services); authorized under Wis. Stat. § 49.785",
+    "jurisdiction": "state",
+    "provider": "government",
+    "categories": ["food-basic-needs"],
+    // A burial-cost benefit -- none of the six CATEGORIES fits. Closest is "food-basic-needs" as end-of-life basic need; recorded as a category-gap finding (like wi-earned-income-credit).
+    "summary": "Helps pay the unmet funeral, cemetery, and cremation costs of a person who was on certain Medicaid or assistance programs when they died. Payment goes to the funeral, cemetery, or crematory provider -- not to the family.",
+    "benefit": "Up to $1,500 toward funeral costs and up to $1,000 toward cemetery/cremation costs (2022 manual), paid to the provider after the estate, family, insurance, and other resources are exhausted.",
+    "howToApply": {
+      "url": "https://www.emhandbooks.wisconsin.gov/wfcap/policy/wfcap_1.htm",
+      "phone": "888-859-0611",
+      "steps": [
+        "The funeral, cemetery, or crematory provider (not the family) submits the WFCAP application (F-10141).",
+        "The provider must first make a reasonable effort to exhaust all other funding sources (burial trusts, insurance, estate assets, fundraisers).",
+        "DHS confirms the decedent was enrolled in a qualifying program on the date of death and pays the provider the unmet balance up to the limits."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    /*
+      Unusual unit of work: the applicant is the SERVICE PROVIDER, the eligible
+      person is DECEASED, and eligibility is "the decedent, on the confirmed date
+      of death, was in at least one of ~13 named programs" -- several of which
+      carry their own FPL sub-limits. This is an incorporated categorical list
+      with per-branch figures.
+    */
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        {
+          // "met at least one of the following criteria" on the date of death
+          "kind": "anyOf",
+          "of": [
+            // "The decedent was a Wisconsin Works (W-2) participant (paid placement only)."
+            { "kind": "set", "fact": "decedentCurrentBenefits", "op": "includesAny", "values": ["w2-tanf"] },
+            { "kind": "compare", "fact": "decedentWasChildOnCaretakerSupplementOrKinshipCare", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "decedentWasEbdCategoricallyNeedyMedicaid", "op": "eq", "value": true },
+            // "a parent or caretaker relative receiving BadgerCare Plus with family income that does not exceed 50% of the federal poverty level"
+            { "kind": "compare", "fact": "decedentWasBadgerCareParentUnder50FPL", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "decedentWasChildInFosterCareOrAdoptionAssistance", "op": "eq", "value": true },
+            // "a child under age six or ... a pregnant woman receiving BadgerCare Plus with family income that did not exceed 185% of the federal poverty level"
+            { "kind": "compare", "fact": "decedentWasChildUnder6OrPregnantBadgerCareUnder185FPL", "op": "eq", "value": true },
+            // "a child at least age six, but not yet 19, receiving BadgerCare Plus with family income that did not exceed 100% of the federal poverty level"
+            { "kind": "compare", "fact": "decedentWasChild6to18BadgerCareUnder100FPL", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "decedentWasInstitutionalMedicaid", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "decedentWasInHcbsWaiverOrIris", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "decedentWasFamilyCareMember", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "decedentWasTbOnlyMedicaid", "op": "eq", "value": true }
+          ]
+        },
+        { "kind": "manualReview", "note": "Payer of last resort: the provider must have exhausted the estate, family resources, burial trusts, burial insurance, and fundraisers first, and the unmet amount is what remains. Not decidable from interview facts -- and the applicant is the provider, not the family." }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "decedentCurrentBenefits", "type": "enumSet", "sourceText": "the whole eligibility rule is about a DECEASED person's program enrolment on their date of death -- a fact no living interview respondent supplies for themselves; it would be asked about a family member" },
+      { "key": "decedentWasBadgerCareParentUnder50FPL", "type": "boolean", "sourceText": "a parent or caretaker relative receiving BadgerCare Plus with family income that does not exceed 50% of the federal poverty level" },
+      { "key": "decedentWasChildUnder6OrPregnantBadgerCareUnder185FPL", "type": "boolean", "sourceText": "a child under age six or ... a pregnant woman receiving BadgerCare Plus with family income that did not exceed 185% of the federal poverty level" },
+      { "key": "decedentWasChild6to18BadgerCareUnder100FPL", "type": "boolean", "sourceText": "a child at least age six, but not yet 19, receiving BadgerCare Plus with family income that did not exceed 100% of the federal poverty level" }
+    ],
+    "expressibility": {
+      "level": "manual-review-dominant",
+      "note": "The categorical list has structure, but each branch is 'was the decedent, on their date of death, in program X (possibly with sub-FPL-limit Y)' -- knowable only from case records. Plus the payer-of-last-resort accounting. And the applicant is the funeral provider. The interview cannot ask any of this."
+    },
+    "branchDropRisk": [
+      {
+        "figure": "50% FPL / 185% FPL / 100% FPL (the three BadgerCare sub-limits)",
+        "takenNaivelyAs": "one income ceiling for WFCAP",
+        "actuallyIs": "three different FPL limits, each scoped to a different decedent category (parent/caretaker; child under 6 or pregnant; child 6-18). And most of the ~13 qualifying routes have NO income figure at all -- they are program-enrolment facts.",
+        "direction": "narrower"
+      }
+    ],
+    "unencodable": [
+      { "kind": "incorporated-law", "text": "The ~13 qualifying-program definitions -- each references a specific Medicaid category or assistance program with its own eligibility rules (EBD, HCBS waivers, institutional Medicaid, foster care, adoption assistance, TB-Only)." },
+      { "kind": "other", "text": "Payer-of-last-resort accounting: the estate, family, burial trusts, burial insurance, and fundraisers must be exhausted; WFCAP pays only the remainder up to the caps." },
+      { "kind": "other", "text": "The applicant is the funeral / cemetery / crematory provider, not the bereaved family -- the 'unit of work' the corpus assumes (a person seeking a benefit) does not apply here." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.dhs.wisconsin.gov/em/wfcap.htm",
+    "ruleUrl": "https://www.emhandbooks.wisconsin.gov/wfcap/policy/wfcap_1.htm",
+    "hops": [
+      "guessed URLs (wfcap/index.htm, wisconsin-funeral-cemetery-aids/index.htm) 404'd; found via search",
+      "-> WFCAP Manual (emhandbooks) Section 1.3 'Potentially Eligible Decedents' -- the ~13-item categorical list with the three BadgerCare FPL sub-limits"
+    ],
+    "format": ["html-prose", "wi-admin-code"],
+    "formatNotes": "the substantive rule is in the WFCAP policy manual (emhandbooks.wisconsin.gov), a handbook not the admin code proper -- but it functions like one. Section 1.3 is a run-on list.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200 for the handbook. Two guessed dhs.wisconsin.gov URLs 404'd first; found via search.",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "50% / 185% / 100% FPL (the BadgerCare decedent sub-limits)",
+        "separation": "column-header",
+        "where": "Each FPL figure is embedded in its own list item, scoped by the decedent-category clause that precedes it in the same sentence ('a child at least age six, but not yet 19, receiving BadgerCare Plus with family income that did not exceed 100 percent...'). Read as a bare list of numbers, the three would collapse."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 13, "workedBy": "agent", "notes": "2 x 404 on guessed URLs + 2 searches + 1 handbook fetch. The handbook's Section 1.3 list is the whole rule; the caps ($1,500 / $1,000) are from the 2022 manual release and may have changed." },
+  "surprises": [
+    "The clearest 'unit of work' anomaly in the corpus: eligibility is entirely about a DEAD person's program enrolment, and the applicant is a business (the funeral home). pipeline-principles.md §1 says 'a program, not an excerpt' assuming a person seeking help -- WFCAP breaks that frame while still being a real safety-net benefit a grieving family should know exists."
+  ]
+}

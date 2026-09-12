@@ -1,0 +1,90 @@
+{
+  "id": "newbridge-madison-food-bridge",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "sharedFrontDoor": { "id": "newbridge-madison", "url": "https://www.newbridgemadison.org/", "phone": "608-512-0000" },
+
+  "record": {
+    "name": "NewBridge Food Bridge",
+    "administeredBy": "NewBridge (nonprofit serving older adults in Madison), with The River, St. Vincent de Paul, and WayForward food pantries",
+    "jurisdiction": "city",
+    "provider": "nonprofit",
+    "categories": ["food-basic-needs"],
+    "summary": "Free volunteer delivery of food-pantry groceries to homebound, low-income older adults in Madison who cannot get to a pantry themselves.",
+    "benefit": "Regular volunteer deliveries of groceries from partner food pantries, plus a friendly check-in.",
+    "howToApply": {
+      "url": "https://www.newbridgemadison.org/food-bridge",
+      "phone": "608-512-0000",
+      "steps": [
+        "Call (608) 512-0000 and ask about Food Bridge.",
+        "NewBridge confirms you meet the age, homebound, and income criteria.",
+        "Volunteers begin delivering groceries from a partner pantry."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        // "support homebound, low-income older adults in Madison, Wisconsin"
+        { "kind": "compare", "fact": "city", "op": "eq", "value": "madison" },
+        // "Food Bridge serves older adults who are aged 60 and above."
+        { "kind": "set", "fact": "age", "op": "in", "values": ["60-64", "65-plus"] },
+        // "individuals must have limited mobility or face significant challenges leaving their homes"
+        { "kind": "compare", "fact": "isHomeboundOrLimitedMobility", "op": "eq", "value": true },
+        // "The program is limited to people at 240% of the Federal Poverty Level or Below"
+        { "kind": "incomeAtOrBelow", "scale": "fpl", "percent": 240 }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "isHomeboundOrLimitedMobility", "type": "boolean", "sourceText": "individuals must have limited mobility or face significant challenges leaving their homes" }
+    ],
+    "expressibility": {
+      "level": "full",
+      "note": "Madison + 60+ + homebound + income at or below 240% FPL. All four map (homebound needs a new boolean). No manualReview node -- NewBridge confirms the criteria by phone but they are all stated and checkable."
+    },
+    "branchDropRisk": [
+      {
+        "figure": "240% of the Federal Poverty Level",
+        "takenNaivelyAs": "matching it against the more common 150-200% FPL food-program thresholds and assuming a typo, or narrowing it",
+        "actuallyIs": "a genuinely generous 240% ceiling -- higher than CSFP (150%), TEFAP (~185%), or Senior Farmers Market (185%). A reader who 'corrects' it toward the usual food-program figure would under-claim.",
+        "direction": "narrower"
+      }
+    ],
+    "unencodable": [
+      { "kind": "other", "text": "Which partner pantry (The River, SVdP, WayForward) serves a given delivery depends on geography and pantry capacity -- affects logistics, not eligibility." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.newbridgemadison.org/",
+    "ruleUrl": "https://www.newbridgemadison.org/food-bridge",
+    "hops": ["newbridgemadison.org -> /food-bridge -- 'Eligibility for the program is based on the following criteria:' with Age / Homebound / Low-income spelled out"],
+    "format": ["html-prose"],
+    "formatNotes": "prose + a labelled criteria list ('Age:', 'Homebound:', 'Low-income:'). The 240% FPL figure is stated inline.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "240% of the Federal Poverty Level",
+        "separation": "colocated",
+        "where": "Stated as the 'Low-income:' criterion in the eligibility list, with its own label."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 6, "workedBy": "agent", "notes": "1 fetch (from the same NewBridge crawl as newbridge-madison-home-chore). A clean, fully-stated rule -- notable for the 240% FPL ceiling being much higher than peer food programs." },
+  "surprises": [
+    "Two NewBridge programs (this and Home Chore) use different income ceilings -- 240% FPL here, 150% FPL for Home Chore -- and different asset rules. Even within one small nonprofit, the means test is set per-program, not org-wide. The GO-NO-GO §6.6 split was right: these could not share a file."
+  ]
+}

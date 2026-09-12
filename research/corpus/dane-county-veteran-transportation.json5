@@ -1,0 +1,106 @@
+{
+  "id": "dane-county-veteran-transportation",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Dane County Veteran Transportation (Vets Helping Vets & Ride with Pride)",
+    "administeredBy": "Dane County Department of Human Services (with the Retired & Senior Volunteer Program and Madison Metro Transit)",
+    "jurisdiction": "county",
+    "provider": "government",
+    "categories": ["veterans", "health-disability"],
+    "summary": "Two transportation programs for Dane County veterans: Vets Helping Vets provides door-through-door volunteer rides to appointments; Ride with Pride provides a free annual Madison Metro bus pass.",
+    "benefit": "Vets Helping Vets: scheduled individual rides in volunteers' cars (donations accepted, no one denied for inability to pay). Ride with Pride: a free Metro Transit annual commute card.",
+    "howToApply": {
+      "url": "https://www.danecountyhumanservices.org/Disability-and-Aging/Transportation/Veteran-Transportation",
+      "phone": "608-266-4158",
+      "steps": [
+        "For Vets Helping Vets: call the Retired & Senior Volunteer Program at (608) 238-7901.",
+        "For Ride with Pride: contact the Dane County Veterans Service Office at (608) 266-4158.",
+        "Rides depend on volunteer driver availability."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    /*
+      One page, two programs, two rules. Kept as one candidate (one purpose:
+      veteran transportation) with an anyOf over the two -- like
+      wi-chronic-disease-program's condition disjunction.
+    */
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        { "kind": "compare", "fact": "county", "op": "eq", "value": "dane" },
+        { "kind": "compare", "fact": "isVeteran", "op": "eq", "value": true },
+        {
+          "kind": "anyOf",
+          "of": [
+            {
+              // Vets Helping Vets: "available to Veterans with any discharge and or disability status and their families"
+              "kind": "allOf",
+              "of": [
+                { "kind": "not", "of": { "kind": "compare", "fact": "getsCommonCarrierMedicalAssistanceTransport", "op": "eq", "value": true } },
+                { "kind": "not", "of": { "kind": "set", "fact": "currentBenefits", "op": "includesAny", "values": ["family-care-partnership-or-iris"] } }
+              ]
+            },
+            {
+              // Ride with Pride: "available to Veterans with VA disability status or who have a needs-based VA pension"
+              "kind": "anyOf",
+              "of": [
+                { "kind": "compare", "fact": "hasVaDisabilityStatus", "op": "eq", "value": true },
+                { "kind": "compare", "fact": "receivesNeedsBasedVaPension", "op": "eq", "value": true }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "isVeteran", "type": "boolean", "sourceText": "transportation services to veterans (RESERVED today)" },
+      { "key": "getsCommonCarrierMedicalAssistanceTransport", "type": "boolean", "sourceText": "Individuals who receive MA rides to medical appointments through Common Carrier Medical Assistance Transportation are not eligible" },
+      { "key": "family-care-partnership-or-iris", "type": "enumSet-option", "sourceText": "Individuals enrolled in Long-Term Care through Family Care, Family Care Partnership, and IRIS are not eligible -- these are not options in BENEFIT_ENROLLMENTS" },
+      { "key": "hasVaDisabilityStatus", "type": "boolean", "sourceText": "Veterans with VA disability status (Ride with Pride)" },
+      { "key": "receivesNeedsBasedVaPension", "type": "boolean", "sourceText": "or who have a needs-based VA pension (Ride with Pride) -- ties to us-va-veterans-pension" }
+    ],
+    "expressibility": {
+      "level": "partial",
+      "note": "Both sub-rules are structurally simple, but each needs facts the interview lacks -- notably exclusions keyed to OTHER benefit enrolments (MA Common Carrier transport, Family Care / Partnership / IRIS) that are not in BENEFIT_ENROLLMENTS. The Ride with Pride route needs a VA disability / needs-based-pension fact."
+    },
+    "branchDropRisk": [],
+    "unencodable": [
+      { "kind": "other", "text": "Vets Helping Vets exclusions are defined by enrolment in OTHER programs (MA Common Carrier Medical Assistance Transport; Family Care / Family Care Partnership / IRIS) -- benefit-interaction rules the interview cannot fully carry." },
+      { "kind": "agency-discretion", "text": "'Rides are dependent on driver availability' -- a volunteer-capacity constraint on Vets Helping Vets." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.danecountyhumanservices.org/Disability-and-Aging/Transportation/Veteran-Transportation",
+    "ruleUrl": null,
+    "hops": ["danecountyhumanservices.org/.../Veteran-Transportation -- 'General Eligibility:' blocks stated inline for each of the two programs"],
+    "format": ["html-prose"],
+    "formatNotes": "prose with a labelled 'General Eligibility:' / 'Cost:' / 'How to Apply:' block per sub-program. Cleanly structured.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "the two 'General Eligibility:' rules",
+        "separation": "colocated",
+        "where": "Each sub-program has its own labelled 'General Eligibility:' paragraph directly under its heading. The exclusions (MA transport, Family Care/IRIS) are stated in the same paragraph as the eligibility."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 7, "workedBy": "agent", "notes": "1 fetch. Two distinct programs on one page; kept as one candidate because both are 'veteran transportation' with a shared front door (the CVSO / DHS). Eligibility for each is a clean labelled block." },
+  "surprises": [
+    "A rule whose exclusions are entirely 'you're already covered by X' -- not eligible if you get MA transport, or Family Care, or IRIS. The interview's currentBenefits vocabulary has none of these, so a faithful record can't apply the very conditions that decide most cases."
+  ]
+}

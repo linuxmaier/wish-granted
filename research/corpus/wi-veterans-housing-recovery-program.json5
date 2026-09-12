@@ -1,0 +1,88 @@
+{
+  "id": "wi-veterans-housing-recovery-program",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Veterans Housing and Recovery Program (VHRP)",
+    "administeredBy": "Wisconsin Department of Veterans Affairs",
+    "jurisdiction": "state",
+    "provider": "government",
+    "categories": ["housing-utilities", "veterans"],
+    "summary": "A residential program giving homeless or at-risk Wisconsin veterans temporary housing, meals, job training, and supportive services while they work toward permanent housing. The Wisconsin site is at Union Grove; spouses and children cannot live on site.",
+    "benefit": "A residential bed with three meals a day, laundry, transportation assistance, and case-managed support toward permanent housing, employment, education, healthcare, and recovery goals.",
+    "howToApply": {
+      "url": "https://dva.wi.gov/services/housing-and-financial-services/veterans-housing-and-recovery/",
+      "phone": "262-878-9151",
+      "steps": [
+        "Contact the VHRP Union Grove site directly about referrals and applications (262-878-9151).",
+        "Referrals often come through the VA, a CVSO, or a homeless-services provider.",
+        "If a bed is available and you are assessed as a fit, you move in and begin working your goal plan."
+      ]
+    },
+    "status": "waitlist",
+    "seasonalNote": null,
+    // Fixed-capacity residential program; entry depends on an open bed and a referral/assessment. Modelled as waitlist.
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        { "kind": "compare", "fact": "isVeteran", "op": "eq", "value": true },
+        {
+          // "military veterans ... who are homeless or at risk of becoming homeless"
+          "kind": "anyOf",
+          "of": [
+            { "kind": "compare", "fact": "isExperiencingHomelessness", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "atRiskOfHomelessness", "op": "eq", "value": true }
+          ]
+        },
+        { "kind": "manualReview", "note": "Residential capacity + a fit assessment at intake. 'Please contact the Union Grove VHRP site directly for questions about referrals, applications, and program information.' Not decidable from interview facts." }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "isVeteran", "type": "boolean", "sourceText": "military veterans, men and women (RESERVED today)" },
+      { "key": "isExperiencingHomelessness", "type": "boolean", "sourceText": "who are homeless (shared with the-beacon-dane, svdp-madison-vinnys-lockers)" },
+      { "key": "atRiskOfHomelessness", "type": "boolean", "sourceText": "or at risk of becoming homeless -- broader than currently homeless; no current fact captures 'at risk'" }
+    ],
+    "expressibility": {
+      "level": "partial",
+      "note": "Veteran + (homeless or at-risk) maps given the facts. The bed-availability and intake-fit assessment are manualReview, and there is no income figure at all -- the gate is homelessness status plus a referral."
+    },
+    "branchDropRisk": [],
+    "unencodable": [
+      { "kind": "agency-discretion", "text": "Residential bed availability at the single Wisconsin site (Union Grove)." },
+      { "kind": "professional-assessment", "text": "Intake fit assessment -- whether the residential program suits the veteran's goals and needs." },
+      { "kind": "other", "text": "'Spouses and children are not eligible to live at VHRP sites' -- a household-composition limit on who can be housed, though staff help families find other housing." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://dva.wi.gov/services/housing-and-financial-services/veterans-housing-and-recovery/",
+    "ruleUrl": null,
+    "hops": ["dva.wi.gov/services/housing-and-financial-services/veterans-housing-and-recovery/ -- describes the program, its one Wisconsin location, and the 'homeless or at risk of becoming homeless' framing; no income criteria"],
+    "format": ["html-prose"],
+    "formatNotes": "prose + bullet 'Program Highlights' / 'Amenities'. The only eligibility framing is 'veterans ... who are homeless or at risk of becoming homeless'.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "(no eligibility figure)",
+        "separation": "n/a — no governing figure",
+        "where": "No income limit or numeric criterion. Eligibility is a status ('homeless or at risk') plus a referral/assessment."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 6, "workedBy": "agent", "notes": "1 fetch. Thin on eligibility detail -- the page is written to attract referrals, not to state a rule." },
+  "surprises": [
+    "A state-run homeless-veterans housing program whose published eligibility is two words ('homeless veterans') plus 'call the site'. The federal HUD-VASH / SSVF programs behind veteran homelessness have detailed rules; this state program publishes essentially none."
+  ]
+}

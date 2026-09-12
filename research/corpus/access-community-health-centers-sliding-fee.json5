@@ -1,0 +1,92 @@
+{
+  "id": "access-community-health-centers-sliding-fee",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Access Community Health Centers - Sliding Fee Discount",
+    "administeredBy": "Access Community Health Centers (a Federally Qualified Health Center serving Dane and nearby counties)",
+    "jurisdiction": "county",
+    "provider": "nonprofit",
+    "categories": ["health-disability"],
+    "summary": "A discount program at Access's medical, dental, and behavioral health clinics in the Madison area. Any patient can apply; how much you pay is set by your household income and family size against the Federal Poverty Level.",
+    "benefit": "Flat, reduced fees for visits, treatment, prescriptions, and behavioral health -- the lowest-income patients pay a nominal fee. Applies at all Access clinics.",
+    "howToApply": {
+      "url": "https://accesscommunityhealthcenters.org/patients/payment-options/sliding-fee-discount-2/",
+      "phone": "608-443-5480",
+      "steps": [
+        "Become a patient of Access Community Health Centers (schedule an appointment).",
+        "Ask to speak with a Patient Services Specialist -- you can apply during your appointment.",
+        "Provide verification of income and family size (a pay stub, tax filing, SSI/SSDI letter, or a signed statement of no income)."
+      ]
+    },
+    "requiredDocuments": ["Verification of income (pay stub, tax filing, benefit letter, or statement of no income)", "Verification of family size (birth certificate, school enrollment, court document, tax return)"],
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    /*
+      There is NO eligibility gate. "Any patient of Access Community Health
+      Centers can apply for the Sliding Fee Discount, regardless of their ability
+      to pay." Income vs FPL sets the DISCOUNT LEVEL (which flat-fee tier), not
+      whether you qualify. See branchDropRisk -- the risk is reading the FPL
+      schedule as a cutoff.
+    */
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        // "Any patient of Access Community Health Centers can apply ... regardless of their ability to pay."
+        { "kind": "compare", "fact": "isPatientOfAccessCHC", "op": "eq", "value": true },
+        { "kind": "manualReview", "note": "The discount TIER (nominal fee vs a higher flat fee) is set by combined household income and family size against the current FPL. But there is no income above which a patient is turned away -- above the top tier they pay full flat fees, still as a patient. The only 'eligibility' is being a patient." }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "isPatientOfAccessCHC", "type": "boolean", "sourceText": "Any patient of Access Community Health Centers can apply -- 'patient' is the only condition; anyone can become one" }
+    ],
+    "expressibility": {
+      "level": "full",
+      "note": "The rule is 'be a patient'. There is nothing to gate on. What looks like an income test is a fee schedule -- it changes the price, not eligibility. A faithful record has one real leaf and a manualReview explaining the fee tiers."
+    },
+    "branchDropRisk": [
+      {
+        "figure": "the Federal Poverty Level schedule",
+        "takenNaivelyAs": "an eligibility cutoff -- 'you qualify for the discount if your income is below X% FPL'",
+        "actuallyIs": "a fee schedule. Income vs FPL picks which flat-fee tier you pay; there is no cutoff. Encoding an FPL ceiling would wrongly rule out higher-income uninsured patients who still get a (smaller or zero) discount and full FQHC access.",
+        "direction": "narrower"
+      }
+    ],
+    "unencodable": [
+      { "kind": "other", "text": "The actual fee tiers and the income bands that map to them are not published -- 'contact our Patient Services Specialists'. The discount amount is set at application." },
+      { "kind": "documentation", "text": "Income and family-size verification at application (though a signed 'statement of no income' is accepted)." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://accesscommunityhealthcenters.org/patients/",
+    "ruleUrl": "https://accesscommunityhealthcenters.org/patients/payment-options/sliding-fee-discount-2/",
+    "hops": ["accesscommunityhealthcenters.org/patients/ -> payment-options/sliding-fee-discount-2/ -- a FAQ: 'Can I apply?' / 'How is eligibility determined?' / 'What documents do I need?'"],
+    "format": ["html-prose"],
+    "formatNotes": "prose FAQ. The FPL fee bands themselves are not on the page -- only that income vs FPL sets the fee.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200. patient-information/ 404'd; patients/payment-options/sliding-fee-discount-2/ via search.",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "the FPL schedule",
+        "separation": "same-page-elsewhere",
+        "where": "The page says income is 'compared to the current Federal Poverty Levels to determine if a patient pays a nominal fee'. The framing that this sets a FEE and not eligibility is in the preceding answer ('Any patient ... can apply ... regardless of their ability to pay'). Read the FPL sentence alone and it looks like a cutoff."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 9, "workedBy": "agent", "notes": "1 fetch + 1 search (patient-information/ 404). The FQHC sliding-fee model is federally mandated (Section 330); the specifics vary by center and Access does not publish its bands." },
+  "surprises": [
+    "A 'means-tested' health program with no means test: everyone is eligible, income only changes the price. The corpus so far has treated an FPL figure as either a ceiling or a cost-share tier; here it is neither -- it is a discount schedule with no floor and no ceiling."
+  ]
+}

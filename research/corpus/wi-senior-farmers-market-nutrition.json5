@@ -1,0 +1,101 @@
+{
+  "id": "wi-senior-farmers-market-nutrition",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Senior Farmers Market Nutrition Program",
+    "administeredBy": "U.S. Department of Agriculture, administered by the Wisconsin Department of Health Services (WIC); local agencies are county Aging and Disability Resource Centers",
+    "jurisdiction": "federal",
+    "provider": "government",
+    "categories": ["food-basic-needs"],
+    "summary": "Vouchers for older adults with limited income to buy fresh, locally grown produce at Wisconsin farmers markets and farmstands.",
+    "benefit": "Five $5.00 checks ($25.00 total) per person per growing season (June 1 through October 31) for fresh fruits, vegetables, and herbs grown in or near Wisconsin.",
+    "howToApply": {
+      "url": "https://www.dhs.wisconsin.gov/wic/fmnp/senior.htm",
+      "phone": null,
+      "steps": [
+        "Contact your local agency -- usually your county's Aging and Disability Resource Center (ADRC).",
+        "Complete the SFMNP Eligibility Agreement (form F-40103), self-certifying age, residency, and income.",
+        "Receive your checks and a list of participating markets and farmstands."
+      ]
+    },
+    "status": "seasonal",
+    "seasonalNote": "Checks are valid June 1 through October 31. Enrollment opens seasonally through local agencies; supplies are limited."
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        // "Live in Wisconsin. / I certify that I am a resident of ____ county."
+        { "kind": "compare", "fact": "state", "op": "eq", "value": "WI" },
+        {
+          // "Be age 60 or greater. Native Americans can join at age 55 or greater."
+          "kind": "anyOf",
+          "of": [
+            { "kind": "set", "fact": "age", "op": "in", "values": ["60-64", "65-plus"] },
+            { "kind": "allOf", "of": [
+              { "kind": "compare", "fact": "isNativeAmerican", "op": "eq", "value": true },
+              /* 55 is inside our "under-60" band; not expressible with AGE_BANDS. */
+              { "kind": "compare", "fact": "ageAtLeast55", "op": "eq", "value": true }
+            ]}
+          ]
+        },
+        // form F-40103: "I certify that my household income is at or below 185 percent of the federal poverty guideline." The citizen web page says only "Meet income guidelines" with NO number.
+        { "kind": "incomeAtOrBelow", "scale": "fpl", "percent": 185 }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "isNativeAmerican", "type": "boolean", "sourceText": "Native Americans can join at age 55 or greater" },
+      { "key": "ageAtLeast55", "type": "boolean", "sourceText": "age 55 or greater -- AGE_BANDS cannot express a 55 cut point" }
+    ],
+    "expressibility": {
+      "level": "partial",
+      "note": "The 60+/WI-resident/185%-FPL core is expressible. The Native American age-55 branch needs a new fact and breaks AGE_BANDS (55 cut point). The whole income figure is only on a downstream form, not the program page."
+    },
+    "branchDropRisk": [
+      {
+        "figure": "185 percent of the federal poverty guideline",
+        "takenNaivelyAs": "no income test at all -- the public page says only 'Meet income guidelines'",
+        "actuallyIs": "a real 185% FPL self-certification, but the number is two documents downstream (the F-40103 form, then the annual Income Eligibility Table). An extractor reading only the program page authors a record with an income test it cannot fill.",
+        "direction": "narrower"
+      }
+    ],
+    "unencodable": [
+      { "kind": "documentation", "text": "'It is illegal to enroll in this program at more than one location' -- an anti-duplication rule, self-certified." },
+      { "kind": "agency-discretion", "text": "Supplies/vouchers are limited each season -- functionally first-come." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.dhs.wisconsin.gov/wic/fmnp/senior.htm",
+    "ruleUrl": "https://www.dhs.wisconsin.gov/forms/f4/f40103.pdf",
+    "hops": [
+      "wic/fmnp/senior.htm 'Who can join' -- states age and residency, but for income says only 'Meet income guidelines'",
+      "-> form F-40103 (SFMNP Eligibility Agreement, PDF) -- self-certification text: 'household income is at or below 185 percent of the federal poverty guideline'; the dollar amounts are on a separate 'current year's SFMNP Income Eligibility Table'"
+    ],
+    "format": ["html-prose", "pdf"],
+    "formatNotes": "citizen page is prose; the income figure is only on the F-40103 eligibility-agreement PDF, with dollar rows on yet a third document.",
+    "fetch": {
+      "tool": "lib-source live fetcher + pdf.ts (extractPdf)",
+      "status": "HTTP 200; form PDF is 2 pages, extractPdf ok",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "185 percent of the federal poverty guideline",
+        "separation": "other-document",
+        "where": "NOT on the program's public web page at all -- the page says only 'Meet income guidelines'. The percentage is on the self-certification FORM (F-40103), and the actual dollar thresholds are on yet a third document, the annual 'SFMNP Income Eligibility Table'. Three documents deep to get from 'there is an income test' to 'here is the number'."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 11, "workedBy": "agent", "notes": "2 fetches + 1 search. The public page was a dead end for the figure; the application form PDF had the 185% self-certification language. Did not fetch the separate Income Eligibility Table (would give the current dollar rows)." },
+  "surprises": [
+    "A one-sentence eligibility rule ('60+, WI resident, meet income guidelines') where the single load-bearing number is deliberately kept off the public page and split across two downstream forms. If an extractor only reads the page it was handed, it authors a record with an income test it cannot fill."
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "id": "newbridge-madison-home-chore",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  // NewBridge runs several senior programs with different rules. Home Chore and
+  // Food Bridge are captured as separate candidates (own distinct rule + benefit);
+  // the shared front door is NewBridge Case Management.
+  "sharedFrontDoor": { "id": "newbridge-madison", "url": "https://www.newbridgemadison.org/", "phone": "608-512-0000" },
+
+  "record": {
+    "name": "NewBridge Home Chore Program",
+    "administeredBy": "NewBridge (nonprofit serving older adults in Madison and Monona)",
+    "jurisdiction": "city",
+    "provider": "nonprofit",
+    "categories": ["health-disability"],
+    "summary": "Free help for low-income older adults in Madison and Monona who cannot do household tasks alone: volunteers do light housekeeping, laundry, yard work, snow shoveling, and friendly visits, so people can stay in their homes.",
+    "benefit": "Volunteer help with vacuuming, laundry, tidying, raking, mowing, snow clearing, and monthly companionship visits.",
+    "howToApply": {
+      "url": "https://www.newbridgemadison.org/home-chore",
+      "phone": "608-512-0000",
+      "steps": [
+        "Become a NewBridge Case Management client and complete an annual assessment.",
+        "Request Home Chore services through your case manager.",
+        "Wait to be matched with a volunteer -- wait times are often long."
+      ]
+    },
+    "status": "waitlist",
+    "seasonalNote": null,
+    // "Wait times are often long and determined by a need based assessment and availability/capabilities of volunteers."
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        // "free for Madison and Monona older adults"
+        { "kind": "compare", "fact": "city", "op": "eq", "value": "madison" },
+        // "60 years of age or older."
+        { "kind": "set", "fact": "age", "op": "in", "values": ["60-64", "65-plus"] },
+        // "Make less than 150% of the Federal Poverty level."
+        { "kind": "incomeAtOrBelow", "scale": "fpl", "percent": 150 },
+        // "Liquid Assets do not exceed $46,000."
+        { "kind": "compare", "fact": "liquidAssetsAtOrBelow46000", "op": "eq", "value": true },
+        // "Unable to complete tasks themselves due to physical or mental capabilities and lack other supports systems."
+        { "kind": "compare", "fact": "unableToDoTasksAndLacksOtherSupport", "op": "eq", "value": true },
+        // "Must be NewBridge Case Management client and complete an assessment yearly."
+        { "kind": "manualReview", "note": "Prerequisite: be an active NewBridge Case Management client with a current annual assessment. That assessment also determines the functional need. Plus a volunteer-availability-limited waitlist." }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "liquidAssetsAtOrBelow46000", "type": "boolean", "sourceText": "Liquid Assets do not exceed $46,000 -- an unusually high, specific asset ceiling for a chore program" },
+      { "key": "unableToDoTasksAndLacksOtherSupport", "type": "boolean", "sourceText": "Unable to complete tasks themselves due to physical or mental capabilities and lack other supports systems -- a two-part functional + social-support test" }
+    ],
+    "expressibility": {
+      "level": "partial",
+      "note": "City + age 60+ + 150% FPL + a $46,000 liquid-asset ceiling all map (given new facts). But the program is gated on first being a NewBridge Case Management client with a current assessment -- a bootstrap requirement -- and the functional need is decided in that assessment."
+    },
+    "branchDropRisk": [],
+    "unencodable": [
+      { "kind": "asset-test", "text": "Liquid assets not exceeding $46,000 -- a specific asset test; 'liquid' excludes the home." },
+      { "kind": "professional-assessment", "text": "The annual NewBridge Case Management assessment -- determines functional need and is a prerequisite for the service." },
+      { "kind": "other", "text": "Must already be a NewBridge Case Management client -- you cannot access Home Chore directly." },
+      { "kind": "agency-discretion", "text": "Volunteer-availability-limited waitlist." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.newbridgemadison.org/",
+    "ruleUrl": "https://www.newbridgemadison.org/home-chore",
+    "hops": ["newbridgemadison.org -> /home-chore -- a 'Do I Qualify?' section with five bullet requirements inline"],
+    "format": ["html-prose"],
+    "formatNotes": "prose + a clean five-bullet 'Do I Qualify?' list. The 150% FPL and $46,000 asset figures are stated inline.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "less than 150% of the Federal Poverty level / $46,000 liquid assets",
+        "separation": "colocated",
+        "where": "Both are bullets in the 'Do I Qualify?' list on the program page, stated as plain figures."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 8, "workedBy": "agent", "notes": "3 fetches (NewBridge homepage + several sub-program pages). Home Chore has the cleanest, most specific rule of the NewBridge programs -- captured it and Food Bridge as separate candidates." },
+  "surprises": [
+    "A volunteer chore program with a hard $46,000 liquid-asset ceiling and a requirement to already be enrolled in a different program (Case Management). A small nonprofit service with a more specific means test than several state benefits in this corpus."
+  ]
+}

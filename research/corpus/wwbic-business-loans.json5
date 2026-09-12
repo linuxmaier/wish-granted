@@ -1,0 +1,85 @@
+{
+  "id": "wwbic-business-loans",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "WWBIC Business Loans",
+    "administeredBy": "Wisconsin Women's Business Initiative Corporation (WWBIC), a statewide nonprofit CDFI",
+    "jurisdiction": "state",
+    "provider": "nonprofit",
+    "categories": ["small-business"],
+    "summary": "Small-business loans from a nonprofit lender for Wisconsin entrepreneurs -- including start-ups and people with imperfect credit -- who may not qualify at a bank. Paired with free business coaching. 'All credit histories invited to apply.'",
+    "benefit": "Direct business loans (micro through larger amounts), plus one-on-one business advising and classes. Loan approval is not guaranteed.",
+    "howToApply": {
+      "url": "https://www.wwbic.com/lending/",
+      "phone": "414-263-5450",
+      "steps": [
+        "Prepare your documents: driver's license, personal financial statement, business plan, and the items on WWBIC's Required Document Checklist (14 days to submit once you start).",
+        "Submit the online loan application.",
+        "Work with a WWBIC loan specialist through underwriting; delays are common due to demand."
+      ]
+    },
+    "requiredDocuments": ["Driver's license or state ID (borrower, spouse, and any guarantor)", "Personal financial statement", "Written business plan", "Required Document Checklist items (start-up or existing business)"],
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    /*
+      WWBIC publishes not an eligibility RULE but a "good possibility you'll
+      qualify" checklist -- soft indicators, not gates. The real decision is
+      underwriting. This is close to "no published rule" but the checklist is
+      informative, so format is html-prose with a heavy manualReview.
+    */
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        // "Does or will your business operate in Wisconsin?"
+        { "kind": "compare", "fact": "businessOperatesInWisconsin", "op": "eq", "value": true },
+        { "kind": "manualReview", "note": "Everything else on the 'Loan Financing Eligibility' list is a soft indicator, not a gate: a written business plan, industry experience or a track record, understanding of business operations, and an explanation for any credit imperfections ('We invite all credit histories to apply!'). Actual eligibility is decided in underwriting -- 'Loan approval is not guaranteed.'" }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "businessOperatesInWisconsin", "type": "boolean", "sourceText": "Does or will your business operate in Wisconsin?" }
+    ],
+    "expressibility": {
+      "level": "manual-review-dominant",
+      "note": "The only hard condition is 'business in Wisconsin'. The rest is an underwriting judgment WWBIC explicitly frames as a 'good possibility', not a rule -- and 'all credit histories invited' means even the usual credit gate is soft."
+    },
+    "branchDropRisk": [],
+    "unencodable": [
+      { "kind": "professional-assessment", "text": "Loan underwriting -- character, capacity, capital, collateral, conditions. The whole decision. 'Loan approval is not guaranteed.'" },
+      { "kind": "documentation", "text": "The Required Document Checklist (differs for start-ups vs existing businesses); 14-day submission window." },
+      { "kind": "other", "text": "The 'eligibility' bullets ('written business plan?', 'industry experience?', 'understanding of business operations?') are self-assessment prompts, not conditions the program checks against a threshold." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.wwbic.com/lending/",
+    "ruleUrl": null,
+    "hops": ["wwbic.com/lending/ -- a 'Loan Financing Eligibility' section framed as 'if you answer yes to the following, there is a good possibility you will qualify'"],
+    "format": ["html-prose"],
+    "formatNotes": "prose + a self-assessment question list. No income test, no numeric threshold -- eligibility is underwriting.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "(no eligibility figure)",
+        "separation": "n/a — no governing figure",
+        "where": "No income or numeric threshold. Eligibility is a lender's underwriting decision, deliberately not published as a rule."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 8, "workedBy": "agent", "notes": "1 fetch. The 'eligibility' section reads like a rule but is a soft self-assessment. Distinguishing 'a checklist that decides' from 'a checklist that encourages' took the reading time." },
+  "surprises": [
+    "A page with a section literally headed 'Loan Financing Eligibility' that contains no eligibility rule -- every item is a hedged 'good possibility' self-check. The word 'eligibility' on a page is not a promise that a rule follows."
+  ]
+}

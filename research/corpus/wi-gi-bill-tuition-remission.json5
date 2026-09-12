@@ -1,0 +1,137 @@
+{
+  "id": "wi-gi-bill-tuition-remission",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Wisconsin GI Bill (tuition remission)",
+    "administeredBy": "Wisconsin Department of Veterans Affairs; administered by UW System and Wisconsin Technical College System institutions",
+    "jurisdiction": "state",
+    "provider": "government",
+    "categories": ["childcare-education", "veterans"],
+    "summary": "A full waiver of tuition and segregated fees at any UW System or Wisconsin Technical College school -- up to 128 credits or 8 semesters -- for eligible Wisconsin veterans and, in some cases, their spouses and children. Separate from the federal GI Bill.",
+    "benefit": "100% remission of tuition and segregated fees for up to 128 credits or 8 semesters (whichever is greater) at a participating UW or technical college.",
+    "howToApply": {
+      "url": "https://dva.wi.gov/benefits/education/wi-gi-bill/",
+      "phone": "800-947-8387",
+      "steps": [
+        "Confirm eligibility with your County or Tribal Veterans Service Office.",
+        "Apply through the participating UW or technical college's veteran services office each term.",
+        "The institution applies the remission to your tuition bill."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "anyOf",
+      "of": [
+        {
+          // "Eligibility - Veteran Students"
+          "kind": "allOf",
+          "of": [
+            { "kind": "compare", "fact": "isVeteran", "op": "eq", "value": true },
+            // "The veteran must be a current Wisconsin resident and currently living in Wisconsin at time of applying"
+            { "kind": "compare", "fact": "state", "op": "eq", "value": "WI" },
+            {
+              // "who was either: A Wisconsin resident at time of entry ... OR a Wisconsin resident for at least three consecutive years preceding the ... semester"
+              "kind": "anyOf",
+              "of": [
+                { "kind": "compare", "fact": "wiResidentAtEntryToService", "op": "eq", "value": true },
+                { "kind": "compare", "fact": "wiResident3ConsecutiveYearsBeforeTerm", "op": "eq", "value": true }
+              ]
+            },
+            // "discharged under honorable conditions from active duty"
+            { "kind": "compare", "fact": "dischargedHonorableActiveDuty", "op": "eq", "value": true },
+            {
+              /* "and meet at least one of the following:" -- a long service-qualification disjunction (90 days wartime, 2 years peacetime, discharge for service-connected disability / hardship / RIF, EO 10957, expeditionary medal, crisis zone). */
+              "kind": "compare", "fact": "meetsWiGiBillServiceQualification", "op": "eq", "value": true
+            }
+          ]
+        },
+        {
+          // "Eligibility - Spouse/Child Students"
+          "kind": "allOf",
+          "of": [
+            { "kind": "compare", "fact": "isSpouseOrChildOfVeteran", "op": "eq", "value": true },
+            {
+              "kind": "anyOf",
+              "of": [
+                // way 1: veteran has >=30% service-connected disability rating + WI residency nexus
+                { "kind": "allOf", "of": [
+                  { "kind": "compare", "fact": "sponsorVaDisabilityRating30Plus", "op": "eq", "value": true },
+                  { "kind": "compare", "fact": "sponsorWiResidencyNexus", "op": "eq", "value": true }
+                ]},
+                // way 2: veteran died on active duty / of a service-connected disability / in the line of duty + WI residency nexus
+                { "kind": "compare", "fact": "sponsorDiedInServiceOrOfServiceConnectedCause", "op": "eq", "value": true }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "isVeteran", "type": "boolean", "sourceText": "The veteran must be a current Wisconsin resident (RESERVED today)" },
+      { "key": "wiResidentAtEntryToService", "type": "boolean", "sourceText": "A Wisconsin resident at time of entry (or re-entry) into active-duty service (Home of Record WI)" },
+      { "key": "wiResident3ConsecutiveYearsBeforeTerm", "type": "boolean", "sourceText": "A Wisconsin resident for at least three consecutive years preceding the beginning of any semester" },
+      { "key": "dischargedHonorableActiveDuty", "type": "boolean", "sourceText": "discharged under honorable conditions from active duty in the U.S. armed forces" },
+      { "key": "meetsWiGiBillServiceQualification", "type": "boolean", "sourceText": "meet at least one of the following: 90 days during a war period / 2 consecutive years peacetime / discharged for a service-connected disability, hardship, reduction in force / EO 10957 / expeditionary or service medal / designated crisis zone -- a multi-part disjunction folded into one fact" },
+      { "key": "isSpouseOrChildOfVeteran", "type": "boolean", "sourceText": "Eligibility - Spouse/Child Students" },
+      { "key": "sponsorVaDisabilityRating30Plus", "type": "boolean", "sourceText": "awarded at least a 30% service-connected disability rating by the U.S. Department of Veterans Affairs" },
+      { "key": "sponsorWiResidencyNexus", "type": "boolean", "sourceText": "Entered service as a Wisconsin resident or resided in Wisconsin for at least three consecutive years immediately preceding ... the veteran's spouse or child registers" },
+      { "key": "sponsorDiedInServiceOrOfServiceConnectedCause", "type": "boolean", "sourceText": "Died on active duty, died as the result of a service-connected disability, or died in the line of duty" }
+    ],
+    "expressibility": {
+      "level": "partial",
+      "note": "The two-route structure (veteran student / spouse-child student) maps to an anyOf. But the service-qualification disjunction is a 7-way test folded into one boolean the interview cannot really ask, and 'discharged under honorable conditions' plus the residency-history tests are documentation-heavy. The CVSO certification is the real gate."
+    },
+    "branchDropRisk": [
+      {
+        "figure": "30% service-connected disability rating (spouse/child route)",
+        "takenNaivelyAs": "the disability rating needed for the whole program",
+        "actuallyIs": "only the spouse/child route needs a rating at all -- and it is 30%, not the 100% that wi-veterans-property-tax-credit needs. The veteran's own route has no rating requirement. Conflating the two rating thresholds mis-scopes both programs.",
+        "direction": "narrower"
+      }
+    ],
+    "unencodable": [
+      { "kind": "incorporated-law", "text": "The s. 45.01(12) 'veteran' definition and the war-period definitions behind 'served during a war period'." },
+      { "kind": "documentation", "text": "The CVSO/TVSO eligibility certification -- a determination, not a self-assertion; and the DD-214 discharge-character review." },
+      { "kind": "other", "text": "Credit/semester caps (128 / 8) and the requirement to also apply for the federal GI Bill first in some cases -- benefit-interaction rules." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://dva.wi.gov/benefits/education/wi-gi-bill/",
+    "ruleUrl": null,
+    "hops": ["dva.wi.gov/benefits/education/wi-gi-bill/ -- 'Eligibility - Veteran Students' and 'Eligibility - Spouse/Child Students' sections carry the full rule inline"],
+    "format": ["html-prose"],
+    "formatNotes": "prose + nested bullet lists. Unusually complete for a WDVA page -- the eligibility rule is fully stated, not deferred to the admin code.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "30% service-connected disability rating",
+        "separation": "colocated",
+        "where": "Stated inline under 'Eligibility - Spouse/Child Students', clearly scoped to that route ('The first way a veteran may qualify is if the veteran ... Has been awarded at least a 30% service-connected disability rating')."
+      },
+      {
+        "scopeOf": "(no income figure)",
+        "separation": "n/a — no governing figure",
+        "where": "No income test -- the program is a categorical veterans education benefit."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 12, "workedBy": "agent", "notes": "1 fetch. The rule is long but fully on-page. Did not fetch the s. 45.01(12) veteran definition or the war-period list." },
+  "surprises": [
+    "After wi-veterans-assistance-grant and wi-veterans-property-tax-credit both hid their rules in the admin code, this WDVA page states its entire (complex) eligibility rule inline. Same agency, opposite behaviour -- 'WDVA defers to the code' is not a reliable house style."
+  ]
+}

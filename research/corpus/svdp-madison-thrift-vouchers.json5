@@ -1,0 +1,87 @@
+{
+  "id": "svdp-madison-thrift-vouchers",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  /*
+    Split from svdp-madison-assistance (GO-NO-GO.md §6.6). Clothing and furniture
+    vouchers are combined into one file: one benefit ("a St. Vinny's thrift-store
+    voucher"), one rule (Dane County residency), differing only in the periodicity
+    and dollar value per voucher type.
+  */
+  "sharedFrontDoor": { "id": "svdp-madison", "url": "https://svdpmadison.org/get-help/", "phone": "608-257-0919" },
+
+  "record": {
+    "name": "St. Vincent de Paul - Madison Clothing & Furniture Vouchers",
+    "administeredBy": "Society of St. Vincent de Paul - Madison (nonprofit)",
+    "jurisdiction": "county",
+    "provider": "nonprofit",
+    "categories": ["food-basic-needs"],
+    // Household basic needs (clothing, furniture, housewares) -- "food-basic-needs" is the closest of the six.
+    "summary": "Free clothing and furniture from St. Vinny's Thrift Stores for Dane County residents in hard times, via a voucher. Furniture help is aimed especially at people moving from homelessness into housing.",
+    "benefit": "Clothing voucher: $50 per eligible adult and $30 per eligible child (17 and under), redeemable at any St. Vinny's in Dane County, once every six months. Furniture voucher: sofas, chairs, tables, cribs, beds, plus dishes and linens, once every five years.",
+    "howToApply": {
+      "url": "https://svdpmadison.org/program/clothing/",
+      "phone": "608-278-2920",
+      "steps": [
+        "Call (608) 278-2920 for a clothing voucher, or (608) 257-0919 for furniture.",
+        "For furniture, St. Vincent de Paul members schedule a home visit; for clothing, pick up or be mailed the voucher.",
+        "Redeem clothing vouchers at any St. Vinny's Thrift Store in Dane County; fulfil furniture vouchers at the Dig & Save Outlet in Madison by appointment."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        // Clothing: "You must live in Dane County". Furniture: "You must live in Dane County".
+        { "kind": "compare", "fact": "county", "op": "eq", "value": "dane" },
+        { "kind": "manualReview", "note": "Periodicity limits: a clothing voucher at most every six months; a furniture voucher at most every five years. Not eligibility gates, but they cap actionability -- a household that used a voucher recently cannot use another." }
+      ]
+    },
+    "factsNeeded": [],
+    "expressibility": {
+      "level": "full",
+      "note": "The eligibility rule is just 'live in Dane County' for both voucher types. No income test. The per-type periodicity and dollar values are benefit parameters, noted as manualReview."
+    },
+    "branchDropRisk": [],
+    "unencodable": [
+      { "kind": "other", "text": "Clothing voucher: eligible 'every six months'. Furniture voucher: eligible 'every five years'. Periodicity limits per voucher type." },
+      { "kind": "other", "text": "$50/adult and $30/child (17 and under) are the clothing-voucher values -- benefit amounts scoped by person type, not eligibility." },
+      { "kind": "agency-discretion", "text": "Furniture vouchers involve a home visit scheduled by SVdP members -- an assessment of need in practice, though no criteria are published." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://svdpmadison.org/get-help/",
+    "ruleUrl": "https://svdpmadison.org/program/clothing/",
+    "hops": [
+      "svdpmadison.org/get-help/ -> /program/clothing/ ('Eligibility:' -- Dane County, every six months) and /program/furniture/ ('Eligibility:' -- Dane County, every five years)"
+    ],
+    "format": ["html-prose"],
+    "formatNotes": "two sibling program pages, each with a two-bullet 'Eligibility:' list (residency + periodicity). Combined here as one benefit.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200 on both /program/clothing/ and /program/furniture/. The listed slugs 'clothing-vouchers'/'furniture-vouchers' 404; the real slugs are 'clothing' and 'furniture'.",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "Dane County residency",
+        "separation": "colocated",
+        "where": "First bullet of the 'Eligibility:' list on each of the clothing and furniture program pages."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 7, "workedBy": "agent", "notes": "2 fetches (clothing + furniture pages). Combined into one candidate because the eligibility rule is identical (Dane County residency) and the benefit is the same kind (a thrift-store voucher)." },
+  "surprises": [
+    "The clearest 'no income test' nonprofit basic-needs rule in the corpus -- residency alone -- yet still not encodable as a clean pass today because 'how often can I get one' (six months / five years) has no representation and would leave it stuck at manualReview."
+  ]
+}

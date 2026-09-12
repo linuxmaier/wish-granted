@@ -1,0 +1,95 @@
+{
+  "id": "wi-iris",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "IRIS (Include, Respect, I Self-Direct)",
+    "administeredBy": "Wisconsin Department of Health Services (Division of Medicaid Services)",
+    "jurisdiction": "state",
+    "provider": "government",
+    "categories": ["health-disability"],
+    "summary": "A Medicaid long-term care program for adults 18+ who are older or have a disability and want to self-direct their supports -- choosing and managing their own providers within a budget. An alternative to Family Care.",
+    "benefit": "A monthly budget for long-term care goods and services (personal care, home modifications, supported employment, respite, home-delivered meals, assistive technology, and more), which the participant directs.",
+    "howToApply": {
+      "url": "https://www.dhs.wisconsin.gov/iris/index.htm",
+      "phone": "855-274-7947",
+      "steps": [
+        "Contact your local ADRC or Tribal ADRS -- they screen you for functional and financial eligibility.",
+        "Complete the Long-Term Care Functional Screen and the Medicaid application.",
+        "If eligible, choose IRIS (vs Family Care), pick an IRIS consultant agency and a fiscal employer agent, and build your plan."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        // "Live in Wisconsin."
+        { "kind": "compare", "fact": "state", "op": "eq", "value": "WI" },
+        // "Be at least 18 years old."
+        { "kind": "compare", "fact": "isAdult", "op": "eq", "value": true },
+        // "Be an older adult or an adult with a disability."
+        {
+          "kind": "anyOf",
+          "of": [
+            { "kind": "set", "fact": "age", "op": "in", "values": ["60-64", "65-plus"] },
+            { "kind": "compare", "fact": "hasDisability", "op": "eq", "value": true }
+          ]
+        },
+        // "Be enrolled in Medicaid." (financial eligibility -- Medicaid for the Elderly, Blind, or Disabled, with an asset test and possible cost share)
+        { "kind": "set", "fact": "currentBenefits", "op": "includesAny", "values": ["medicaid-badgercare"] },
+        // "Live in a home, apartment, adult family home, or residential care apartment complex."
+        { "kind": "compare", "fact": "livesInCommunitySetting", "op": "eq", "value": true },
+        // "Be functionally eligible. The Long-Term Care Functional Screen helps confirm eligibility."
+        { "kind": "manualReview", "note": "The Wisconsin Long-Term Care Functional Screen -- a trained-staff instrument determining a nursing-home level of need. Not self-reportable. Same gate as Family Care and the ADRC long-term-care route." }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "isAdult", "type": "boolean", "sourceText": "Be at least 18 years old" },
+      { "key": "hasDisability", "type": "boolean", "sourceText": "Be an older adult or an adult with a disability -- hasDisability is RESERVED" },
+      { "key": "livesInCommunitySetting", "type": "boolean", "sourceText": "Live in a home, apartment, adult family home, or residential care apartment complex -- i.e. NOT in a nursing home / institution" }
+    ],
+    "expressibility": {
+      "level": "partial",
+      "note": "Residency + 18+ + (older or disabled) + Medicaid-enrolled + community setting all map. But the load-bearing gate -- functional eligibility via the LTC Functional Screen -- is manualReview, and 'enrolled in Medicaid' hides an EBD asset test and a possible cost share."
+    },
+    "branchDropRisk": [],
+    "unencodable": [
+      { "kind": "professional-assessment", "text": "The Long-Term Care Functional Screen -- nursing-home level of need. The single load-bearing condition." },
+      { "kind": "asset-test", "text": "Medicaid financial eligibility (EBD) behind 'Be enrolled in Medicaid' -- an income + strict asset test, with a monthly cost share for some participants." },
+      { "kind": "other", "text": "IRIS vs Family Care is a participant choice among the functionally + financially eligible -- not itself an eligibility condition." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.dhs.wisconsin.gov/iris/index.htm",
+    "ruleUrl": null,
+    "hops": ["dhs.wisconsin.gov/iris/index.htm -- 'Who is eligible' section lists six bullet requirements inline"],
+    "format": ["html-prose"],
+    "formatNotes": "prose + a clean six-bullet 'Who is eligible' list. The financial-eligibility detail (asset test, cost share) is only hinted at (in the 'Costs' section).",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "'Be enrolled in Medicaid'",
+        "separation": "cross-reference",
+        "where": "Stated as a one-line bullet. The whole EBD financial test behind it (income, asset limit, cost-share calculation) is only alluded to in the separate 'Costs' section ('Your cost share amount is based on your income and determines your eligibility') and is fully defined in the Medicaid Eligibility Handbook."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 7, "workedBy": "agent", "notes": "1 fetch. The 'Who is eligible' list is tidy; the real complexity (functional screen + EBD financial test) is stated in one word each ('functionally eligible', 'enrolled in Medicaid')." },
+  "surprises": [
+    "Third corpus program (with dane-county-adrc-long-term-care-functional-screen and, next, Family Care) gated on the SAME off-page instrument -- the LTC Functional Screen. A cluster of Wisconsin LTC programs all reduce to 'pass the screen', which no record can encode."
+  ]
+}

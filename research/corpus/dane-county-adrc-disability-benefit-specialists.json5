@@ -1,0 +1,80 @@
+{
+  "id": "dane-county-adrc-disability-benefit-specialists",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  // Split from dane-county-adrc (GO-NO-GO.md §6.6). Front door is the ADRC.
+  "sharedFrontDoor": { "id": "dane-county-adrc", "url": "https://www.daneadrc.org/", "phone": "608-240-7400" },
+
+  "record": {
+    "name": "Disability Benefit Specialists (ADRC of Dane County)",
+    "administeredBy": "Area Agency on Aging of Dane County / Dane County Department of Human Services",
+    "jurisdiction": "county",
+    "provider": "government",
+    "categories": ["health-disability"],
+    "summary": "Free help for working-age adults with a disability to understand and apply for public and private benefits (SSI, SSDI, Medicaid, Medicare, FoodShare, and others), and to resolve benefit problems and denials.",
+    "benefit": "One-on-one benefits counselling and application help from a Disability Benefit Specialist.",
+    "howToApply": {
+      "url": "https://www.daneadrc.org/What-We-Do",
+      "phone": "608-240-7400",
+      "steps": [
+        "Call the ADRC and ask for a Disability Benefit Specialist.",
+        "An Information & Assistance Specialist screens for age and disability and connects you."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        { "kind": "compare", "fact": "county", "op": "eq", "value": "dane" },
+        // "Disability Benefit Specialists (DBS) may assist individuals between the ages of 18 and 59 who have physical disabilities, developmental disabilities, mental health issues, and/or substance abuse issues."
+        { "kind": "compare", "fact": "ageBetween18And59", "op": "eq", "value": true },
+        { "kind": "compare", "fact": "hasDisability", "op": "eq", "value": true }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "ageBetween18And59", "type": "boolean", "sourceText": "individuals between the ages of 18 and 59 -- an 18-59 band; AGE_BANDS (under-60 / 60-64 / 65-plus) cannot express either boundary" },
+      { "key": "hasDisability", "type": "boolean", "sourceText": "who have physical disabilities, developmental disabilities, mental health issues, and/or substance abuse issues -- broad; hasDisability is RESERVED" }
+    ],
+    "expressibility": {
+      "level": "full",
+      "note": "The rule is just county + 18-59 + has a (broadly defined) disability. All three map, given hasDisability un-reserved and a real-age fact. Nothing manualReview -- it is a counselling service, not a means-tested benefit."
+    },
+    "branchDropRisk": [],
+    "unencodable": [
+      { "kind": "other", "text": "The 59 ceiling exists because 60+ is served by the Elder Benefit Specialist instead (see dane-county-adrc-elder-benefit-specialist) -- the split is administrative, not a denial of help." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.daneadrc.org/",
+    "ruleUrl": "https://www.daneadrc.org/What-We-Do",
+    "hops": ["daneadrc.org/What-We-Do -- the 'Disability Benefit Specialists' paragraph states the 18-59 age band and the disability categories inline"],
+    "format": ["html-prose"],
+    "formatNotes": "one prose paragraph on the ADRC 'What We Do' page.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200 (re-fetched for the §6 split)",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "ages 18 and 59",
+        "separation": "colocated",
+        "where": "Stated inline in the same sentence as the disability categories: 'individuals between the ages of 18 and 59 who have physical disabilities ...'."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 4, "workedBy": "agent", "notes": "Re-used the pilot's daneadrc.org/What-We-Do fetch; one paragraph. Cheap because the rule is one sentence." },
+  "surprises": [
+    "A clean, fully-expressible rule that still can't be encoded today -- it needs BOTH hasDisability un-reserved AND an age model that can carry an 18-59 band. Two independent vocabulary gaps for one one-sentence rule."
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "id": "svdp-madison-charitable-pharmacy",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  // Split from svdp-madison-assistance (GO-NO-GO.md §6.6).
+  "sharedFrontDoor": { "id": "svdp-madison", "url": "https://svdpmadison.org/get-help/", "phone": "608-257-0919" },
+
+  "record": {
+    "name": "St. Vincent de Paul - Madison Charitable Pharmacy",
+    "administeredBy": "Society of St. Vincent de Paul - Madison (nonprofit; state-licensed pharmacy)",
+    "jurisdiction": "county",
+    "provider": "nonprofit",
+    "categories": ["health-disability"],
+    "summary": "A free pharmacy for low-income, uninsured adults in Dane County. Fills prescriptions for chronic and acute conditions (heart disease, diabetes, infections, and more) at no cost, up to a 30-day supply. Does not stock controlled substances.",
+    "benefit": "Prescription medications at no cost to the patient (up to a 30-day supply per prescription), plus medication counselling.",
+    "howToApply": {
+      "url": "https://svdpmadison.org/program/pharmacy/",
+      "phone": "608-268-0355",
+      "steps": [
+        "Apply to the pharmacy before your first fill -- online, in person (by appointment), or by phone. No walk-ins.",
+        "Provide a current prescription from your provider.",
+        "Pick up at 2033 Fish Hatchery Road, Madison."
+      ]
+    },
+    "requiredDocuments": ["A current prescription from your provider", "Proof of Dane County residency / Dane County provider", "Proof of no health insurance", "Household income documentation (below 300% FPL)"],
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        // "You must be 18+ years old,"
+        { "kind": "compare", "fact": "isAdult", "op": "eq", "value": true },
+        {
+          // "live in Dane County or see a doctor in Dane County,"
+          "kind": "anyOf",
+          "of": [
+            { "kind": "compare", "fact": "county", "op": "eq", "value": "dane" },
+            { "kind": "compare", "fact": "seesADoctorInDaneCounty", "op": "eq", "value": true }
+          ]
+        },
+        // "have no health insurance,"
+        { "kind": "compare", "fact": "hasHealthInsurance", "op": "eq", "value": false },
+        // "have a current prescription from your provider, and"
+        { "kind": "compare", "fact": "hasCurrentPrescription", "op": "eq", "value": true },
+        // "have an annual household income below 300% of the Federal Poverty Level (FPL)."
+        { "kind": "incomeAtOrBelow", "scale": "fpl", "percent": 300 }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "isAdult", "type": "boolean", "sourceText": "You must be 18+ years old" },
+      { "key": "seesADoctorInDaneCounty", "type": "boolean", "sourceText": "live in Dane County OR see a doctor in Dane County -- an alternative to residency that no current geography fact captures" },
+      { "key": "hasHealthInsurance", "type": "boolean", "sourceText": "have no health insurance (shared with wi-well-woman-program)" },
+      { "key": "hasCurrentPrescription", "type": "boolean", "sourceText": "have a current prescription from your provider" }
+    ],
+    "expressibility": {
+      "level": "full",
+      "note": "A textbook clean rule: 18+, Dane nexus, uninsured, has a prescription, income <300% FPL -- all as a single allOf. Every leaf maps given a few new booleans. Nothing manualReview. This is a well-formed nonprofit rule, the opposite of the 'no rule published' expectation for small charities."
+    },
+    "branchDropRisk": [],
+    "unencodable": [
+      { "kind": "documentation", "text": "The application step (online/in-person/phone) before a first fill; no walk-ins." },
+      { "kind": "other", "text": "'We do not stock or provide controlled substances' -- limits what the benefit covers, not who is eligible." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://svdpmadison.org/get-help/",
+    "ruleUrl": "https://svdpmadison.org/program/pharmacy/",
+    "hops": ["svdpmadison.org/get-help/ -> /program/pharmacy/ has a 'Pharmacy Eligibility:' list with five inline conditions including 'annual household income below 300% of the Federal Poverty Level'"],
+    "format": ["html-prose"],
+    "formatNotes": "prose + a five-bullet 'Pharmacy Eligibility:' list. The 300% FPL figure is stated inline with no dollar table.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "300% of the Federal Poverty Level",
+        "separation": "colocated",
+        "where": "Stated inline as the fifth bullet of the 'Pharmacy Eligibility:' list. No dollar table; the % is the whole statement of the income test."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 6, "workedBy": "agent", "notes": "1 fetch (batch-2 split). The 300% FPL nonprofit threshold matches SVdP's microlending program exactly -- a shared org-wide income policy stated per-program." },
+  "surprises": [
+    "A small Catholic charity's free pharmacy publishes a cleaner, more complete eligibility rule (five inline conditions, an explicit % FPL) than several Wisconsin state programs in this corpus, whose rules were buried in admin code or split across handbooks."
+  ]
+}

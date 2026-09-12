@@ -1,0 +1,88 @@
+{
+  "id": "keep-wisconsin-warm-cool-fund",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Keep Wisconsin Warm/Cool Fund (KWWCF)",
+    "administeredBy": "Keep Wisconsin Warm/Cool Fund (a nonprofit), working with local Wisconsin Home Energy Plus / WHEAP providers",
+    "jurisdiction": "state",
+    "provider": "nonprofit",
+    "categories": ["housing-utilities"],
+    "summary": "A nonprofit fund that provides supplemental help with heating and cooling bills, furnace repair, and energy crises for Wisconsin households whose energy burden is high and whose other resources (like WHEAP) are not enough.",
+    "benefit": "Supplemental payments toward energy bills, furnace/heating-equipment repair or replacement, and disconnection or fuel emergencies -- filling gaps left by WHEAP and other programs.",
+    "howToApply": {
+      "url": "https://kwwf.org/apply/",
+      "phone": "800-891-9276",
+      "steps": [
+        "Apply online at heat.help / esi.help, or book an appointment by county at kwwf.org.",
+        "If you are disconnected, have a disconnect notice, are low on fuel, or have a furnace emergency, call 800-506-5596.",
+        "A local energy-assistance provider processes the application together with your WHEAP application."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        { "kind": "compare", "fact": "state", "op": "eq", "value": "WI" },
+        // "those experiencing a significant energy burden where other available resources are inadequate"
+        { "kind": "compare", "fact": "hasSignificantEnergyBurdenWithInadequateOtherResources", "op": "eq", "value": true },
+        // "Participants whose gross income is within the Wisconsin Home Energy Assistance Program (WHEAP) gross income guidelines may qualify"
+        { "kind": "incomeAtOrBelow", "scale": "wi-smi", "percent": 100 },
+        { "kind": "manualReview", "note": "'may qualify for supplemental support' -- KWWCF is a discretionary gap-filler layered on WHEAP. Whether a household gets help, and how much, depends on the local provider's assessment of the energy burden and what WHEAP and other programs already covered." }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "hasSignificantEnergyBurdenWithInadequateOtherResources", "type": "boolean", "sourceText": "those experiencing a significant energy burden where other available resources are inadequate -- a two-part judgment (burden + insufficiency of other help)" }
+    ],
+    "expressibility": {
+      "level": "partial",
+      "note": "Residency + WHEAP income guidelines map (WHEAP uses the wi-smi scale at 60% SMI = incomeAtOrBelow('wi-smi', 100), same as the shipped WHEAP records). But the core -- a 'significant energy burden' that other resources cannot cover, assessed by a local provider -- is manualReview, and 'may qualify' means it is discretionary even when income fits."
+    },
+    "branchDropRisk": [
+      {
+        "figure": "the WHEAP gross income guidelines",
+        "takenNaivelyAs": "the KWWCF eligibility test -- 'if you're WHEAP-income-eligible, you qualify'",
+        "actuallyIs": "a necessary but not sufficient condition. Income within WHEAP guidelines means you 'may qualify for supplemental support'; the fund only helps where the energy burden exceeds what WHEAP and other resources covered.",
+        "direction": "either"
+      }
+    ],
+    "unencodable": [
+      { "kind": "professional-assessment", "text": "The local provider's assessment of a 'significant energy burden' and whether other resources (WHEAP, utility programs, community funds) were 'inadequate'." },
+      { "kind": "agency-discretion", "text": "'May qualify for supplemental support' -- KWWCF is a limited fund; help is not an entitlement even for income-eligible households." },
+      { "kind": "other", "text": "The exact WHEAP income guidelines table (2025-2026 Home Energy Plus program year) is referenced but not reproduced on the page." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://kwwf.org/apply/",
+    "ruleUrl": null,
+    "hops": ["kwwf.org/apply/ -- 'Who Qualifies for the KWW/CF?' plus a 'Gross Income Guidelines' section that points at the WHEAP / Home Energy Plus table"],
+    "format": ["html-prose"],
+    "formatNotes": "prose. structured.txt came back empty (JS-heavy layout); the normalized text carried the eligibility statement. The income table itself is the WHEAP one, referenced not reproduced.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200. kwwf.org/get-help/ and /programs/ 404'd; /apply/ is the eligibility page. renderStructured produced little; normalize() carried the text.",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "the WHEAP gross income guidelines",
+        "separation": "cross-reference",
+        "where": "'Participants whose gross income is within the Wisconsin Home Energy Assistance Program (WHEAP) gross income guidelines may qualify' -- the guidelines are WHEAP's, on the state Home Energy Plus site, not on this page. And the 'significant energy burden' condition beside it is not a figure at all."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 10, "workedBy": "agent", "notes": "3 fetch attempts (2 x 404) + reading the normalized text (structured render was thin). A nonprofit that explicitly layers on top of a state program and borrows its income test." },
+  "surprises": [
+    "A nonprofit energy fund that does not publish its own income limit -- it adopts WHEAP's by reference. The record only makes sense next to the shipped WHEAP records; in isolation its income rule is a pointer to another program's table."
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "id": "wi-talent-incentive-program-grant",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "Talent Incentive Program (TIP) Grant",
+    "administeredBy": "Wisconsin Higher Educational Aids Board (HEAB) and the Wisconsin Educational Opportunity Programs (WEOP)",
+    "jurisdiction": "state",
+    "provider": "government",
+    "categories": ["childcare-education"],
+    "summary": "A grant for the most financially needy and educationally disadvantaged Wisconsin-resident students. First-time freshmen must be nominated by their financial aid office or a WEOP counselor; the grant then continues as long as need is shown.",
+    "benefit": "$600 to (roughly) $1,800 per year toward college costs at a participating Wisconsin institution. Eligibility cannot exceed ten semesters.",
+    "howToApply": {
+      "url": "https://heab.state.wi.us/programs.html",
+      "phone": "608-267-2206",
+      "steps": [
+        "File the FAFSA.",
+        "For an initial award: be nominated as a first-time freshman by your college financial aid office or a WEOP counselor.",
+        "To continue: keep filing the FAFSA and keep showing financial need."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": "Initial awards require a nomination while funds last; nomination happens through the financial aid office / WEOP.",
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        // "Wisconsin resident students"
+        { "kind": "compare", "fact": "state", "op": "eq", "value": "WI" },
+        // "attending colleges and universities in the State of Wisconsin"
+        { "kind": "compare", "fact": "enrolledAtParticipatingWisconsinInstitution", "op": "eq", "value": true },
+        // "the most financially needy and educationally disadvantaged"
+        { "kind": "manualReview", "note": "'The most financially needy and educationally disadvantaged' -- both are judgments. Financial need is FAFSA-based with no published threshold; 'educationally disadvantaged' is assessed by the nominating financial aid office / WEOP counselor (first-generation, low-income school, academic under-preparation, etc.)." },
+        {
+          "kind": "anyOf",
+          "of": [
+            // initial award
+            { "kind": "allOf", "of": [
+              // "First-time freshmen students are nominated for the TIP Grant by the school financial aid offices or by counselors of the Wisconsin Educational Opportunity Programs (WEOP)."
+              { "kind": "compare", "fact": "isFirstTimeFreshman", "op": "eq", "value": true },
+              // "Required Enrollment: At least half-time, first-time freshman for initial awards"
+              { "kind": "compare", "fact": "enrolledAtLeastHalfTime", "op": "eq", "value": true },
+              { "kind": "manualReview", "note": "Requires a NOMINATION by a financial aid office or a WEOP counselor. The applicant cannot self-nominate -- this is the load-bearing gate for initial eligibility." }
+            ]},
+            // continuing award
+            { "kind": "allOf", "of": [
+              { "kind": "compare", "fact": "hadPriorTIPGrant", "op": "eq", "value": true },
+              // "To continue to receive the TIP Grant, students must continue to show financial need."
+              { "kind": "compare", "fact": "hasNotExceeded10SemestersOfTIP", "op": "eq", "value": true }
+            ]}
+          ]
+        }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "enrolledAtParticipatingWisconsinInstitution", "type": "boolean", "sourceText": "attending colleges and universities in the State of Wisconsin (UW / Tech / Independent / Tribal)" },
+      { "key": "isFirstTimeFreshman", "type": "boolean", "sourceText": "First-time freshmen students are nominated ... for initial awards" },
+      { "key": "enrolledAtLeastHalfTime", "type": "boolean", "sourceText": "Required Enrollment: At least half-time, first-time freshman for initial awards" },
+      { "key": "hadPriorTIPGrant", "type": "boolean", "sourceText": "To continue to receive the TIP Grant ..." }
+    ],
+    "expressibility": {
+      "level": "manual-review-dominant",
+      "note": "Residency + institution + enrollment level map. But the two gates that matter -- 'most financially needy and educationally disadvantaged' AND a nomination by a financial aid office or WEOP counselor -- are both manualReview. A student cannot know if they qualify without being nominated."
+    },
+    "branchDropRisk": [
+      {
+        "figure": "'at least half-time' (vs the Wisconsin Grant's 'less than half-time' floor)",
+        "takenNaivelyAs": "the same enrollment rule as the Wisconsin Grant",
+        "actuallyIs": "TIP requires half-time for initial awards, where the Wisconsin Grant (wi-grant-higher-education) explicitly reaches less-than-half-time students. Two HEAB grants on the same page, opposite enrollment floors.",
+        "direction": "narrower"
+      }
+    ],
+    "unencodable": [
+      { "kind": "agency-discretion", "text": "The nomination by a financial aid office or a WEOP counselor -- the load-bearing gate for initial awards; cannot be self-initiated." },
+      { "kind": "professional-assessment", "text": "'Educationally disadvantaged' -- a nominator's judgment (first-generation status, low-resource high school, academic preparation)." },
+      { "kind": "incorporated-law", "text": "'Financial need' = the FAFSA methodology; no income figure is published." },
+      { "kind": "agency-discretion", "text": "Funding-limited: initial awards depend on HEAB's annual appropriation." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://heab.state.wi.us/programs.html",
+    "ruleUrl": null,
+    "hops": ["heab.state.wi.us/programs.html -- the 'Talent Incentive Program Grant' section; same page as the Wisconsin Grant and the school-type matrix table"],
+    "format": ["html-prose", "html-table"],
+    "formatNotes": "one section of the ~23KB HEAB programs page. Same page as wi-grant-higher-education.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200 (same fetch as wi-grant-higher-education)",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "'the most financially needy and educationally disadvantaged'",
+        "separation": "other-document",
+        "where": "No numeric definition of either term on the page. 'Financially needy' is the FAFSA calculation; 'educationally disadvantaged' is the nominator's assessment against WEOP / financial-aid-office criteria that are not published here."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 7, "workedBy": "agent", "notes": "Same page fetch as wi-grant-higher-education. Split into its own candidate because it has a distinct rule (nomination gate, half-time floor, 'educationally disadvantaged') and a distinct benefit amount." },
+  "surprises": [
+    "A grant a student cannot apply for directly -- an initial TIP award requires someone else (a financial aid officer or WEOP counselor) to nominate you. The 'how to apply' is really 'hope you are noticed'. A benefits tool can surface it, but only as 'ask your financial aid office about this'."
+  ]
+}

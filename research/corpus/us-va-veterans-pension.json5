@@ -1,0 +1,113 @@
+{
+  "id": "us-va-veterans-pension",
+  "capturedAt": "2026-09-09",
+  "notVerified": "Nothing in this file is verified or shipped. A machine gathered it. See README.md.",
+
+  "record": {
+    "name": "VA Veterans Pension",
+    "administeredBy": "U.S. Department of Veterans Affairs",
+    "jurisdiction": "federal",
+    "provider": "government",
+    "categories": ["veterans", "health-disability"],
+    "summary": "A monthly payment to low-income wartime veterans who are 65 or older or have a permanent and total disability, and whose income and net worth are within federal limits.",
+    "benefit": "A monthly pension bringing countable income up to a Congressionally set Maximum Annual Pension Rate (MAPR). Add-ons for Aid and Attendance or Housebound status (see us-va-aid-attendance).",
+    "howToApply": {
+      "url": "https://www.va.gov/pension/how-to-apply/",
+      "phone": "800-827-1000",
+      "steps": [
+        "Complete VA Form 21P-527EZ (online, by mail, or with help from an accredited representative or a County Veterans Service Officer).",
+        "Provide income, net worth, and medical evidence.",
+        "VA determines countable income and pays the difference up to the MAPR."
+      ]
+    },
+    "status": "open",
+    "seasonalNote": null
+  },
+
+  "rule": {
+    "eligibility": {
+      "kind": "allOf",
+      "of": [
+        { "kind": "compare", "fact": "isVeteran", "op": "eq", "value": true },
+        // "You didn't receive a dishonorable discharge"
+        { "kind": "not", "of": { "kind": "compare", "fact": "dischargeWasDishonorable", "op": "eq", "value": true } },
+        // "Your yearly family income and net worth meet certain limits set by Congress." -- net worth includes spouse's; excludes house, car, most furnishings.
+        { "kind": "compare", "fact": "vaPensionIncomeAndNetWorthWithinLimit", "op": "eq", "value": true },
+        {
+          /* "at least 1 of these must be true about your service:" -- service-length/era rules keyed to when active duty began (pre-9/8/1980: 90 days incl. 1 wartime day; enlisted after 9/7/1980: 24 months...). */
+          "kind": "compare", "fact": "vaPensionWartimeServiceRequirementMet", "op": "eq", "value": true
+        },
+        {
+          // "And at least 1 of these must be true:"
+          "kind": "anyOf",
+          "of": [
+            { "kind": "set", "fact": "age", "op": "in", "values": ["65-plus"] },
+            { "kind": "compare", "fact": "hasPermanentAndTotalDisability", "op": "eq", "value": true },
+            { "kind": "compare", "fact": "isNursingHomePatientForDisability", "op": "eq", "value": true },
+            // "or You're getting Social Security Disability Insurance or Supplemental Security Income" -- SSDI is not in BENEFIT_ENROLLMENTS
+            { "kind": "set", "fact": "currentBenefits", "op": "includesAny", "values": ["ssi"] }
+          ]
+        }
+      ]
+    },
+    "factsNeeded": [
+      { "key": "isVeteran", "type": "boolean", "sourceText": "wartime Veterans (RESERVED today)" },
+      { "key": "dischargeWasDishonorable", "type": "boolean", "sourceText": "You didn't receive a dishonorable discharge" },
+      { "key": "vaPensionIncomeAndNetWorthWithinLimit", "type": "boolean", "sourceText": "yearly family income and net worth meet certain limits set by Congress -- a combined income + asset test with specific exclusions (house, car, furnishings); net worth includes the spouse's. Not an FPL-scaled figure." },
+      { "key": "vaPensionWartimeServiceRequirementMet", "type": "boolean", "sourceText": "service-length + wartime-day rules keyed to the date active duty began (pre-1980 vs post-1980 enlisted vs post-1981 officer) -- a multi-branch service test folded into one fact" },
+      { "key": "hasPermanentAndTotalDisability", "type": "boolean", "sourceText": "You have a permanent and total disability -- distinct from a VA service-connected rating; this is the P&T standard" },
+      { "key": "isNursingHomePatientForDisability", "type": "boolean", "sourceText": "You're a patient in a nursing home for long-term care because of a disability" }
+    ],
+    "expressibility": {
+      "level": "partial",
+      "note": "The four-clause structure (veteran + not-dishonorable + income/net-worth + wartime service + one of age/disability/nursing-home/SSDI-SSI) maps to an allOf-of-anyOfs. But the income-AND-net-worth test is a combined asset test with statutory exclusions, and the wartime-service test is date-keyed and multi-branch -- both fold into booleans the interview cannot ask."
+    },
+    "branchDropRisk": [
+      {
+        "figure": "the MAPR (Maximum Annual Pension Rate)",
+        "takenNaivelyAs": "an income ceiling -- 'if you earn less than the MAPR you qualify'",
+        "actuallyIs": "the pension TARGET, not a gate: VA pays the difference between countable income and the MAPR. Eligibility turns on countable income (after deductions like unreimbursed medical expenses) AND a separate net-worth limit -- not a bare income comparison.",
+        "direction": "either"
+      }
+    ],
+    "unencodable": [
+      { "kind": "asset-test", "text": "The net-worth limit -- includes the spouse's net worth, excludes primary home / one car / most furnishings, and has a 3-year look-back on asset transfers." },
+      { "kind": "incorporated-law", "text": "The wartime-period list (Mexican Border through the Gulf War, still open) and the date-keyed service-length rules." },
+      { "kind": "professional-assessment", "text": "'Permanent and total disability' determination." },
+      { "kind": "other", "text": "Countable income is gross family income minus certain deductions (notably unreimbursed medical expenses over 5% of MAPR) -- so the effective income test is not a figure a person can self-check." }
+    ]
+  },
+
+  "access": {
+    "entryUrl": "https://www.va.gov/pension/eligibility/",
+    "ruleUrl": null,
+    "hops": ["va.gov/pension/eligibility/ -- 'Am I eligible for Veterans Pension benefits?' states the full multi-part rule inline, plus a linked wartime-period list"],
+    "format": ["html-prose"],
+    "formatNotes": "prose + nested 'both of these / at least 1 of these' bullet structure. va.gov is clean and well-structured -- no shell, no PDF.",
+    "fetch": {
+      "tool": "lib-source live fetcher (createLiveFetcher)",
+      "status": "HTTP 200",
+      "userAgent": "desktop-chrome",
+      "jsRenderNeeded": false,
+      "formShellRecoveryNeeded": false,
+      "robots": "allowed"
+    },
+    "scopeSeparation": [
+      {
+        "scopeOf": "the MAPR / income limits 'set by Congress'",
+        "separation": "cross-reference",
+        "where": "The eligibility page says income and net worth must 'meet certain limits set by Congress' and links to a separate 'Veterans Pension rates' page for the actual figures -- and even there, 'countable income' is income minus deductions, defined elsewhere again."
+      },
+      {
+        "scopeOf": "wartime period",
+        "separation": "same-page-elsewhere",
+        "where": "The service requirement references 'at least 1 day during wartime'; the list of qualifying wartime periods is a separate section lower on the same page."
+      }
+    ]
+  },
+
+  "cost": { "wallClockMinutes": 12, "workedBy": "agent", "notes": "2 fetches (eligibility + aid-attendance). va.gov structures the rule well; the difficulty is the income/net-worth definitions being off-page and deduction-based." },
+  "surprises": [
+    "A federal means-tested benefit where the prominent number (MAPR) is neither an income ceiling nor a benefit cap -- it is a target the payment fills to. 'Income below MAPR' is a common wrong shorthand; the real test is countable income (net of medical-expense deductions) plus a net-worth limit."
+  ]
+}

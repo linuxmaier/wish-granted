@@ -40,6 +40,14 @@ no extraction pipeline — the one built through 2026 was unwound on 2026-09-08
 (#97), and widening the corpus by hand is the current route to reach. "We should
 add programs" is always in scope; it is presently the main job.
 
+The corpus-widening research (#100) has produced **60 unverified candidate
+records** in `research/corpus/` and an analysis in `research/corpus/FINDINGS.md`
+— counts on what rule shapes actually occur, what the fact vocabulary needs
+(`isVeteran` and `hasDisability` both now have their evidence), and how often a
+figure is separated from its governing scope. Candidates are **not shipped**;
+promoting one is a separate human pass. `research/corpus/PROCEDURE.md` is the
+capture method (temporary — deleted when #100 closes).
+
 ## Where principles live, and where new ones go
 
 One rule: **a principle is stated once, and everywhere else links to it.**
