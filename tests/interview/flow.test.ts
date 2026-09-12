@@ -98,6 +98,11 @@ const madisonFamily: Answers = {
   facingLossOfHousing: false,
   utilityShutoffRisk: false,
   currentBenefits: [],
+  // Nobody in this household served. Answering the question at all is what
+  // rules the three veterans records out -- an unanswered `veteranConnection`
+  // leaves them in "might qualify", which is what the whole-interview
+  // assertions below would otherwise catch.
+  veteranConnection: [],
 };
 
 const outOfState: Answers = {
@@ -310,6 +315,13 @@ describe('a screen can anchor one question ahead of the impact sort', () => {
       currentBenefits: [] as string[],
       facingLossOfHousing: false,
       recentIncomeDrop: false,
+      // wi-veterans-housing-recovery gates on "unhoused, or facing loss of
+      // housing", so while its veteran test is unanswered it keeps
+      // `housing-status` relevant on its own -- correct behaviour, and
+      // unrelated to the WHEAP property under test here. Answering it rules
+      // that record out and leaves the housing screen resting on WHEAP alone,
+      // which is what this test is about.
+      veteranConnection: [] as string[],
     };
     const result = matchAll(PROGRAMS, answers);
     const housing = SCREENS.find((s) => s.id === 'housing')!;

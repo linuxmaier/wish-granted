@@ -69,11 +69,12 @@ export type FactKey = (typeof FACT_KEYS)[number];
  *
  * Two different reasons sit in this list, and they are not the same:
  *
- * - `veteranConnection`, `hasDisability` and `hasChildUnder18` are *queued*.
- *   Each has a measured question to ask and a named set of programs behind it;
- *   they are unused only because no record in front of them is verified yet.
- *   Adding the question is step 3 of the three-step change, and it lands with
- *   the first record that needs it -- see docs/interview-roadmap.md.
+ * - `hasDisability` and `hasChildUnder18` are *queued*. Each has a measured
+ *   question to ask and a named set of programs behind it; they are unused
+ *   only because no record in front of them needs them yet. Adding the
+ *   question is step 3 of the three-step change, and it lands with the first
+ *   record that does -- see docs/interview-roadmap.md. `veteranConnection`
+ *   left this list that way.
  * - `citizenshipStatus` and `employmentStatus` are *declined*. Nothing is
  *   waiting on them.
  *
@@ -84,7 +85,6 @@ export type FactKey = (typeof FACT_KEYS)[number];
  * fails on any other unused or unaskable fact.
  */
 export const RESERVED_FACT_KEYS: readonly FactKey[] = [
-  'veteranConnection',
   'hasDisability',
   'hasChildUnder18',
   'citizenshipStatus',
