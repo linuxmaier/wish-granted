@@ -349,10 +349,17 @@ rounded away — see [interview-roadmap.md](interview-roadmap.md). `tests/data/v
 checks that every declared band is actually offered by a choice, because a band no question
 can produce is a rule no answer can satisfy.
 
-`veteranConnection`, `hasDisability` and `hasChildUnder18` are declared but not yet asked,
-for a different reason from `citizenshipStatus` and `employmentStatus`: each has a measured
-question waiting on it and lands with the first verified record that needs it. The shapes
-are settled ahead of the records so two authors cannot coin two spellings of one fact.
+`veteranConnection` is asked, on its own `military` screen — "Is anyone in your household a
+veteran, or a veteran's family member?", a multi-select over five values. It is a set rather
+than a boolean because two of the three veterans records can be satisfied through a family
+route, so a plain "nobody served" would leave them undecided for everyone; the measurement
+is in [interview-roadmap.md](interview-roadmap.md). The screen is dropped for anyone outside
+Wisconsin, since all three records gate on geography first.
+
+`hasDisability` and `hasChildUnder18` are declared but not yet asked, for a different reason
+from `citizenshipStatus` and `employmentStatus`: each has a measured question waiting on it
+and lands with the first record that needs it. The shapes are settled ahead of the records
+so two authors cannot coin two spellings of one fact.
 
 ### What the corpus actually gates on (issue #9)
 

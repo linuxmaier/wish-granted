@@ -78,6 +78,21 @@ const SENIOR_ALONE: Persona = {
   'How old are you': { radio: '65 or older' },
 };
 
+// A Dane County veteran household (#102). The veterans records are the first
+// three in the corpus to use `veteranConnection`, and this persona is the only
+// place the real multi-select gets driven through the UI -- the unit tests
+// write the fact directly, which cannot catch a mis-wired checkbox.
+const DANE_VETERAN: Persona = {
+  'Where do you live': { radio: 'Elsewhere in Dane County' },
+  'How many people': { num: 1 },
+  'household income': { num: 14_000 },
+  'Does your household include': { none: true },
+  'best describes your housing': { radio: 'Renting' },
+  'Is any of this happening': { none: true },
+  'already receive any of these': { none: true },
+  'Is anyone in your household a veteran': { check: ['a veteran or current service member'] },
+};
+
 /** Answers whatever question is on screen, then advances. Returns when done. */
 async function runInterview(page: Page, persona: Persona, maxScreens = 12) {
   for (let i = 0; i < maxScreens; i += 1) {
@@ -227,6 +242,39 @@ test.describe('the interview end to end', () => {
     expect(maybe).toContain('BadgerCare Plus');
     expect(await bucket(page, /likely a match/i)).not.toContain('BadgerCare Plus');
     expect(await ruledOutNames(page)).not.toContain('BadgerCare Plus');
+  });
+
+  test('a veteran is confirmed for the county service office', async ({ page }) => {
+    await runInterview(page, DANE_VETERAN);
+
+    // No test to pass and nothing uncertain: Wis. Stat. s. 45.80(5)(a) makes
+    // advising county veterans the office's duty, so this record abstains on
+    // nothing and should land as a full match rather than a lead.
+    expect(await bucket(page, /likely a match/i)).toContain(
+      'Dane County Veterans Service Office',
+    );
+
+    // Stably housed, so the residential housing program is correctly out.
+    expect(await ruledOutNames(page)).toContain('Veterans Housing and Recovery Program');
+  });
+
+  test('answering "no one in my household" rules the veterans programs out', async ({
+    page,
+  }) => {
+    // The point of asking at all. Without this answer all three veterans
+    // records sit in "might qualify" for everyone, which is what makes a
+    // long results page unreadable -- see docs/interview-roadmap.md.
+    const civilian: Persona = { ...DANE_VETERAN, 'Is anyone in your household a veteran': { none: true } };
+    await runInterview(page, civilian);
+
+    const ruledOut = await ruledOutNames(page);
+    for (const name of [
+      'Dane County Veterans Service Office',
+      'Veterans Subsistence Aid Grant',
+      'Veterans Housing and Recovery Program',
+    ]) {
+      expect(ruledOut, `expected ${name} ruled out for a civilian household`).toContain(name);
+    }
   });
 
   test('the interview is shorter out of state', async ({ page }) => {

@@ -176,6 +176,116 @@ describe('bucketing', () => {
     expect(ids(result.maybe)).toContain('madison-housing-choice-voucher');
     expect(ids(result.eligible)).not.toContain('madison-housing-choice-voucher');
   });
+
+  describe('the veterans records and the family route (#102)', () => {
+    const VETERANS = [
+      'wi-veterans-subsistence-aid',
+      'wi-veterans-housing-recovery',
+      'dane-county-veterans-service-office',
+    ];
+
+    /** A Dane County household, stably housed, well under every income cap. */
+    const daneHousehold: Answers = {
+      state: 'WI',
+      county: 'dane',
+      city: 'madison',
+      householdSize: 1,
+      annualHouseholdIncome: 14_000,
+      housingStatus: 'renting',
+      facingLossOfHousing: false,
+    };
+
+    it('confirms the county service office for a veteran, rather than abstaining', () => {
+      const result = matchAll(PROGRAMS, { ...daneHousehold, veteranConnection: ['veteran'] });
+      expect(ids(result.eligible)).toContain('dane-county-veterans-service-office');
+    });
+
+    it('rules out every veterans program when nobody in the household served', () => {
+      const result = matchAll(PROGRAMS, { ...daneHousehold, veteranConnection: [] });
+      for (const id of VETERANS) expect(ids(result.ruledOut)).toContain(id);
+    });
+
+    it('leaves them at "might qualify" while the question is unanswered -- never ruled out', () => {
+      // Unhoused, so that the veteran test is the *only* thing left undecided
+      // on all three. A stably housed household rules the housing program out
+      // on its own, which the last test in this block covers.
+      const result = matchAll(PROGRAMS, {
+        ...daneHousehold,
+        housingStatus: 'unhoused-or-temporary',
+      });
+      for (const id of VETERANS) {
+        expect(ids(result.maybe)).toContain(id);
+        expect(ids(result.ruledOut)).not.toContain(id);
+      }
+    });
+
+    // The reason `veteranConnection` is a set and not the boolean `isVeteran`
+    // that facts.ts used to reserve. Two of these three records can be
+    // satisfied through a family route, so a household with no veteran in it
+    // must still reach them.
+    it("keeps the subsistence grant reachable for a veteran's spouse with no veteran in the household", () => {
+      const result = matchAll(PROGRAMS, {
+        ...daneHousehold,
+        veteranConnection: ['spouse-or-partner'],
+      });
+      expect(ids(result.ruledOut)).not.toContain('wi-veterans-subsistence-aid');
+      expect(ids(result.ruledOut)).not.toContain('dane-county-veterans-service-office');
+      // The housing program is the exception, and deliberately so: spouses and
+      // children cannot live at the VHRP site.
+      expect(ids(result.ruledOut)).toContain('wi-veterans-housing-recovery');
+    });
+
+    // The branch-drop guard. VA 2.01(2)(b)3m. caps household income at 200%
+    // FPL "[e]xcept for an applicant who is eligible under par. (d)" -- the
+    // spouse or dependent of an activated or deployed service member, for whom
+    // the guidelines do not apply at all. Encoding the 200% figure at the top
+    // of the rule would rule that person out. See the record's docblock.
+    it('rules out a veteran over 200% FPL on income', () => {
+      const overCap = incomeLimit('fpl', 200, 1) + 1_000;
+      const result = matchAll(PROGRAMS, {
+        ...daneHousehold,
+        annualHouseholdIncome: overCap,
+        veteranConnection: ['veteran'],
+      });
+      expect(ids(result.ruledOut)).toContain('wi-veterans-subsistence-aid');
+    });
+
+    it("does not rule out a serving member's spouse over 200% FPL, because the cap carves them out", () => {
+      const overCap = incomeLimit('fpl', 200, 1) + 1_000;
+      const result = matchAll(PROGRAMS, {
+        ...daneHousehold,
+        annualHouseholdIncome: overCap,
+        veteranConnection: ['spouse-or-partner'],
+      });
+      expect(ids(result.maybe)).toContain('wi-veterans-subsistence-aid');
+      expect(ids(result.ruledOut)).not.toContain('wi-veterans-subsistence-aid');
+    });
+
+    // A surviving spouse is covered by par. (c), which carries no income
+    // exemption -- only par. (d)'s activated/deployed route does. The
+    // carve-out must not leak to every family route.
+    it('still applies the income cap to a surviving spouse', () => {
+      const overCap = incomeLimit('fpl', 200, 1) + 1_000;
+      const result = matchAll(PROGRAMS, {
+        ...daneHousehold,
+        annualHouseholdIncome: overCap,
+        veteranConnection: ['surviving-spouse'],
+      });
+      expect(ids(result.ruledOut)).toContain('wi-veterans-subsistence-aid');
+    });
+
+    it('reaches the veterans housing program for an unhoused veteran, and rules it out for a stably housed one', () => {
+      const unhoused = matchAll(PROGRAMS, {
+        ...daneHousehold,
+        housingStatus: 'unhoused-or-temporary',
+        veteranConnection: ['veteran'],
+      });
+      expect(ids(unhoused.maybe)).toContain('wi-veterans-housing-recovery');
+
+      const housed = matchAll(PROGRAMS, { ...daneHousehold, veteranConnection: ['veteran'] });
+      expect(ids(housed.ruledOut)).toContain('wi-veterans-housing-recovery');
+    });
+  });
 });
 
 describe('sorting and explanations', () => {

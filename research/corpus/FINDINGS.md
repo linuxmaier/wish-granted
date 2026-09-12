@@ -135,7 +135,7 @@ Age boundaries the three bands **cannot** express, each from a real candidate:
 | "is an adult" (18+) | 5 candidates (`isAdult`) |
 
 **~14 candidates carry an age condition the current model rounds away or
-cannot state.** `age` as a band was the right call for the original 21 records;
+cannot state.** `age` as a band was the right call for the original corpus;
 the wider corpus needs either finer bands or a numeric age with per-rule
 boundaries (`standing-decisions.md`, "When a fact earns a question", already
 anticipates this).

@@ -1,5 +1,5 @@
 import type { Answers, FactKey } from '@/domain/facts';
-import { BENEFIT_ENROLLMENTS, FACTS } from '@/domain/facts';
+import { BENEFIT_ENROLLMENTS, FACTS, VETERAN_CONNECTIONS } from '@/domain/facts';
 
 /**
  * The concrete v1 interview.
@@ -301,6 +301,38 @@ export const SCREENS: readonly Screen[] = [
           fact: 'currentBenefits',
           choices: multiChoices('currentBenefits', BENEFIT_ENROLLMENTS),
           noneLabel: 'None of these',
+        },
+      },
+    ],
+  },
+
+  {
+    // A dedicated screen, for the same reason `about-you` is one: on its own
+    // the impact sort parks it late, and the relevance filter drops it the
+    // moment nothing undecided needs it -- which is immediately, for anyone
+    // outside Wisconsin, since all three veterans records gate on geography
+    // first.
+    //
+    // It is the highest-value question the corpus asked for: across the 60
+    // research candidates it settles more programs than any other, and it is
+    // the only way to stop showing a whole category to the ~90% of people it
+    // does not apply to. See docs/interview-roadmap.md.
+    id: 'military',
+    title: 'Military service',
+    questions: [
+      {
+        id: 'veteran-connection',
+        prompt: "Is anyone in your household a veteran, or a veteran's family member?",
+        // A set rather than a yes/no because the programs are: two of the
+        // three records here can be satisfied through a family route, so
+        // "no, nobody served" would leave them undecided for everyone. See
+        // the `veteranConnection` FactSpec in domain/facts.ts.
+        help: 'Some benefits are for the veteran, and others are for a spouse, a widow or widower, or a child. Check everything that applies. Skip this if you would rather not say — nothing gets ruled out for a blank answer.',
+        input: {
+          type: 'multi',
+          fact: 'veteranConnection',
+          choices: multiChoices('veteranConnection', VETERAN_CONNECTIONS),
+          noneLabel: 'No one in my household',
         },
       },
     ],

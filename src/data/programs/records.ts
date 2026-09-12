@@ -1,6 +1,7 @@
 import type { Program } from '@/domain/program';
 
 import { badgercarePlus } from './badgercare-plus';
+import { daneCountyVeteransServiceOffice } from './dane-county-veterans-service-office';
 import { daneEvictionPrevention } from './dane-eviction-prevention';
 import { daneJoiningForcesForFamilies } from './dane-joining-forces-for-families';
 import { foodshareSnapWi } from './foodshare-snap-wi';
@@ -14,6 +15,8 @@ import { theRiverFoodPantry } from './the-river-food-pantry';
 import { wheapCrisisAssistance } from './wheap-crisis-assistance';
 import { wheapEnergyAssistance } from './wheap-energy-assistance';
 import { wi211 } from './wi-211';
+import { wiVeteransHousingRecovery } from './wi-veterans-housing-recovery';
+import { wiVeteransSubsistenceAid } from './wi-veterans-subsistence-aid';
 import { wicWisconsin } from './wic-wisconsin';
 import { wisconsinSharesChildCare } from './wisconsin-shares-child-care';
 import { wisconsinWeatherization } from './wisconsin-weatherization';
@@ -69,6 +72,11 @@ export const HAND_AUTHORED_PROGRAMS: readonly Program[] = [
 
   // Childcare & education
   wisconsinSharesChildCare,
+
+  // Veterans
+  wiVeteransSubsistenceAid,
+  wiVeteransHousingRecovery,
+  daneCountyVeteransServiceOffice,
 
   // Cross-cutting referral services
   daneJoiningForcesForFamilies,
