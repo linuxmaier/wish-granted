@@ -339,9 +339,20 @@ reopen conditions — see [standing-decisions.md](standing-decisions.md); the re
 recorded there once and is not repeated here.
 
 `age` used to sit in that list. Issue #88 replaced the rule that kept it there, and it is
-now asked as a band (`under 60` / `60 to 64` / `65 or older`) on its own `about-you` screen.
-The screen is skippable, and a blank answer leaves the affected programs at "might qualify"
-— never ruled out.
+now asked as a band on its own `about-you` screen. The screen is skippable, and a blank
+answer leaves the affected programs at "might qualify" — never ruled out.
+
+There are eight bands, and they are deliberately uneven: every boundary is a real program
+cut-off, listed against its program in `AGE_BANDS` (`src/domain/facts.ts`). The list grew
+from three when the corpus survey found ~14 candidates with a boundary three cut points
+rounded away — see [interview-roadmap.md](interview-roadmap.md). `tests/data/vocabulary.test.ts`
+checks that every declared band is actually offered by a choice, because a band no question
+can produce is a rule no answer can satisfy.
+
+`veteranConnection`, `hasDisability` and `hasChildUnder18` are declared but not yet asked,
+for a different reason from `citizenshipStatus` and `employmentStatus`: each has a measured
+question waiting on it and lands with the first verified record that needs it. The shapes
+are settled ahead of the records so two authors cannot coin two spellings of one fact.
 
 ### What the corpus actually gates on (issue #9)
 

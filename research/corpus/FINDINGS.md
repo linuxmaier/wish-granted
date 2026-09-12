@@ -283,10 +283,21 @@ Stated explicitly, per the issue.
 
 ## Pointers for the follow-on (not decisions — `pipeline-principles.md` §5)
 
+**Three of these have since been acted on** (2026-09-12). The plan they became,
+with each question priced against this corpus, is
+`../../docs/interview-roadmap.md`; the decisions are recorded in
+`standing-decisions.md`. Kept here, marked, because the pointer is the evidence
+and the outcome is not always what the pointer proposed.
+
 - `isVeteran`: un-reserve — 11 candidates, a whole category. (`standing-decisions.md`.)
+  → **Done, but not as a boolean.** A later measurement found the reserved
+  boolean cannot carry the family routes 6 of those 11 qualify through, so the
+  fact shipped as `veteranConnection`, an `enumSet`.
 - `hasDisability`: un-reserve for the category; expect ~6 disability programs to
   still need a rating/functional fact or a `manualReview`.
+  → **Done**, and the ~6 confirmed: they are left as `manualReview` on purpose.
 - `AGE_BANDS`: ~14 candidates need a boundary it cannot state. Revisit.
+  → **Done.** Three cut points became eight; still bands, not a number.
 - The `allOf(clean, manualReview(rest))` shape is the **majority** (36/60), not
   an edge case — whatever comes next should emit it early, per §3.4.
 - Structure **preservation** (`renderStructured`) is worth keeping; a

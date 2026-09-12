@@ -198,6 +198,32 @@ In practice, before adding a fact:
 4. Give a new question its own screen, so `flow.ts` can drop it when nothing undecided
    depends on it (see the `about-you` screen — most people never see it).
 
+### Facts an existing answer already gives you
+
+Step 2 above is the one that gets skipped, and the corpus survey shows what it costs: 141
+distinct fact keys across 60 candidates, 134 of them named by exactly one candidate, many
+of them a second spelling of something the interview already asks. Check this table before
+coining a key.
+
+| If the rule says | Use |
+|---|---|
+| homeless, unhoused, literally homeless, in a shelter, a child is homeless | `housingStatus: 'unhoused-or-temporary'` |
+| at risk of homelessness, facing impending homelessness, housing instability, behind on rent | `facingLossOfHousing: true` |
+| a tenant / a renter, an owner-occupant | `housingStatus` — `'renting'` / `'own-home'` |
+| an energy crisis, a shutoff notice, no working heat | `utilityShutoffRisk: true` |
+| a recent job loss or cut in hours, income lower than last year's | `recentIncomeDrop: true` |
+| already enrolled in another program, categorically eligible through one | a `currentBenefits` value — add one to `BENEFIT_ENROLLMENTS` rather than a new boolean |
+| an age boundary of 16, 18, 40, 55, 60, 62, 64 or 65 | `age` — the bands already cut at all eight |
+
+**Roughly 15 candidates coin a homelessness-status fact**, and every one of them maps onto
+the first two rows. Reusing the existing fact is worth ~3 candidates' worth of precision for
+no new question at all; see [interview-roadmap.md](interview-roadmap.md).
+
+The one place *not* to reuse: when the rule genuinely means something narrower and the
+existing fact would over-claim. `lostIncomeFromIllnessInjuryOrDisaster` (the Veterans
+Subsistence Aid Grant) names a *cause* that `recentIncomeDrop` does not, so the difference is
+real — encode the shared part and put the cause in `manualReview`.
+
 ### An unasked fact must never bucket a program `eligible` or `ruledOut` on its own (issue #79)
 
 If a program's eligibility turns on a fact and that fact is unanswered, the program stays
