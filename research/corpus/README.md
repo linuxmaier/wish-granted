@@ -16,6 +16,9 @@ Promotion to a shipped record is a separate human pass and is out of scope for
 the corpus phase.
 
 `PROCEDURE.md` (temporary — deleted when #100 closes) is the how-to.
+`analysis/` (also temporary) holds the scripts behind every number quoted in
+`FINDINGS.md` and `../../docs/interview-roadmap.md` — run them from the repo
+root; they need no dependencies.
 `GO-NO-GO.md` (also the comment on issue #101) is the pilot's report: what the
 capture format got right and the seven named changes (§6) that this file now
 describes as applied.

@@ -19,7 +19,7 @@ One rule fixes it:
 | [`AGENTS.md`](../AGENTS.md) (aliased `CLAUDE.md`) | The entry point: the two grounding principles, and this routing table. | Detail of any kind. |
 | [`CONTRIBUTING.md`](../CONTRIBUTING.md) | The product's promises, and how to work here. | Anything with a revisit condition. |
 | **This file** | Every design principle and judgment: the statement, the reason, the reopen condition, the glossary of terms of art, and the record of what changed. | Mechanism. How something is implemented. |
-| Mechanism docs (`design.md`, `data-authoring.md`, `pipeline-principles.md`, …) | How a thing works, and how to use it. | The *argument* for a principle. State it in a line and link here. |
+| Mechanism docs (`design.md`, `data-authoring.md`, `interview-roadmap.md`, `pipeline-principles.md`, …) | How a thing works, and how to use it. | The *argument* for a principle. State it in a line and link here. |
 | Code and tests | The rule, in one line, with a link here. | Justification, history, or a retelling of why the rule exists. |
 | Git history and issues | What changed, when, and the full argument at the time. | — |
 | Issues labelled `superseded`, and `docs/archive/` | A dated record of the retired extraction programme. | **Anything current.** See below. |
@@ -97,6 +97,14 @@ newly significant (7).
 | **bucket** | Which of the three answers a person gets for a program: eligible, might qualify, ruled out |
 | **coverage** | What fraction of attempts produced usable output at all |
 | **yield** | Of those, what fraction stated an actual rule rather than abstaining. **Coverage and yield are different numbers** and a run that confuses them can look successful while answering nothing |
+| **demand** (of a fact) | How many records or candidates *name* it. Cheap to count and it **over-rates**: a fact ten rules mention but none of them turns on buys nothing |
+| **pruning power** (of a fact) | How many of those it would actually move out of "might qualify" — which only a fact sitting on a *necessary* condition can do. This is the number that decides whether a question earns its screen |
+
+**Demand and pruning power are different numbers**, in the same way coverage
+and yield are, and the gap between them is not small: `isVeteran` is named by
+10 of the 60 candidates and settles 5. Measured per fact by
+`research/corpus/analysis/fact-demand.mjs`; the consequences for what to ask
+are in [`interview-roadmap.md`](interview-roadmap.md).
 
 ### The harm directions
 
@@ -175,6 +183,15 @@ records.
 program appears, not buried in a disclosure. A person looking at "might qualify"
 needs to know what would settle it. Not built yet: #95.
 
+The corpus work raised what #95 is worth. With every question in
+[`interview-roadmap.md`](interview-roadmap.md) answered, **14 of the 60
+candidates still sit at "might qualify" for every persona** — 4 because they
+publish no rule at all, 5 because they end in a caseworker or an underwriter,
+5 because their rule is another body of law. For those, the user's next step is
+a phone call, and no further question changes that. Shortening the "might" list
+without saying *what is unresolved and who resolves it* makes the page shorter,
+not more useful.
+
 ## When a fact earns a question
 
 **A fact is worth asking when it unlocks programs worth including.** The test is
@@ -248,7 +265,9 @@ must be re-measured against a wider corpus.
 | **Source change detection is a known gap.** Nothing notices when a source page moves or rewrites its rules. | Its implementation was deleted in the unwind (#7, #82 — both `superseded`). | When the corpus is wide enough that manual re-verification stops being feasible. The three rejected signals in the Facts table stay rejected; a replacement needs a different approach. |
 | **`citizenshipStatus` stays unasked**, and immigration status is never encoded as a rule. Affected programs carry a plain-language caveat and stay in "might qualify". | It genuinely affects federal food benefits, but the rules are dense with exceptions — children frequently qualify when adults do not — and a rules engine that got them slightly wrong would tell a family they are ineligible when they are not. This is the "coverage argument can lose" case: applied honestly per fact, here it loses. | This argues against **exclusionary** rules on that fact, not against the fact itself. Reopen the moment a program is found that the fact would let us *include* someone in — refugee- and immigrant-specific assistance is exactly the under-served case. Asking it and only ever using it to widen a match has never been evaluated. |
 | **`employmentStatus` stays unasked.** | The friction of asking is not yet bought back by the coverage it would unlock. | Same test as any other fact — see "When a fact earns a question". Nobody has re-run it since #9. |
-| **`isVeteran` and `hasDisability` stay reserved.** | Their categories were deferred in the original brief. | Now. The deferral was circular in the way #88 rejected. Run the #88 coverage test: does asking unlock programs worth including? Health/disability is plausibly the largest under-served category for this audience, and the corpus expansion is the moment to settle it. |
+| **`veteranConnection` and `hasDisability` are queued, not deferred.** Both are asked as soon as a record in front of them is verified; neither waits on a further argument. **And a household's military connection is a set, not a boolean** — the reserved `isVeteran` boolean was the wrong shape and is gone. | The old deferral was circular in the way #88 rejected, and the corpus settled it: 11 candidates behind the veteran fact (a whole category), 21 behind `health-disability`. The shape finding is measured — 6 of the 11 veterans candidates qualify through a *family* route, so a bare "is anyone a veteran?" answered "no" leaves all 6 undecided for everyone. The boolean settles 4.2 of 60 candidates; the set settles 8.2. | Settled in the "ask" direction; do not re-litigate *whether*. Reopen the **shape** if a verified record needs a distinction the five `VETERAN_CONNECTIONS` values cannot draw. Reopen `hasDisability`'s household scoping if a record needs applicant-vs-household precision that `manualReview` cannot carry. |
+| **`AGE_BANDS` has eight cut points, and age stays a band rather than a number.** | The band *form* was right — every age-gated rule needs a boundary, and a band reads as a life-stage question rather than an ID check. The old list's stated premise was not: it claimed the only boundaries were 60, 62 and 65, and the corpus has 16, 18, 40, 55, 60, 62, 64 and 65, with Well Woman needing a 40–64 window that three bands cannot state at either end. About 14 candidates carried a boundary the old list rounded away. | **If eight options prove to be real friction on a phone** — the honest cost of this choice, against one numeric input, which would be a single field and exact at every boundary. The argument for bands is perceived intrusiveness, not privacy (nothing leaves the browser), so it is a UX judgment and it is the product owner's. Reopen also if a rule needs a boundary the eight bands cannot state; 17.5 and an exact 64 already round outward into "might qualify". |
+| **Facts that stay unasked on purpose.** Three groups, all of which leave their programs in "might qualify": (a) figures **nobody can answer accurately** — VA rating percentages, discharge characterisation, war-period service, `qualifiesForFederalEIC`, Schedule H "household income", the FAFSA Student Aid Index; (b) **professional assessments** — the Long-Term Care Functional Screen, a 25% developmental delay, clinical diagnoses, credit score and debt-to-income; (c) **asset tests**. | (a) and (b) would collect a guess and then treat it as an answer — the direction that tells someone they qualify when they do not. (c) is different and is the measured surprise: asking an asset question settles **0.0** of the 60 candidates, because this audience essentially always passes the test, so it never rules anything out — and every asset-gated candidate except the Medicare Savings Programs carries a `manualReview` that caps it at "might" regardless. An intrusive question about money, for nothing. | (a) and (b): when a record's rule turns on one of them *and* a caseworker-facing route exists that the app could hand off to — that is #95's problem, not the vocabulary's. (c) **Asset tests: when a candidate appears whose asset limit is low enough that real applicants fail it, or whose rule has no other abstention** — then asking could confirm rather than merely narrow. Re-run `research/corpus/analysis/interview-value.mjs` before reopening. |
 | **211 Wisconsin and findhelp.org are not fetched.** | robots.txt (findhelp); no confirmed access path (211). | The robots.txt finding stands. The reasoning about 211 partly rested on HSDS carrying no eligibility data — no longer disqualifying, since a directory entry still yields a real record. Reopen the access-path question on those terms. |
 | **PolicyEngine US is a future cross-check, not a dependency.** | Open questions: AGPL implications, and whether it scores partial inputs. | Now. Both are answerable in an afternoon and neither has been attempted. Consulting parameter values at build time differs materially from redistributing or embedding. |
 | **Ship the whole corpus to every client.** | The privacy property: what the client requests must not depend on the user's answers. | At roughly 1,000 programs (~460 KB gzipped). Split by content type first, by state second; never by county, never by an answer. |
@@ -259,6 +278,23 @@ must be re-measured against a wider corpus.
 
 Kept short and here, so no other file has to carry it.
 
+- **2026-09-12 — the veterans and health/disability facts stopped being
+  deferred, and the veteran fact changed shape.** The #100 corpus gave the #88
+  coverage test its answer: 11 candidates behind a military-connection fact, 21
+  behind disability. `isVeteran` (a reserved boolean) was replaced by
+  `veteranConnection` (an `enumSet`) because the boolean cannot express the
+  family routes 6 of those 11 candidates qualify through — measured at 4.2 of
+  60 candidates settled versus 8.2. `hasChildUnder18` was declared alongside
+  them. The plan, the per-question numbers and the sequencing are in
+  [`interview-roadmap.md`](interview-roadmap.md).
+- **2026-09-12 — `AGE_BANDS` went from three cut points to eight.** The old
+  list's premise ("every rule that turns on age needs 60, 62 or 65") was
+  falsified by the corpus, which has 16, 18, 40, 55, 60, 62, 64 and 65. Age
+  stays a band — that part of the decision held.
+- **2026-09-12 — asking about assets was measured and rejected.** Six-plus
+  candidates set an asset limit, and asking settles none of them: this audience
+  passes the test. The first item found to have *demand* but no *pruning
+  power*, and the reason the two are now distinguished under "The words".
 - **2026-09-08 — the eligibility-extraction programme was unwound.** Ten script
   suites, their tests, CI jobs and research docs were deleted or archived, and
   26 issues were marked `superseded`. Not because one component failed: the

@@ -42,11 +42,17 @@ add programs" is always in scope; it is presently the main job.
 
 The corpus-widening research (#100) has produced **60 unverified candidate
 records** in `research/corpus/` and an analysis in `research/corpus/FINDINGS.md`
-— counts on what rule shapes actually occur, what the fact vocabulary needs
-(`isVeteran` and `hasDisability` both now have their evidence), and how often a
-figure is separated from its governing scope. Candidates are **not shipped**;
-promoting one is a separate human pass. `research/corpus/PROCEDURE.md` is the
-capture method (temporary — deleted when #100 closes).
+— counts on what rule shapes actually occur, what the fact vocabulary needs, and
+how often a figure is separated from its governing scope. Candidates are **not
+shipped**; promoting one is a separate human pass. `research/corpus/PROCEDURE.md`
+is the capture method and `research/corpus/analysis/` the scripts behind the
+numbers (both temporary — deleted when #100 closes).
+
+**What the interview has to ask to serve that corpus is planned in
+[`docs/interview-roadmap.md`](docs/interview-roadmap.md).** The headline: with
+today's questions, 76% of those 60 candidates would say "might qualify" to
+everyone. One new question and a longer age-band list take that to 43%. Read it
+before adding a fact or a question.
 
 ## Where principles live, and where new ones go
 
@@ -56,7 +62,7 @@ One rule: **a principle is stated once, and everywhere else links to it.**
 |---|---|---|
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | The product's promises, plus how to work here | Anything with a revisit condition |
 | [`docs/standing-decisions.md`](docs/standing-decisions.md) | **Every design principle and judgment**: the statement, the reason, the reopen condition, the glossary, and what has changed | Mechanism |
-| `docs/design.md`, `docs/data-authoring.md`, `docs/pipeline-principles.md`, … | How a thing works, and how to use it | The *argument* for a principle |
+| `docs/design.md`, `docs/data-authoring.md`, `docs/interview-roadmap.md`, `docs/pipeline-principles.md`, … | How a thing works, and how to use it | The *argument* for a principle |
 | Code and tests | The rule, in one line, with a link | Justification, history, or a retelling of why |
 | Git history and GitHub issues | The full argument at the time | — |
 | Issues labelled `superseded`, and `docs/archive/` | A dated record of retired work | **Anything current.** Not a source of reasoning — see below |
