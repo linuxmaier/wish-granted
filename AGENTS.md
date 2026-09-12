@@ -35,7 +35,7 @@ looks: the app has a third bucket, and "might qualify" is not a wrong answer in
 either direction. Read [`docs/standing-decisions.md`](docs/standing-decisions.md),
 "The two harms", before invoking either of these in an argument.
 
-Where the corpus stands: **21 records, 16 verified, all hand-authored.** There is
+Where the corpus stands: **20 records, 16 verified, all hand-authored.** There is
 no extraction pipeline — the one built through 2026 was unwound on 2026-09-08
 (#97), and widening the corpus by hand is the current route to reach. "We should
 add programs" is always in scope; it is presently the main job.
@@ -50,9 +50,15 @@ numbers (both temporary — deleted when #100 closes).
 
 **What the interview has to ask to serve that corpus is planned in
 [`docs/interview-roadmap.md`](docs/interview-roadmap.md).** The headline: with
-today's questions, 76% of those 60 candidates would say "might qualify" to
-everyone. One new question and a longer age-band list take that to 43%. Read it
-before adding a fact or a question.
+the questions the app asked before that plan, 76% of those 60 candidates would
+say "might qualify" to everyone. One new question and a longer age-band list
+take that to 43%. Read it before adding a fact or a question.
+
+The first three candidates have been promoted — the `veterans` category now
+ships, and the `veteranConnection` question with it. Promoting a candidate is
+*not* the same as verifying it: all three carry `lastVerified: null` and a
+comment naming what an agent confirmed against a fetched source and what it
+could not. A human still has to read the sources.
 
 ## Where principles live, and where new ones go
 

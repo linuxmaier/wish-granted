@@ -1,16 +1,20 @@
 # What the interview has to ask next
 
-**Status: a plan, with the measurements behind it.** This is a mechanism doc —
+**Status: tier 1 is part-shipped; the rest is a plan.** This is a mechanism doc —
 it says what to ask, in what order, and what each item buys. The *principles*
 it applies (when a fact earns a question, the two harms, abstain per condition)
 live in [`standing-decisions.md`](standing-decisions.md) and are not re-argued
 here. The decisions this plan settles are recorded there too, with reopen
 conditions.
 
-It exists because the corpus work changed the problem. Until now the interview
-was sized for 21 records; `research/corpus/` holds 60 more candidates, and the
-question is no longer "what facts do our rules need" but "what does this
-audience have to be asked before a 60-program results page is worth reading".
+It exists because the corpus work changed the problem. The interview was sized
+for 17 records; `research/corpus/` holds 60 more candidates, and the question is
+no longer "what facts do our rules need" but "what does this audience have to be
+asked before a 60-program results page is worth reading".
+
+**Shipped so far:** the eight-band `AGE_BANDS`, the homelessness mapping, and
+the `veteranConnection` question with the first three veterans records — steps
+1 to 3 of "Sequencing" below.
 
 Reproduce every figure below with:
 
@@ -36,8 +40,8 @@ the facts the interview asks today:
 Three quarters of the page, undifferentiated. That is not caution — it is the
 under-claim harm arrived at by way of caution
 ([`standing-decisions.md`](standing-decisions.md), "The two harms"), and it
-hands the sorting work straight back to a person in a crisis. Today's 21
-records hide this: with a corpus this small, a long "might" list is short in
+hands the sorting work straight back to a person in a crisis. A 20-record
+corpus hides this: with a corpus this small, a long "might" list is short in
 absolute terms. At 81 it is a wall.
 
 Every item below is priced in the same unit: **how many of the 60 candidates
@@ -282,31 +286,50 @@ not more useful.**
 
 Facts cannot be asked before a record needs them: the three-step change in
 [`data-authoring.md`](data-authoring.md) is enforced by
-`tests/data/vocabulary.test.ts`, and every one of the 60 candidates is
-unverified, so **nothing here can ship a question until a human verifies the
-record in front of it.** That is the gate, and it is the right one.
+`tests/data/vocabulary.test.ts`, so **no question here can ship until a record
+references its fact.** That is the gate, and it is the right one.
 
-So the work lands in this order:
+An earlier version of this section said the gate was a record *verified*. It is
+not, and the difference matters for how fast this can move: a record ships with
+`lastVerified: null` and an honest `manualReview` where its rule could not be
+pinned down — `dane-eviction-prevention.ts` is the precedent, and
+[`data-authoring.md`](data-authoring.md) says plainly that "a record with an
+honest `null` is worth more than one with a date covering a threshold nobody
+actually re-derived." So a question can land as soon as a record is *authored
+from fetched sources*; the human pass that sets `lastVerified` follows, and the
+app shows an unverified banner until it does.
 
-1. **Shapes first** *(this change)*. `AGE_BANDS` widened and the age question
-   with it; `veteranConnection` and `hasChildUnder18` declared in
-   `RESERVED_FACT_KEYS` with their shapes settled. Declaring a shape ahead of
-   the record is what `RESERVED_FACT_KEYS` is for, and it stops two authors
-   coining two spellings of one fact.
-2. **The homelessness mapping into `data-authoring.md`** — no code, no
-   question, 3.2 candidates' worth of precision, and it stops the sixteenth
-   coinage.
-3. **First veterans record verified** → the `veteranConnection` question lands
-   with it, on its own screen so `flow.ts` can drop it. Biggest single win, and
-   a category the app is currently silent on.
-4. **First record needing a minor in the home** → one more checkbox on the
-   household screen.
-5. **First health/disability record** → `hasDisability` joins the household
-   checklist or its own screen, depending on what the record needs.
-6. **Benefit checkboxes** land one at a time, each with the record that reads
-   it.
-7. **Tier 2 reassessed** once tier 1 has shipped and "might" is down to ~26 —
+1. **Shapes first.** ✅ *Shipped.* `AGE_BANDS` widened from three cut points to
+   eight and the age question with it; `veteranConnection` and
+   `hasChildUnder18` declared with their shapes settled. Declaring a shape
+   ahead of the record is what `RESERVED_FACT_KEYS` is for, and it stops two
+   authors coining two spellings of one fact.
+2. **The homelessness mapping into `data-authoring.md`.** ✅ *Shipped.* No code
+   and no question — 3.2 candidates' worth of precision, and it stops the
+   sixteenth coinage. `wi-veterans-housing-recovery.ts` is the worked example.
+3. **First veterans records + the `veteranConnection` question.** ✅ *Shipped.*
+   Three records (the Subsistence Aid Grant, the Veterans Housing and Recovery
+   Program, and the Dane County Veterans Service Office) and one `multi`
+   question on its own `military` screen, so `flow.ts` drops it for anyone
+   outside Wisconsin. `veteranConnection` has left `RESERVED_FACT_KEYS`.
+4. **The rest of the veterans candidates.** 8 of the 11 are still unshipped,
+   and they need no new fact — `veteranConnection` already covers them. The
+   cheapest reach available right now.
+5. **First record needing a minor in the home** → one more checkbox on the
+   household screen, no new screen. `hasChildUnder18` is declared and waiting.
+6. **First health/disability record** → `hasDisability` joins the household
+   checklist or takes its own screen, depending on what the record needs.
+   21 of the 60 candidates are in this category; it is the biggest unshipped
+   block.
+7. **Benefit checkboxes** land one at a time, each with the record that reads
+   it — Medicare, Family Care / Partnership / IRIS, Kinship Care.
+8. **Tier 2 reassessed** once tier 1 has shipped and "might" is down to ~26 —
    the case for a fourth and fifth question is different when the page is
    readable.
 
-#95 belongs beside step 3, not after step 7.
+**#95 is now the binding constraint, not a nice-to-have.** Step 3 shipped a
+record (`wi-veterans-subsistence-aid`) whose rule is three `manualReview`
+leaves deep, and the honest thing it tells a veteran is "might qualify". What
+it does not yet tell them is *which* of those three things is unresolved, or
+that a county veterans service officer settles all three for free. Every
+further step on this list adds more programs in that state.

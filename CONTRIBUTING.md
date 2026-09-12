@@ -22,7 +22,7 @@ opening.** A tool that is impeccably accurate about twenty-one programs has
 failed most of the people who open it — and failed them invisibly, because
 nobody files a bug for a program they were never shown.
 
-Where the corpus stands today: **21 records** (16 verified), all hand-authored.
+Where the corpus stands today: **20 records** (16 verified), all hand-authored.
 A Dane County resident in crisis could plausibly qualify for several times what
 we list.
 

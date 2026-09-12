@@ -218,6 +218,10 @@ coining a key.
 **Roughly 15 candidates coin a homelessness-status fact**, and every one of them maps onto
 the first two rows. Reusing the existing fact is worth ~3 candidates' worth of precision for
 no new question at all; see [interview-roadmap.md](interview-roadmap.md).
+`wi-veterans-housing-recovery.ts` is the worked example — its source says "homeless or at
+risk of becoming homeless", which it encodes as
+`anyOf(is('housingStatus', 'unhoused-or-temporary'), isTrue('facingLossOfHousing'))` with no
+new fact at all.
 
 The one place *not* to reuse: when the rule genuinely means something narrower and the
 existing fact would over-claim. `lostIncomeFromIllnessInjuryOrDisaster` (the Veterans

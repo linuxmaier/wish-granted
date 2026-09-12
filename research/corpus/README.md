@@ -12,8 +12,19 @@ batch (#101) and batch 2 (#102). They are:
   `eligibility` trees here reference fact keys that do not exist, including ones
   in `RESERVED_FACT_KEYS`.
 
-Promotion to a shipped record is a separate human pass and is out of scope for
-the corpus phase.
+Promotion to a shipped record is a separate pass, and it has two halves that
+are easy to run together and should not be:
+
+- **Re-authoring the record against freshly fetched sources.** A candidate's
+  figures are unverified and some are wrong — the first three promoted
+  (`wi-veterans-subsistence-aid`, `wi-veterans-housing-recovery`,
+  `dane-county-veterans-service-office`) each needed corrections, including a
+  phone number one candidate carried that appears on none of its sources. Never
+  copy a candidate's `eligibility` across; re-derive it.
+- **Setting `lastVerified`.** That means *a human* read the source, and nothing
+  else counts. A promoted record ships with `lastVerified: null` and a comment
+  saying what was confirmed and what was not, exactly like
+  `dane-eviction-prevention.ts`.
 
 `PROCEDURE.md` (temporary — deleted when #100 closes) is the how-to.
 `analysis/` (also temporary) holds the scripts behind every number quoted in
