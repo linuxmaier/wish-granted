@@ -331,9 +331,9 @@ describe('a screen can anchor one question ahead of the impact sort', () => {
     // happens to also put "housing-status" before "housing-trouble"
     // alphabetically. A synthetic screen with a real, controlled score gap is
     // what actually exercises the anchor: three fixture programs depend on
-    // `hasChildUnder5`, only one depends on `isVeteran`, so left to impact
+    // `hasChildUnder5`, only one depends on `hasDisability`, so left to impact
     // alone "outscores" would sort first -- and it does not.
-    const anchorFact: FactKey = 'isVeteran';
+    const anchorFact: FactKey = 'hasDisability';
     const outscoresFact: FactKey = 'hasChildUnder5';
     const programs: Program[] = [
       fixtureProgram('fixture-anchor-1', anchorFact),
@@ -398,7 +398,7 @@ describe('a screen can anchor one question ahead of the impact sort', () => {
     // "drops the anchor along with the rest of the screen" test above for the
     // real-data case this collapses into instead. A synthetic screen is what
     // lets this property stay under test in the meantime.
-    const anchorFact: FactKey = 'isVeteran';
+    const anchorFact: FactKey = 'hasDisability';
     const survivingFact: FactKey = 'hasChildUnder5';
     const programs: Program[] = [
       fixtureProgram('fixture-anchor-only', anchorFact),
@@ -421,11 +421,11 @@ describe('a screen can anchor one question ahead of the impact sort', () => {
       anchorQuestionId: 'fixture-anchor',
     };
 
-    // Answering isVeteran resolves (rules out) the fixture program that
+    // Answering hasDisability resolves (rules out) the fixture program that
     // depends on it, so the anchor question no longer helps anything --
     // while hasChildUnder5 stays unanswered, so the surviving question and
     // the screen itself both stay alive.
-    const answers: Answers = { isVeteran: false };
+    const answers: Answers = { hasDisability: false };
     const result = matchAll(programs, answers);
 
     expect(questionImpact(anchorQuestion, answers, result)).toBe(0);

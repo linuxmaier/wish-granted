@@ -53,6 +53,43 @@ describe('the interview and the rules agree', () => {
       }
     }
   });
+
+  it('offers every declared value of an enum fact it asks about', () => {
+    // A declared option no question can produce is a rule nobody can satisfy:
+    // the engine would hold the program at "might qualify" for everyone, with
+    // no way for an answer to settle it. The failure is silent -- the option
+    // type-checks, the rule type-checks, and no other test looks at the gap
+    // between an enum's options and the choices on screen.
+    //
+    // This started mattering when AGE_BANDS grew from 3 cut points to 8
+    // (docs/interview-roadmap.md): adding a band and forgetting its choice is
+    // now an easy and invisible mistake.
+    const offered = new Map<FactKey, Set<string>>();
+    const add = (fact: FactKey, value: string) => {
+      if (!offered.has(fact)) offered.set(fact, new Set());
+      offered.get(fact)!.add(value);
+    };
+
+    for (const question of ALL_QUESTIONS) {
+      const { input } = question;
+      if (input.type === 'choice') {
+        for (const choice of input.choices) {
+          for (const [fact, value] of Object.entries(choice.implies)) {
+            if (typeof value === 'string') add(fact as FactKey, value);
+          }
+        }
+      } else if (input.type === 'multi') {
+        for (const choice of input.choices) add(input.fact, choice.value);
+      }
+    }
+
+    for (const [fact, values] of offered) {
+      const declared = FACTS[fact].options;
+      if (!declared) continue;
+      const unreachable = declared.filter((option) => !values.has(option));
+      expect(unreachable, `${fact} declares options no question offers`).toEqual([]);
+    }
+  });
 });
 
 function factsSupplied(question: (typeof ALL_QUESTIONS)[number]): FactKey[] {

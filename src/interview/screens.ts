@@ -324,12 +324,20 @@ export const SCREENS: readonly Screen[] = [
       {
         id: 'age',
         prompt: 'How old are you?',
-        help: 'A range is all we need. A few programs — Medicaid and some senior benefits — set different rules around ages 60 and 65. Skip this if you would rather not say; nothing gets ruled out for a blank answer.',
+        help: 'A range is all we need — never your date of birth. Programs set their cut-offs at different ages, which is why the ranges are uneven. Skip this if you would rather not say; nothing gets ruled out for a blank answer.',
         input: {
+          // One choice per band, in AGE_BANDS order. The bands are uneven
+          // because every boundary is a real program cut-off -- see AGE_BANDS
+          // in domain/facts.ts for which program asks for which.
           type: 'choice',
           choices: [
-            { value: 'under-60', label: 'Under 60', implies: { age: 'under-60' } },
-            { value: '60-64', label: '60 to 64', implies: { age: '60-64' } },
+            { value: 'under-16', label: 'Under 16', implies: { age: 'under-16' } },
+            { value: '16-17', label: '16 or 17', implies: { age: '16-17' } },
+            { value: '18-39', label: '18 to 39', implies: { age: '18-39' } },
+            { value: '40-54', label: '40 to 54', implies: { age: '40-54' } },
+            { value: '55-59', label: '55 to 59', implies: { age: '55-59' } },
+            { value: '60-61', label: '60 or 61', implies: { age: '60-61' } },
+            { value: '62-64', label: '62 to 64', implies: { age: '62-64' } },
             { value: '65-plus', label: '65 or older', implies: { age: '65-plus' } },
           ],
         },

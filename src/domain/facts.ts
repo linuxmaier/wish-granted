@@ -47,13 +47,19 @@ export const FACT_KEYS = [
   // See the FactSpec below for why this is a boolean, not a dollar figure.
   'recentIncomeDrop',
 
-  // --- Declared but not asked ------------------------------------------------
-  // Reserved so the schema can carry the deferred categories (veterans,
-  // health/disability) without a migration. No program references these, and
-  // no question supplies them; the vocabulary test allows exactly the keys
-  // listed in RESERVED_FACT_KEYS to be unused.
-  'isVeteran',
+  // --- Declared, awaiting their first record --------------------------------
+  // Shapes settled ahead of the records that will use them, so that promoting
+  // a candidate out of research/corpus/ is a data change and so that two
+  // authors cannot coin two spellings of the same fact. No program references
+  // these and no question supplies them; the vocabulary test allows exactly
+  // the keys listed in RESERVED_FACT_KEYS to be unused.
+  //
+  // These are no longer deferred on principle -- see
+  // docs/standing-decisions.md and docs/interview-roadmap.md for what each
+  // unlocks and in what order.
+  'veteranConnection',
   'hasDisability',
+  'hasChildUnder18',
 ] as const;
 
 export type FactKey = (typeof FACT_KEYS)[number];
@@ -61,19 +67,26 @@ export type FactKey = (typeof FACT_KEYS)[number];
 /**
  * Facts declared ahead of any question that supplies them.
  *
- * `isVeteran` / `hasDisability` are declared so their categories can be added
- * as a data change rather than a schema change. `citizenshipStatus` and
- * `employmentStatus` are not asked today.
+ * Two different reasons sit in this list, and they are not the same:
  *
- * Each of these is a standing decision with a reopen condition, recorded in
+ * - `veteranConnection`, `hasDisability` and `hasChildUnder18` are *queued*.
+ *   Each has a measured question to ask and a named set of programs behind it;
+ *   they are unused only because no record in front of them is verified yet.
+ *   Adding the question is step 3 of the three-step change, and it lands with
+ *   the first record that needs it -- see docs/interview-roadmap.md.
+ * - `citizenshipStatus` and `employmentStatus` are *declined*. Nothing is
+ *   waiting on them.
+ *
+ * Each is a standing decision with a reopen condition, recorded in
  * docs/standing-decisions.md -- do not re-derive the reasoning here.
  *
  * tests/data/vocabulary.test.ts allows exactly these keys to be unused, and
  * fails on any other unused or unaskable fact.
  */
 export const RESERVED_FACT_KEYS: readonly FactKey[] = [
-  'isVeteran',
+  'veteranConnection',
   'hasDisability',
+  'hasChildUnder18',
   'citizenshipStatus',
   'employmentStatus',
 ];
@@ -105,15 +118,37 @@ export interface FactSpec {
 }
 
 /**
- * Age is asked as a band, not an exact number: every rule that turns on age
- * needs a boundary (0-64, 60+, 62+, 65+), never a precise age.
+ * Age is asked as a band, not an exact number. That much is unchanged; what
+ * changed is how many cut points a band list needs.
  *
- * The cut points are 60 and 65. Homestead Credit's 62+ approximates to the
- * 60-64 band, which over-includes 60- and 61-year-olds rather than excluding
- * anyone -- an over-inclusion here cannot say "you qualify" on its own, it only
- * keeps the program in "might qualify".
+ * Each boundary below is required by a named program in the corpus survey
+ * (research/corpus/FINDINGS.md §2c), so the list is derived, not guessed:
+ *
+ *   16   FoodShare Employment and Training
+ *   18   the five candidates that gate on "is an adult"
+ *   40   Wisconsin Well Woman (a 40-64 window -- neither end expressible before)
+ *   55   Senior Farmers' Market Nutrition, the Native American route
+ *   60   CSFP senior food, the ADRC elder benefit specialist
+ *   62   Homestead Credit
+ *   64   Well Woman's upper bound
+ *   65   SeniorCare, the Medicare Savings Programs
+ *
+ * Two boundaries are still rounded, and both round outward so the program
+ * stays in "might qualify" rather than ruling anyone out: the ADRC long-term
+ * care functional screen's 17.5 falls in `16-17`, and a rule needing exactly
+ * 64 gets `62-64`. See docs/standing-decisions.md, "AGE_BANDS", for why bands
+ * rather than a number, and the condition for revisiting that.
  */
-export const AGE_BANDS = ['under-60', '60-64', '65-plus'] as const;
+export const AGE_BANDS = [
+  'under-16',
+  '16-17',
+  '18-39',
+  '40-54',
+  '55-59',
+  '60-61',
+  '62-64',
+  '65-plus',
+] as const;
 
 export const CITIZENSHIP_STATUSES = [
   'us-citizen',
@@ -135,6 +170,26 @@ export const EMPLOYMENT_STATUSES = [
   'retired',
   'unable-to-work',
   'student',
+] as const;
+
+/**
+ * How a household connects to military service. Every value is a qualifying
+ * route some candidate names in its own right; see the `veteranConnection`
+ * FactSpec below for why this is a set rather than a boolean.
+ *
+ * Deliberately absent: discharge characterisation, service dates, war-period
+ * service, and VA disability rating percentages. Those gate several of the
+ * same programs and are all left to `manualReview` -- nobody can answer
+ * "did you serve during a defined war period?" from memory, and a wrong answer
+ * would tell someone they qualify when they do not. See
+ * docs/standing-decisions.md, "Facts that stay unasked on purpose".
+ */
+export const VETERAN_CONNECTIONS = [
+  'veteran',
+  'spouse-or-partner',
+  'surviving-spouse',
+  'child-or-dependent',
+  'gold-star-parent',
 ] as const;
 
 /**
@@ -193,8 +248,13 @@ export const FACTS: Readonly<Record<FactKey, FactSpec>> = {
     label: 'age',
     options: AGE_BANDS,
     optionLabels: {
-      'under-60': 'under 60',
-      '60-64': '60 to 64',
+      'under-16': 'under 16',
+      '16-17': '16 or 17',
+      '18-39': '18 to 39',
+      '40-54': '40 to 54',
+      '55-59': '55 to 59',
+      '60-61': '60 or 61',
+      '62-64': '62 to 64',
       '65-plus': '65 or older',
     },
   },
@@ -312,17 +372,52 @@ export const FACTS: Readonly<Record<FactKey, FactSpec>> = {
     negated: 'household income has not changed significantly in the last month or two',
   },
 
-  isVeteran: {
-    key: 'isVeteran',
-    type: 'boolean',
-    label: 'someone in the household is a veteran',
-    negated: 'no one in the household is a veteran',
+  /**
+   * A set, not a boolean, and the corpus survey is the reason: 6 of the 11
+   * veterans candidates satisfy their veteran test through a *family* route --
+   * `anyOf(veteran, spouse-or-dependent)` -- so a bare "is anyone here a
+   * veteran?" answered "no" leaves those 6 undecided for everybody. Measured:
+   * the boolean settles 4.2 of 60 candidates, the set 8.2.
+   * See docs/interview-roadmap.md.
+   */
+  veteranConnection: {
+    key: 'veteranConnection',
+    type: 'enumSet',
+    label: 'connection to military service',
+    options: VETERAN_CONNECTIONS,
+    optionLabels: {
+      veteran: 'a veteran or current service member',
+      'spouse-or-partner': "a veteran's spouse or partner",
+      'surviving-spouse': "a veteran's widow or widower",
+      'child-or-dependent': "a veteran's child or dependent",
+      'gold-star-parent': 'the parent of a service member who died in service',
+    },
   },
+  /**
+   * Household-scoped, like every other person fact here, while several rules
+   * mean the applicant specifically (Family Care and IRIS both read "an adult
+   * with a disability"). That over-includes rather than excludes, so it can
+   * only hold a program at "might qualify" -- the same trade the age bands
+   * make. A rule that needs the distinction should say so in `manualReview`.
+   */
   hasDisability: {
     key: 'hasDisability',
     type: 'boolean',
-    label: 'someone in the household has a qualifying disability',
-    negated: 'no one in the household has a qualifying disability',
+    label: 'someone in the household has a disability or long-term health condition',
+    negated: 'no one in the household has a disability or long-term health condition',
+  },
+  /**
+   * Rides the existing household-members checklist, so it costs no new
+   * question. Distinct from `hasChildUnder5` + `hasSchoolAgeChild`: those two
+   * miss a 16-to-17-year-old out of school, and W-2, Emergency Assistance and
+   * Kinship Care all turn on a minor in the home rather than a school
+   * enrolment.
+   */
+  hasChildUnder18: {
+    key: 'hasChildUnder18',
+    type: 'boolean',
+    label: 'there is a child under 18 in the household',
+    negated: 'there is no child under 18 in the household',
   },
 };
 
